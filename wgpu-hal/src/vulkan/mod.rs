@@ -480,6 +480,7 @@ struct DeviceExtensionFunctions {
     draw_indirect_count: Option<khr::draw_indirect_count::Device>,
     timeline_semaphore: Option<ExtensionFn<khr::timeline_semaphore::Device>>,
     ray_tracing: Option<RayTracingDeviceExtensionFunctions>,
+    mesh_shading: Option<ext::mesh_shader::Device>,
 }
 
 struct RayTracingDeviceExtensionFunctions {

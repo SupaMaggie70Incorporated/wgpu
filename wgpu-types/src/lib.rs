@@ -476,6 +476,9 @@ bitflags::bitflags! {
         /// This is a web and native feature.
         const FLOAT32_FILTERABLE = 1 << 11;
 
+        /// TODO: REMOVE THIS
+        const MESH_SHADER = 1 << 15;
+
         // Bits 12-18 available for webgpu features. Should you chose to use some of them for
         // for native features, don't forget to update `all_webgpu_mask` and `all_native_mask`
         // accordingly.

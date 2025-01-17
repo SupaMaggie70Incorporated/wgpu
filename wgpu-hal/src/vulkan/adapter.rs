@@ -117,6 +117,8 @@ pub struct PhysicalDeviceFeatures {
 
     /// Features provided by `VK_EXT_subgroup_size_control`, promoted to Vulkan 1.3.
     subgroup_size_control: Option<vk::PhysicalDeviceSubgroupSizeControlFeatures<'static>>,
+    mesh_shader: Option<vk::PhysicalDeviceMeshShaderFeaturesEXT<'static>>,
+    maintenance4: Option<vk::PhysicalDeviceMaintenance4FeaturesKHR<'static>>,
 }
 
 impl PhysicalDeviceFeatures {
@@ -170,6 +172,12 @@ impl PhysicalDeviceFeatures {
             info = info.push_next(feature);
         }
         if let Some(ref mut feature) = self.subgroup_size_control {
+            info = info.push_next(feature);
+        }
+        if let Some(ref mut feature) = self.mesh_shader {
+            info = info.push_next(feature);
+        }
+        if let Some(ref mut feature) = self.maintenance4 {
             info = info.push_next(feature);
         }
         info
@@ -478,6 +486,24 @@ impl PhysicalDeviceFeatures {
                     vk::PhysicalDeviceSubgroupSizeControlFeatures::default()
                         .subgroup_size_control(true),
                 )
+            } else {
+                None
+            },
+            mesh_shader: if enabled_extensions.contains(&ext::mesh_shader::NAME) {
+                let needed = requested_features.contains(wgt::Features::MESH_SHADER);
+                let multiview = requested_features.contains(wgt::Features::MULTIVIEW);
+                Some(
+                    vk::PhysicalDeviceMeshShaderFeaturesEXT::default()
+                        .mesh_shader(needed)
+                        .task_shader(needed)
+                        .multiview_mesh_shader(needed && multiview),
+                )
+            } else {
+                None
+            },
+            maintenance4: if enabled_extensions.contains(&khr::maintenance4::NAME) {
+                let needed = requested_features.contains(wgt::Features::MESH_SHADER);
+                Some(vk::PhysicalDeviceMaintenance4FeaturesKHR::default().maintenance4(needed))
             } else {
                 None
             },
@@ -811,6 +837,11 @@ impl PhysicalDeviceFeatures {
             caps.supports_extension(khr::external_memory_win32::NAME),
         );
 
+        features.set(
+            F::MESH_SHADER,
+            caps.supports_extension(ext::mesh_shader::NAME),
+        );
+
         (features, dl_flags)
     }
 }
@@ -871,6 +902,9 @@ pub struct PhysicalDeviceProperties {
     /// Additional `vk::PhysicalDevice` properties from the
     /// `VK_EXT_robustness2` extension.
     robustness2: Option<vk::PhysicalDeviceRobustness2PropertiesEXT<'static>>,
+
+    /// This may be used at some point
+    _mesh_shader: Option<vk::PhysicalDeviceMeshShaderPropertiesEXT<'static>>,
 
     /// The device API version.
     ///
@@ -973,6 +1007,10 @@ impl PhysicalDeviceProperties {
                 }
             }
 
+            if requested_features.intersects(wgt::Features::MESH_SHADER) {
+                extensions.push(khr::spirv_1_4::NAME);
+            }
+
             //extensions.push(khr::sampler_mirror_clamp_to_edge::NAME);
             //extensions.push(ext::sampler_filter_minmax::NAME);
         }
@@ -986,6 +1024,10 @@ impl PhysicalDeviceProperties {
             // Require `VK_EXT_subgroup_size_control` if the associated feature was requested
             if requested_features.contains(wgt::Features::SUBGROUP) {
                 extensions.push(ext::subgroup_size_control::NAME);
+            }
+
+            if requested_features.intersects(wgt::Features::MESH_SHADER) {
+                extensions.push(khr::maintenance4::NAME);
             }
         }
 
@@ -1059,6 +1101,10 @@ impl PhysicalDeviceProperties {
         // Require VK_GOOGLE_display_timing if the associated feature was requested
         if requested_features.contains(wgt::Features::VULKAN_GOOGLE_DISPLAY_TIMING) {
             extensions.push(google::display_timing::NAME);
+        }
+
+        if requested_features.contains(wgt::Features::MESH_SHADER) {
+            extensions.push(ext::mesh_shader::NAME);
         }
 
         extensions
@@ -1222,6 +1268,8 @@ impl super::InstanceShared {
                 let supports_acceleration_structure =
                     capabilities.supports_extension(khr::acceleration_structure::NAME);
 
+                let supports_mesh_shader = capabilities.supports_extension(ext::mesh_shader::NAME);
+
                 let mut properties2 = vk::PhysicalDeviceProperties2KHR::default();
                 if supports_maintenance3 {
                     let next = capabilities
@@ -1269,6 +1317,13 @@ impl super::InstanceShared {
                     let next = capabilities
                         .robustness2
                         .insert(vk::PhysicalDeviceRobustness2PropertiesEXT::default());
+                    properties2 = properties2.push_next(next);
+                }
+
+                if supports_mesh_shader {
+                    let next = capabilities
+                        ._mesh_shader
+                        .insert(vk::PhysicalDeviceMeshShaderPropertiesEXT::default());
                     properties2 = properties2.push_next(next);
                 }
 
@@ -1415,6 +1470,13 @@ impl super::InstanceShared {
                 let next = features
                     .subgroup_size_control
                     .insert(vk::PhysicalDeviceSubgroupSizeControlFeatures::default());
+                features2 = features2.push_next(next);
+            }
+
+            if capabilities.supports_extension(ext::mesh_shader::NAME) {
+                let next = features
+                    .mesh_shader
+                    .insert(vk::PhysicalDeviceMeshShaderFeaturesEXT::default());
                 features2 = features2.push_next(next);
             }
 
@@ -1786,6 +1848,14 @@ impl super::Adapter {
         } else {
             None
         };
+        let mesh_shading_fns = if enabled_extensions.contains(&ext::mesh_shader::NAME) {
+            Some(ext::mesh_shader::Device::new(
+                &self.instance.raw,
+                &raw_device,
+            ))
+        } else {
+            None
+        };
 
         let naga_options = {
             use naga::back::spv;
@@ -1959,6 +2029,7 @@ impl super::Adapter {
                 draw_indirect_count: indirect_count_fn,
                 timeline_semaphore: timeline_semaphore_fn,
                 ray_tracing: ray_tracing_fns,
+                mesh_shading: mesh_shading_fns,
             },
             pipeline_cache_validation_key,
             vendor_id: self.phd_capabilities.properties.vendor_id,

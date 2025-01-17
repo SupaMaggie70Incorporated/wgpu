@@ -243,6 +243,16 @@ impl crate::Device for Context {
     ) -> Result<Resource, crate::PipelineError> {
         Ok(Resource)
     }
+    unsafe fn create_mesh_pipeline(
+        &self,
+        desc: &crate::MeshPipelineDescriptor<
+            <Self::A as crate::Api>::PipelineLayout,
+            <Self::A as crate::Api>::ShaderModule,
+            <Self::A as crate::Api>::PipelineCache,
+        >,
+    ) -> Result<Resource, crate::PipelineError> {
+        Ok(Resource)
+    }
     unsafe fn destroy_render_pipeline(&self, pipeline: Resource) {}
     unsafe fn create_compute_pipeline(
         &self,
@@ -452,6 +462,13 @@ impl crate::CommandEncoder for Encoder {
         instance_count: u32,
     ) {
     }
+    unsafe fn draw_mesh_tasks(
+        &mut self,
+        group_count_x: u32,
+        group_count_y: u32,
+        group_count_z: u32,
+    ) {
+    }
     unsafe fn draw_indirect(
         &mut self,
         buffer: &Resource,
@@ -462,6 +479,13 @@ impl crate::CommandEncoder for Encoder {
     unsafe fn draw_indexed_indirect(
         &mut self,
         buffer: &Resource,
+        offset: wgt::BufferAddress,
+        draw_count: u32,
+    ) {
+    }
+    unsafe fn draw_mesh_tasks_indirect(
+        &mut self,
+        buffer: &<Self::A as crate::Api>::Buffer,
         offset: wgt::BufferAddress,
         draw_count: u32,
     ) {
@@ -480,6 +504,15 @@ impl crate::CommandEncoder for Encoder {
         buffer: &Resource,
         offset: wgt::BufferAddress,
         count_buffer: &Resource,
+        count_offset: wgt::BufferAddress,
+        max_count: u32,
+    ) {
+    }
+    unsafe fn draw_mesh_tasks_indirect_count(
+        &mut self,
+        buffer: &<Self::A as crate::Api>::Buffer,
+        offset: wgt::BufferAddress,
+        count_buffer: &<Self::A as crate::Api>::Buffer,
         count_offset: wgt::BufferAddress,
         max_count: u32,
     ) {
