@@ -1315,6 +1315,79 @@ impl dispatch::DeviceInterface for CoreDevice {
         .into()
     }
 
+    fn create_mesh_pipeline(
+        &self,
+        desc: &crate::MeshPipelineDescriptor<'_>,
+    ) -> dispatch::DispatchRenderPipeline {
+        use wgc::pipeline as pipe;
+
+        let descriptor = pipe::MeshPipelineDescriptor {
+            label: desc.label.map(Borrowed),
+            layout: desc.layout.map(|layout| layout.inner.as_core().id),
+            task: desc.task.as_ref().map(|task| pipe::TaskState {
+                stage: pipe::ProgrammableStageDescriptor {
+                    module: task.module.inner.as_core().id,
+                    entry_point: task.entry_point.map(Borrowed),
+                    constants: Borrowed(task.compilation_options.constants),
+                    zero_initialize_workgroup_memory: desc
+                        .mesh
+                        .compilation_options
+                        .zero_initialize_workgroup_memory,
+                },
+            }),
+            mesh: pipe::MeshState {
+                stage: pipe::ProgrammableStageDescriptor {
+                    module: desc.mesh.module.inner.as_core().id,
+                    entry_point: desc.mesh.entry_point.map(Borrowed),
+                    constants: Borrowed(desc.mesh.compilation_options.constants),
+                    zero_initialize_workgroup_memory: desc
+                        .mesh
+                        .compilation_options
+                        .zero_initialize_workgroup_memory,
+                },
+            },
+            primitive: desc.primitive,
+            depth_stencil: desc.depth_stencil.clone(),
+            multisample: desc.multisample,
+            fragment: desc.fragment.as_ref().map(|frag| pipe::FragmentState {
+                stage: pipe::ProgrammableStageDescriptor {
+                    module: frag.module.inner.as_core().id,
+                    entry_point: frag.entry_point.map(Borrowed),
+                    constants: Borrowed(frag.compilation_options.constants),
+                    zero_initialize_workgroup_memory: frag
+                        .compilation_options
+                        .zero_initialize_workgroup_memory,
+                },
+                targets: Borrowed(frag.targets),
+            }),
+            multiview: desc.multiview,
+            cache: desc.cache.map(|cache| cache.inner.as_core().id),
+        };
+
+        let (id, error) =
+            self.context
+                .0
+                .device_create_mesh_pipeline(self.id, &descriptor, None, None);
+        if let Some(cause) = error {
+            if let wgc::pipeline::CreateRenderPipelineError::Internal { stage, ref error } = cause {
+                log::error!("Shader translation error for stage {:?}: {}", stage, error);
+                log::error!("Please report it to https://github.com/gfx-rs/wgpu");
+            }
+            self.context.handle_error(
+                &self.error_sink,
+                cause,
+                desc.label,
+                "Device::create_render_pipeline",
+            );
+        }
+        CoreRenderPipeline {
+            context: self.context.clone(),
+            id,
+            error_sink: Arc::clone(&self.error_sink),
+        }
+        .into()
+    }
+
     fn create_compute_pipeline(
         &self,
         desc: &crate::ComputePipelineDescriptor<'_>,

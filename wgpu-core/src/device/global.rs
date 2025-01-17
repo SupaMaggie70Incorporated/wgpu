@@ -15,7 +15,8 @@ use crate::{
     instance::{self, Adapter, Surface},
     pipeline::{
         self, ResolvedComputePipelineDescriptor, ResolvedFragmentState,
-        ResolvedProgrammableStageDescriptor, ResolvedRenderPipelineDescriptor, ResolvedVertexState,
+        ResolvedMeshPipelineDescriptor, ResolvedMeshState, ResolvedProgrammableStageDescriptor,
+        ResolvedRenderPipelineDescriptor, ResolvedTaskState, ResolvedVertexState,
     },
     present,
     resource::{
@@ -1349,6 +1350,216 @@ impl Global {
 
             let id = fid.assign(Fallible::Valid(pipeline));
             api_log!("Device::create_render_pipeline -> {id:?}");
+
+            return (id, None);
+        };
+
+        let id = fid.assign(Fallible::Invalid(Arc::new(desc.label.to_string())));
+
+        // We also need to assign errors to the implicit pipeline layout and the
+        // implicit bind group layouts.
+        if let Some(ids) = implicit_context {
+            let mut pipeline_layout_guard = hub.pipeline_layouts.write();
+            let mut bgl_guard = hub.bind_group_layouts.write();
+            pipeline_layout_guard.insert(ids.root_id, Fallible::Invalid(Arc::new(String::new())));
+            for bgl_id in ids.group_ids {
+                bgl_guard.insert(bgl_id, Fallible::Invalid(Arc::new(String::new())));
+            }
+        }
+
+        (id, Some(error))
+    }
+
+    pub fn device_create_mesh_pipeline(
+        &self,
+        device_id: DeviceId,
+        desc: &pipeline::MeshPipelineDescriptor,
+        id_in: Option<id::RenderPipelineId>,
+        implicit_pipeline_ids: Option<ImplicitPipelineIds<'_>>,
+    ) -> (
+        id::RenderPipelineId,
+        Option<pipeline::CreateRenderPipelineError>,
+    ) {
+        profiling::scope!("Device::create_mesh_pipeline");
+
+        let hub = &self.hub;
+
+        let missing_implicit_pipeline_ids =
+            desc.layout.is_none() && id_in.is_some() && implicit_pipeline_ids.is_none();
+
+        let fid = hub.render_pipelines.prepare(id_in);
+        let implicit_context = implicit_pipeline_ids.map(|ipi| ipi.prepare(hub));
+
+        let error = 'error: {
+            if missing_implicit_pipeline_ids {
+                // TODO: categorize this error as API misuse
+                break 'error pipeline::ImplicitLayoutError::MissingImplicitPipelineIds.into();
+            }
+
+            let device = self.hub.devices.get(device_id);
+
+            #[cfg(feature = "trace")]
+            if let Some(ref mut trace) = *device.trace.lock() {
+                trace.add(trace::Action::CreateMeshPipeline {
+                    id: fid.id(),
+                    desc: desc.clone(),
+                    implicit_context: implicit_context.clone(),
+                });
+            }
+
+            let layout = desc
+                .layout
+                .map(|layout| hub.pipeline_layouts.get(layout).get())
+                .transpose();
+            let layout = match layout {
+                Ok(layout) => layout,
+                Err(e) => break 'error e.into(),
+            };
+
+            let cache = desc
+                .cache
+                .map(|cache| hub.pipeline_caches.get(cache).get())
+                .transpose();
+            let cache = match cache {
+                Ok(cache) => cache,
+                Err(e) => break 'error e.into(),
+            };
+
+            let task = if let Some(ref state) = desc.task {
+                let module = hub
+                    .shader_modules
+                    .get(state.stage.module)
+                    .get()
+                    .map_err(|e| pipeline::CreateRenderPipelineError::Stage {
+                        stage: wgt::ShaderStages::TASK,
+                        error: e.into(),
+                    });
+                let module = match module {
+                    Ok(module) => module,
+                    Err(e) => break 'error e,
+                };
+                let stage = ResolvedProgrammableStageDescriptor {
+                    module,
+                    entry_point: state.stage.entry_point.clone(),
+                    constants: state.stage.constants.clone(),
+                    zero_initialize_workgroup_memory: desc
+                        .mesh
+                        .stage
+                        .zero_initialize_workgroup_memory,
+                };
+                Some(ResolvedTaskState { stage })
+            } else {
+                None
+            };
+
+            let mesh = {
+                let module = hub
+                    .shader_modules
+                    .get(desc.mesh.stage.module)
+                    .get()
+                    .map_err(|e| pipeline::CreateRenderPipelineError::Stage {
+                        stage: wgt::ShaderStages::MESH,
+                        error: e.into(),
+                    });
+                let module = match module {
+                    Ok(module) => module,
+                    Err(e) => break 'error e,
+                };
+                let stage = ResolvedProgrammableStageDescriptor {
+                    module,
+                    entry_point: desc.mesh.stage.entry_point.clone(),
+                    constants: desc.mesh.stage.constants.clone(),
+                    zero_initialize_workgroup_memory: desc
+                        .mesh
+                        .stage
+                        .zero_initialize_workgroup_memory,
+                };
+                ResolvedMeshState { stage }
+            };
+
+            let fragment = if let Some(ref state) = desc.fragment {
+                let module = hub
+                    .shader_modules
+                    .get(state.stage.module)
+                    .get()
+                    .map_err(|e| pipeline::CreateRenderPipelineError::Stage {
+                        stage: wgt::ShaderStages::FRAGMENT,
+                        error: e.into(),
+                    });
+                let module = match module {
+                    Ok(module) => module,
+                    Err(e) => break 'error e,
+                };
+                let stage = ResolvedProgrammableStageDescriptor {
+                    module,
+                    entry_point: state.stage.entry_point.clone(),
+                    constants: state.stage.constants.clone(),
+                    zero_initialize_workgroup_memory: desc
+                        .mesh
+                        .stage
+                        .zero_initialize_workgroup_memory,
+                };
+                Some(ResolvedFragmentState {
+                    stage,
+                    targets: state.targets.clone(),
+                })
+            } else {
+                None
+            };
+
+            let desc = ResolvedMeshPipelineDescriptor {
+                label: desc.label.clone(),
+                layout,
+                task,
+                mesh,
+                primitive: desc.primitive,
+                depth_stencil: desc.depth_stencil.clone(),
+                multisample: desc.multisample,
+                fragment,
+                multiview: desc.multiview,
+                cache,
+            };
+            let pipeline = match device.create_mesh_pipeline(desc) {
+                Ok(pair) => pair,
+                Err(e) => break 'error e,
+            };
+
+            if let Some(ids) = implicit_context.as_ref() {
+                let group_count = pipeline.layout.bind_group_layouts.len();
+                if ids.group_ids.len() < group_count {
+                    log::error!(
+                        "Not enough bind group IDs ({}) specified for the implicit layout ({})",
+                        ids.group_ids.len(),
+                        group_count
+                    );
+                    // TODO: categorize this error as API misuse
+                    break 'error pipeline::ImplicitLayoutError::MissingIds(group_count as _)
+                        .into();
+                }
+
+                let mut pipeline_layout_guard = hub.pipeline_layouts.write();
+                let mut bgl_guard = hub.bind_group_layouts.write();
+                pipeline_layout_guard.insert(ids.root_id, Fallible::Valid(pipeline.layout.clone()));
+                let mut group_ids = ids.group_ids.iter();
+                // NOTE: If the first iterator is longer than the second, the `.zip()` impl will still advance the
+                // the first iterator before realizing that the second iterator has finished.
+                // The `pipeline.layout.bind_group_layouts` iterator will always be shorter than `ids.group_ids`,
+                // so using it as the first iterator for `.zip()` will work properly.
+                for (bgl, bgl_id) in pipeline
+                    .layout
+                    .bind_group_layouts
+                    .iter()
+                    .zip(&mut group_ids)
+                {
+                    bgl_guard.insert(*bgl_id, Fallible::Valid(bgl.clone()));
+                }
+                for bgl_id in group_ids {
+                    bgl_guard.insert(*bgl_id, Fallible::Invalid(Arc::new(String::new())));
+                }
+            }
+
+            let id = fid.assign(Fallible::Valid(pipeline));
+            api_log!("Device::create_mesh_pipeline -> {id:?}");
 
             return (id, None);
         };

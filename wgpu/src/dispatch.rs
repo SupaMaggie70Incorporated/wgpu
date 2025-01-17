@@ -156,6 +156,10 @@ pub trait DeviceInterface: CommonTraits {
         &self,
         desc: &crate::RenderPipelineDescriptor<'_>,
     ) -> DispatchRenderPipeline;
+    fn create_mesh_pipeline(
+        &self,
+        desc: &crate::MeshPipelineDescriptor<'_>,
+    ) -> DispatchRenderPipeline;
     fn create_compute_pipeline(
         &self,
         desc: &crate::ComputePipelineDescriptor<'_>,

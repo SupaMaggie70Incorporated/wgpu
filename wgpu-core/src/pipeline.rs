@@ -363,6 +363,34 @@ pub struct ResolvedFragmentState<'a> {
     pub targets: Cow<'a, [Option<wgt::ColorTargetState>]>,
 }
 
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct TaskState<'a> {
+    /// The compiled task stage and its entry point.
+    pub stage: ProgrammableStageDescriptor<'a>,
+}
+
+/// Describes the task shader in a mesh shader pipeline.
+#[derive(Clone, Debug)]
+pub struct ResolvedTaskState<'a> {
+    /// The compiled task stage and its entry point.
+    pub stage: ResolvedProgrammableStageDescriptor<'a>,
+}
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct MeshState<'a> {
+    /// The compiled mesh stage and its entry point.
+    pub stage: ProgrammableStageDescriptor<'a>,
+}
+
+/// Describes the mesh shader in a mesh shader pipeline.
+#[derive(Clone, Debug)]
+pub struct ResolvedMeshState<'a> {
+    /// The compiled mesh stage and its entry point.
+    pub stage: ResolvedProgrammableStageDescriptor<'a>,
+}
+
 /// Describes a render (graphics) pipeline.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -398,6 +426,60 @@ pub struct ResolvedRenderPipelineDescriptor<'a> {
     pub layout: Option<Arc<PipelineLayout>>,
     /// The vertex processing state for this pipeline.
     pub vertex: ResolvedVertexState<'a>,
+    /// The properties of the pipeline at the primitive assembly and rasterization level.
+    pub primitive: wgt::PrimitiveState,
+    /// The effect of draw calls on the depth and stencil aspects of the output target, if any.
+    pub depth_stencil: Option<wgt::DepthStencilState>,
+    /// The multi-sampling properties of the pipeline.
+    pub multisample: wgt::MultisampleState,
+    /// The fragment processing state for this pipeline.
+    pub fragment: Option<ResolvedFragmentState<'a>>,
+    /// If the pipeline will be used with a multiview render pass, this indicates how many array
+    /// layers the attachments will have.
+    pub multiview: Option<NonZeroU32>,
+    /// The pipeline cache to use when creating this pipeline.
+    pub cache: Option<Arc<PipelineCache>>,
+}
+
+/// Describes a mesh shader (graphics) pipeline.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct MeshPipelineDescriptor<'a> {
+    pub label: Label<'a>,
+    /// The layout of bind groups for this pipeline.
+    pub layout: Option<PipelineLayoutId>,
+    /// The task shader state for this pipeline
+    pub task: Option<TaskState<'a>>,
+    /// The mesh shader state for this pipeline.
+    pub mesh: MeshState<'a>,
+    /// The properties of the pipeline at the primitive assembly and rasterization level.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub primitive: wgt::PrimitiveState,
+    /// The effect of draw calls on the depth and stencil aspects of the output target, if any.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub depth_stencil: Option<wgt::DepthStencilState>,
+    /// The multi-sampling properties of the pipeline.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub multisample: wgt::MultisampleState,
+    /// The fragment processing state for this pipeline.
+    pub fragment: Option<FragmentState<'a>>,
+    /// If the pipeline will be used with a multiview render pass, this indicates how many array
+    /// layers the attachments will have.
+    pub multiview: Option<NonZeroU32>,
+    /// The pipeline cache to use when creating this pipeline.
+    pub cache: Option<PipelineCacheId>,
+}
+
+/// Describes a mesh shader (graphics) pipeline.
+#[derive(Clone, Debug)]
+pub struct ResolvedMeshPipelineDescriptor<'a> {
+    pub label: Label<'a>,
+    /// The layout of bind groups for this pipeline.
+    pub layout: Option<Arc<PipelineLayout>>,
+    /// The task shader state for this pipeline
+    pub task: Option<ResolvedTaskState<'a>>,
+    /// The mesh shader state for this pipeline.
+    pub mesh: ResolvedMeshState<'a>,
     /// The properties of the pipeline at the primitive assembly and rasterization level.
     pub primitive: wgt::PrimitiveState,
     /// The effect of draw calls on the depth and stencil aspects of the output target, if any.
