@@ -3518,6 +3518,596 @@ impl Device {
             late_sized_buffer_groups,
             label: desc.label.to_string(),
             tracking_data: TrackingData::new(self.tracker_indices.render_pipelines.clone()),
+            is_mesh: false,
+        };
+
+        let pipeline = Arc::new(pipeline);
+
+        if is_auto_layout {
+            for bgl in pipeline.layout.bind_group_layouts.iter() {
+                // `bind_group_layouts` might contain duplicate entries, so we need to ignore the result.
+                let _ = bgl
+                    .exclusive_pipeline
+                    .set(binding_model::ExclusivePipeline::Render(Arc::downgrade(
+                        &pipeline,
+                    )));
+            }
+        }
+
+        Ok(pipeline)
+    }
+
+    pub(crate) fn create_mesh_pipeline(
+        self: &Arc<Self>,
+        desc: pipeline::ResolvedMeshPipelineDescriptor,
+    ) -> Result<Arc<pipeline::RenderPipeline>, pipeline::CreateRenderPipelineError> {
+        use wgt::TextureFormatFeatureFlags as Tfff;
+
+        self.check_is_valid()?;
+
+        self.require_features(wgt::Features::MESH_SHADER)?;
+
+        let mut shader_binding_sizes = FastHashMap::default();
+
+        let num_attachments = desc.fragment.as_ref().map(|f| f.targets.len()).unwrap_or(0);
+        let max_attachments = self.limits.max_color_attachments as usize;
+        if num_attachments > max_attachments {
+            return Err(pipeline::CreateRenderPipelineError::ColorAttachment(
+                command::ColorAttachmentError::TooMany {
+                    given: num_attachments,
+                    limit: max_attachments,
+                },
+            ));
+        }
+
+        let color_targets = desc
+            .fragment
+            .as_ref()
+            .map_or(&[][..], |fragment| &fragment.targets);
+        let depth_stencil_state = desc.depth_stencil.as_ref();
+
+        {
+            let cts: ArrayVec<_, { hal::MAX_COLOR_ATTACHMENTS }> =
+                color_targets.iter().filter_map(|x| x.as_ref()).collect();
+            if !cts.is_empty() && {
+                let first = &cts[0];
+                cts[1..]
+                    .iter()
+                    .any(|ct| ct.write_mask != first.write_mask || ct.blend != first.blend)
+            } {
+                self.require_downlevel_flags(wgt::DownlevelFlags::INDEPENDENT_BLEND)?;
+            }
+        }
+
+        let mut io = validation::StageIo::default();
+        let mut validated_stages = wgt::ShaderStages::empty();
+
+        let mut shader_expects_dual_source_blending = false;
+        let mut pipeline_expects_dual_source_blending = false;
+
+        if desc.primitive.strip_index_format.is_some() && !desc.primitive.topology.is_strip() {
+            return Err(
+                pipeline::CreateRenderPipelineError::StripIndexFormatForNonStripTopology {
+                    strip_index_format: desc.primitive.strip_index_format,
+                    topology: desc.primitive.topology,
+                },
+            );
+        }
+
+        if desc.primitive.unclipped_depth {
+            self.require_features(wgt::Features::DEPTH_CLIP_CONTROL)?;
+        }
+
+        if desc.primitive.polygon_mode == wgt::PolygonMode::Line {
+            self.require_features(wgt::Features::POLYGON_MODE_LINE)?;
+        }
+        if desc.primitive.polygon_mode == wgt::PolygonMode::Point {
+            self.require_features(wgt::Features::POLYGON_MODE_POINT)?;
+        }
+
+        if desc.primitive.conservative {
+            self.require_features(wgt::Features::CONSERVATIVE_RASTERIZATION)?;
+        }
+
+        if desc.primitive.conservative && desc.primitive.polygon_mode != wgt::PolygonMode::Fill {
+            return Err(
+                pipeline::CreateRenderPipelineError::ConservativeRasterizationNonFillPolygonMode,
+            );
+        }
+
+        let mut target_specified = false;
+
+        for (i, cs) in color_targets.iter().enumerate() {
+            if let Some(cs) = cs.as_ref() {
+                target_specified = true;
+                let error = 'error: {
+                    if cs.write_mask | wgt::ColorWrites::all() != wgt::ColorWrites::all() {
+                        break 'error Some(pipeline::ColorStateError::InvalidWriteMask(
+                            cs.write_mask,
+                        ));
+                    }
+
+                    let format_features = self.describe_format_features(cs.format)?;
+                    if !format_features
+                        .allowed_usages
+                        .contains(wgt::TextureUsages::RENDER_ATTACHMENT)
+                    {
+                        break 'error Some(pipeline::ColorStateError::FormatNotRenderable(
+                            cs.format,
+                        ));
+                    }
+                    let blendable = format_features.flags.contains(Tfff::BLENDABLE);
+                    let filterable = format_features.flags.contains(Tfff::FILTERABLE);
+                    let adapter_specific = self
+                        .features
+                        .contains(wgt::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES);
+                    // according to WebGPU specifications the texture needs to be
+                    // [`TextureFormatFeatureFlags::FILTERABLE`] if blending is set - use
+                    // [`Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES`] to elude
+                    // this limitation
+                    if cs.blend.is_some() && (!blendable || (!filterable && !adapter_specific)) {
+                        break 'error Some(pipeline::ColorStateError::FormatNotBlendable(
+                            cs.format,
+                        ));
+                    }
+                    if !hal::FormatAspects::from(cs.format).contains(hal::FormatAspects::COLOR) {
+                        break 'error Some(pipeline::ColorStateError::FormatNotColor(cs.format));
+                    }
+
+                    if desc.multisample.count > 1
+                        && !format_features
+                            .flags
+                            .sample_count_supported(desc.multisample.count)
+                    {
+                        break 'error Some(pipeline::ColorStateError::InvalidSampleCount(
+                            desc.multisample.count,
+                            cs.format,
+                            cs.format
+                                .guaranteed_format_features(self.features)
+                                .flags
+                                .supported_sample_counts(),
+                            self.adapter
+                                .get_texture_format_features(cs.format)
+                                .flags
+                                .supported_sample_counts(),
+                        ));
+                    }
+
+                    if let Some(blend_mode) = cs.blend {
+                        for factor in [
+                            blend_mode.color.src_factor,
+                            blend_mode.color.dst_factor,
+                            blend_mode.alpha.src_factor,
+                            blend_mode.alpha.dst_factor,
+                        ] {
+                            if factor.ref_second_blend_source() {
+                                self.require_features(wgt::Features::DUAL_SOURCE_BLENDING)?;
+                                if i == 0 {
+                                    pipeline_expects_dual_source_blending = true;
+                                    break;
+                                } else {
+                                    return Err(pipeline::CreateRenderPipelineError
+                                        ::BlendFactorOnUnsupportedTarget { factor, target: i as u32 });
+                                }
+                            }
+                        }
+                    }
+
+                    break 'error None;
+                };
+                if let Some(e) = error {
+                    return Err(pipeline::CreateRenderPipelineError::ColorState(i as u8, e));
+                }
+            }
+        }
+
+        let limit = self.limits.max_color_attachment_bytes_per_sample;
+        let formats = color_targets
+            .iter()
+            .map(|cs| cs.as_ref().map(|cs| cs.format));
+        if let Err(total) = validate_color_attachment_bytes_per_sample(formats, limit) {
+            return Err(pipeline::CreateRenderPipelineError::ColorAttachment(
+                command::ColorAttachmentError::TooManyBytesPerSample { total, limit },
+            ));
+        }
+
+        if let Some(ds) = depth_stencil_state {
+            target_specified = true;
+            let error = 'error: {
+                let format_features = self.describe_format_features(ds.format)?;
+                if !format_features
+                    .allowed_usages
+                    .contains(wgt::TextureUsages::RENDER_ATTACHMENT)
+                {
+                    break 'error Some(pipeline::DepthStencilStateError::FormatNotRenderable(
+                        ds.format,
+                    ));
+                }
+
+                let aspect = hal::FormatAspects::from(ds.format);
+                if ds.is_depth_enabled() && !aspect.contains(hal::FormatAspects::DEPTH) {
+                    break 'error Some(pipeline::DepthStencilStateError::FormatNotDepth(ds.format));
+                }
+                if ds.stencil.is_enabled() && !aspect.contains(hal::FormatAspects::STENCIL) {
+                    break 'error Some(pipeline::DepthStencilStateError::FormatNotStencil(
+                        ds.format,
+                    ));
+                }
+                if desc.multisample.count > 1
+                    && !format_features
+                        .flags
+                        .sample_count_supported(desc.multisample.count)
+                {
+                    break 'error Some(pipeline::DepthStencilStateError::InvalidSampleCount(
+                        desc.multisample.count,
+                        ds.format,
+                        ds.format
+                            .guaranteed_format_features(self.features)
+                            .flags
+                            .supported_sample_counts(),
+                        self.adapter
+                            .get_texture_format_features(ds.format)
+                            .flags
+                            .supported_sample_counts(),
+                    ));
+                }
+
+                break 'error None;
+            };
+            if let Some(e) = error {
+                return Err(pipeline::CreateRenderPipelineError::DepthStencilState(e));
+            }
+
+            if ds.bias.clamp != 0.0 {
+                self.require_downlevel_flags(wgt::DownlevelFlags::DEPTH_BIAS_CLAMP)?;
+            }
+        }
+
+        if !target_specified {
+            return Err(pipeline::CreateRenderPipelineError::NoTargetSpecified);
+        }
+
+        let is_auto_layout = desc.layout.is_none();
+
+        // Get the pipeline layout from the desc if it is provided.
+        let pipeline_layout = match desc.layout {
+            Some(pipeline_layout) => {
+                pipeline_layout.same_device(self)?;
+                Some(pipeline_layout)
+            }
+            None => None,
+        };
+
+        let mut binding_layout_source = match pipeline_layout {
+            Some(ref pipeline_layout) => {
+                validation::BindingLayoutSource::Provided(pipeline_layout.get_binding_maps())
+            }
+            None => validation::BindingLayoutSource::new_derived(&self.limits),
+        };
+
+        let samples = {
+            let sc = desc.multisample.count;
+            if sc == 0 || sc > 32 || !sc.is_power_of_two() {
+                return Err(pipeline::CreateRenderPipelineError::InvalidSampleCount(sc));
+            }
+            sc
+        };
+
+        let task_entry_point_name;
+        let task_stage = match desc.task {
+            Some(ref task_state) => {
+                let stage_desc = &task_state.stage;
+                let stage = wgt::ShaderStages::TASK;
+
+                let task_shader_module = &stage_desc.module;
+                task_shader_module.same_device(self)?;
+
+                let stage_err = |error| pipeline::CreateRenderPipelineError::Stage { stage, error };
+
+                task_entry_point_name = task_shader_module
+                    .finalize_entry_point_name(
+                        stage,
+                        stage_desc.entry_point.as_ref().map(|ep| ep.as_ref()),
+                    )
+                    .map_err(stage_err)?;
+
+                if let Some(ref interface) = task_shader_module.interface {
+                    io = interface
+                        .check_stage(
+                            &mut binding_layout_source,
+                            &mut shader_binding_sizes,
+                            &task_entry_point_name,
+                            stage,
+                            io,
+                            desc.depth_stencil.as_ref().map(|d| d.depth_compare),
+                        )
+                        .map_err(stage_err)?;
+                    validated_stages |= stage;
+                }
+
+                Some(hal::ProgrammableStage {
+                    module: task_shader_module.raw(),
+                    entry_point: &task_entry_point_name,
+                    constants: stage_desc.constants.as_ref(),
+                    zero_initialize_workgroup_memory: stage_desc.zero_initialize_workgroup_memory,
+                })
+            }
+            None => None,
+        };
+        let mesh_entry_point_name;
+        let mesh_stage = {
+            let stage_desc = &desc.mesh.stage;
+            let stage = wgt::ShaderStages::MESH;
+
+            let mesh_shader_module = &stage_desc.module;
+            mesh_shader_module.same_device(self)?;
+
+            let stage_err = |error| pipeline::CreateRenderPipelineError::Stage { stage, error };
+
+            mesh_entry_point_name = mesh_shader_module
+                .finalize_entry_point_name(
+                    stage,
+                    stage_desc.entry_point.as_ref().map(|ep| ep.as_ref()),
+                )
+                .map_err(stage_err)?;
+
+            if let Some(ref interface) = mesh_shader_module.interface {
+                io = interface
+                    .check_stage(
+                        &mut binding_layout_source,
+                        &mut shader_binding_sizes,
+                        &mesh_entry_point_name,
+                        stage,
+                        io,
+                        desc.depth_stencil.as_ref().map(|d| d.depth_compare),
+                    )
+                    .map_err(stage_err)?;
+                validated_stages |= stage;
+            }
+
+            hal::ProgrammableStage {
+                module: mesh_shader_module.raw(),
+                entry_point: &mesh_entry_point_name,
+                constants: stage_desc.constants.as_ref(),
+                zero_initialize_workgroup_memory: stage_desc.zero_initialize_workgroup_memory,
+            }
+        };
+
+        let fragment_entry_point_name;
+        let fragment_stage = match desc.fragment {
+            Some(ref fragment_state) => {
+                let stage = wgt::ShaderStages::FRAGMENT;
+
+                let shader_module = &fragment_state.stage.module;
+                shader_module.same_device(self)?;
+
+                let stage_err = |error| pipeline::CreateRenderPipelineError::Stage { stage, error };
+
+                fragment_entry_point_name = shader_module
+                    .finalize_entry_point_name(
+                        stage,
+                        fragment_state
+                            .stage
+                            .entry_point
+                            .as_ref()
+                            .map(|ep| ep.as_ref()),
+                    )
+                    .map_err(stage_err)?;
+
+                if validated_stages == wgt::ShaderStages::VERTEX {
+                    if let Some(ref interface) = shader_module.interface {
+                        io = interface
+                            .check_stage(
+                                &mut binding_layout_source,
+                                &mut shader_binding_sizes,
+                                &fragment_entry_point_name,
+                                stage,
+                                io,
+                                desc.depth_stencil.as_ref().map(|d| d.depth_compare),
+                            )
+                            .map_err(stage_err)?;
+                        validated_stages |= stage;
+                    }
+                }
+
+                if let Some(ref interface) = shader_module.interface {
+                    shader_expects_dual_source_blending = interface
+                        .fragment_uses_dual_source_blending(&fragment_entry_point_name)
+                        .map_err(|error| pipeline::CreateRenderPipelineError::Stage {
+                            stage,
+                            error,
+                        })?;
+                }
+
+                Some(hal::ProgrammableStage {
+                    module: shader_module.raw(),
+                    entry_point: &fragment_entry_point_name,
+                    constants: fragment_state.stage.constants.as_ref(),
+                    zero_initialize_workgroup_memory: fragment_state
+                        .stage
+                        .zero_initialize_workgroup_memory,
+                })
+            }
+            None => None,
+        };
+
+        if !pipeline_expects_dual_source_blending && shader_expects_dual_source_blending {
+            return Err(
+                pipeline::CreateRenderPipelineError::ShaderExpectsPipelineToUseDualSourceBlending,
+            );
+        }
+        if pipeline_expects_dual_source_blending && !shader_expects_dual_source_blending {
+            return Err(
+                pipeline::CreateRenderPipelineError::PipelineExpectsShaderToUseDualSourceBlending,
+            );
+        }
+
+        if validated_stages.contains(wgt::ShaderStages::FRAGMENT) {
+            for (i, output) in io.iter() {
+                match color_targets.get(*i as usize) {
+                    Some(Some(state)) => {
+                        validation::check_texture_format(state.format, &output.ty).map_err(
+                            |pipeline| {
+                                pipeline::CreateRenderPipelineError::ColorState(
+                                    *i as u8,
+                                    pipeline::ColorStateError::IncompatibleFormat {
+                                        pipeline,
+                                        shader: output.ty,
+                                    },
+                                )
+                            },
+                        )?;
+                    }
+                    _ => {
+                        log::warn!(
+                            "The fragment stage {:?} output @location({}) values are ignored",
+                            fragment_stage
+                                .as_ref()
+                                .map_or("", |stage| stage.entry_point),
+                            i
+                        );
+                    }
+                }
+            }
+        }
+        let last_stage = match desc.fragment {
+            Some(_) => wgt::ShaderStages::FRAGMENT,
+            None => wgt::ShaderStages::MESH,
+        };
+        if is_auto_layout && !validated_stages.contains(last_stage) {
+            return Err(pipeline::ImplicitLayoutError::ReflectionError(last_stage).into());
+        }
+
+        let pipeline_layout = match binding_layout_source {
+            validation::BindingLayoutSource::Provided(_) => {
+                drop(binding_layout_source);
+                pipeline_layout.unwrap()
+            }
+            validation::BindingLayoutSource::Derived(entries) => {
+                self.derive_pipeline_layout(entries)?
+            }
+        };
+
+        // Multiview is only supported if the feature is enabled
+        if desc.multiview.is_some() {
+            self.require_features(wgt::Features::MULTIVIEW)?;
+        }
+
+        if !self
+            .downlevel
+            .flags
+            .contains(wgt::DownlevelFlags::BUFFER_BINDINGS_NOT_16_BYTE_ALIGNED)
+        {
+            for (binding, size) in shader_binding_sizes.iter() {
+                if size.get() % 16 != 0 {
+                    return Err(pipeline::CreateRenderPipelineError::UnalignedShader {
+                        binding: binding.binding,
+                        group: binding.group,
+                        size: size.get(),
+                    });
+                }
+            }
+        }
+
+        let late_sized_buffer_groups =
+            Device::make_late_sized_buffer_groups(&shader_binding_sizes, &pipeline_layout);
+
+        let cache = match desc.cache {
+            Some(cache) => {
+                cache.same_device(self)?;
+                Some(cache)
+            }
+            None => None,
+        };
+
+        let pipeline_desc = hal::MeshPipelineDescriptor {
+            label: desc.label.to_hal(self.instance_flags),
+            layout: pipeline_layout.raw(),
+            task_stage,
+            mesh_stage,
+            primitive: desc.primitive,
+            depth_stencil: desc.depth_stencil.clone(),
+            multisample: desc.multisample,
+            fragment_stage,
+            color_targets,
+            multiview: desc.multiview,
+            cache: cache.as_ref().map(|it| it.raw()),
+        };
+        let raw =
+            unsafe { self.raw().create_mesh_pipeline(&pipeline_desc) }.map_err(
+                |err| match err {
+                    hal::PipelineError::Device(error) => {
+                        pipeline::CreateRenderPipelineError::Device(self.handle_hal_error(error))
+                    }
+                    hal::PipelineError::Linkage(stage, msg) => {
+                        pipeline::CreateRenderPipelineError::Internal { stage, error: msg }
+                    }
+                    hal::PipelineError::EntryPoint(stage) => {
+                        pipeline::CreateRenderPipelineError::Internal {
+                            stage: hal::auxil::map_naga_stage(stage),
+                            error: ENTRYPOINT_FAILURE_ERROR.to_string(),
+                        }
+                    }
+                    hal::PipelineError::PipelineConstants(stage, error) => {
+                        pipeline::CreateRenderPipelineError::PipelineConstants { stage, error }
+                    }
+                },
+            )?;
+
+        let pass_context = RenderPassContext {
+            attachments: AttachmentData {
+                colors: color_targets
+                    .iter()
+                    .map(|state| state.as_ref().map(|s| s.format))
+                    .collect(),
+                resolves: ArrayVec::new(),
+                depth_stencil: depth_stencil_state.as_ref().map(|state| state.format),
+            },
+            sample_count: samples,
+            multiview: desc.multiview,
+        };
+
+        let mut flags = pipeline::PipelineFlags::empty();
+        for state in color_targets.iter().filter_map(|s| s.as_ref()) {
+            if let Some(ref bs) = state.blend {
+                if bs.color.uses_constant() | bs.alpha.uses_constant() {
+                    flags |= pipeline::PipelineFlags::BLEND_CONSTANT;
+                }
+            }
+        }
+        if let Some(ds) = depth_stencil_state.as_ref() {
+            if ds.stencil.is_enabled() && ds.stencil.needs_ref_value() {
+                flags |= pipeline::PipelineFlags::STENCIL_REFERENCE;
+            }
+            if !ds.is_depth_read_only() {
+                flags |= pipeline::PipelineFlags::WRITES_DEPTH;
+            }
+            if !ds.is_stencil_read_only(desc.primitive.cull_mode) {
+                flags |= pipeline::PipelineFlags::WRITES_STENCIL;
+            }
+        }
+
+        let shader_modules = {
+            let mut shader_modules = ArrayVec::new();
+            shader_modules.extend(desc.task.map(|f| f.stage.module));
+            shader_modules.push(desc.mesh.stage.module);
+            shader_modules.extend(desc.fragment.map(|f| f.stage.module));
+            shader_modules
+        };
+
+        let pipeline = pipeline::RenderPipeline {
+            raw: ManuallyDrop::new(raw),
+            layout: pipeline_layout,
+            device: self.clone(),
+            pass_context,
+            _shader_modules: shader_modules,
+            flags,
+            strip_index_format: desc.primitive.strip_index_format,
+            vertex_steps: Vec::new(),
+            late_sized_buffer_groups,
+            label: desc.label.to_string(),
+            tracking_data: TrackingData::new(self.tracker_indices.render_pipelines.clone()),
+            is_mesh: true,
         };
 
         let pipeline = Arc::new(pipeline);

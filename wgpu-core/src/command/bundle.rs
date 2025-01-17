@@ -108,7 +108,7 @@ use thiserror::Error;
 
 use super::{
     render_command::{ArcRenderCommand, RenderCommand},
-    DrawKind,
+    DrawCommandFamily, DrawKind,
 };
 
 /// <https://gpuweb.github.io/gpuweb/#dom-gpurendercommandsmixin-draw>
@@ -149,6 +149,14 @@ fn validate_draw(
         }
     }
 
+    Ok(())
+}
+
+fn validate_mesh_draw(
+    _group_count_x: u32,
+    _group_count_y: u32,
+    _group_count_z: u32,
+) -> Result<(), DrawError> {
     Ok(())
 }
 
@@ -450,7 +458,7 @@ impl RenderBundleEncoder {
                 } => {
                     let scope = PassErrorScope::Draw {
                         kind: DrawKind::Draw,
-                        indexed: false,
+                        family: DrawCommandFamily::Draw,
                     };
                     draw(
                         &mut state,
@@ -471,7 +479,7 @@ impl RenderBundleEncoder {
                 } => {
                     let scope = PassErrorScope::Draw {
                         kind: DrawKind::Draw,
-                        indexed: true,
+                        family: DrawCommandFamily::DrawIndexed,
                     };
                     draw_indexed(
                         &mut state,
@@ -484,15 +492,33 @@ impl RenderBundleEncoder {
                     )
                     .map_pass_err(scope)?;
                 }
+                RenderCommand::DrawMeshTasks {
+                    group_count_x,
+                    group_count_y,
+                    group_count_z,
+                } => {
+                    let scope = PassErrorScope::Draw {
+                        kind: DrawKind::Draw,
+                        family: DrawCommandFamily::DrawMeshTasks,
+                    };
+                    draw_mesh_tasks(
+                        &mut state,
+                        &base.dynamic_offsets,
+                        group_count_x,
+                        group_count_y,
+                        group_count_z,
+                    )
+                    .map_pass_err(scope)?;
+                }
                 RenderCommand::DrawIndirect {
                     buffer_id,
                     offset,
                     count: 1,
-                    indexed,
+                    family,
                 } => {
                     let scope = PassErrorScope::Draw {
                         kind: DrawKind::DrawIndirect,
-                        indexed,
+                        family,
                     };
                     multi_draw_indirect(
                         &mut state,
@@ -500,7 +526,7 @@ impl RenderBundleEncoder {
                         &buffer_guard,
                         buffer_id,
                         offset,
-                        indexed,
+                        family,
                     )
                     .map_pass_err(scope)?;
                 }
@@ -844,13 +870,35 @@ fn draw_indexed(
     Ok(())
 }
 
+fn draw_mesh_tasks(
+    state: &mut State,
+    dynamic_offsets: &[u32],
+    group_count_x: u32,
+    group_count_y: u32,
+    group_count_z: u32,
+) -> Result<(), RenderBundleErrorInner> {
+    let pipeline = state.pipeline()?;
+    let used_bind_groups = pipeline.used_bind_groups;
+
+    validate_mesh_draw(group_count_x, group_count_y, group_count_z)?;
+    if group_count_x > 0 && group_count_y > 0 && group_count_z > 0 {
+        state.flush_binds(used_bind_groups, dynamic_offsets);
+        state.commands.push(ArcRenderCommand::DrawMeshTasks {
+            group_count_x,
+            group_count_y,
+            group_count_z,
+        });
+    }
+    todo!()
+}
+
 fn multi_draw_indirect(
     state: &mut State,
     dynamic_offsets: &[u32],
     buffer_guard: &crate::storage::Storage<Fallible<Buffer>>,
     buffer_id: id::Id<id::markers::Buffer>,
     offset: u64,
-    indexed: bool,
+    family: DrawCommandFamily,
 ) -> Result<(), RenderBundleErrorInner> {
     state
         .device
@@ -877,7 +925,7 @@ fn multi_draw_indirect(
             MemoryInitKind::NeedsInitializedMemory,
         ));
 
-    if indexed {
+    if let DrawCommandFamily::DrawIndexed = family {
         let index = match state.index {
             Some(ref mut index) => index,
             None => return Err(DrawError::MissingIndexBuffer.into()),
@@ -891,7 +939,7 @@ fn multi_draw_indirect(
         buffer,
         offset,
         count: 1,
-        indexed,
+        family,
     });
     Ok(())
 }
@@ -1101,11 +1149,18 @@ impl RenderBundle {
                         )
                     };
                 }
+                Cmd::DrawMeshTasks {
+                    group_count_x,
+                    group_count_y,
+                    group_count_z,
+                } => {
+                    unsafe { raw.draw_mesh_tasks(*group_count_x, *group_count_y, *group_count_z) };
+                }
                 Cmd::DrawIndirect {
                     buffer,
                     offset,
                     count: 1,
-                    indexed: false,
+                    family: DrawCommandFamily::Draw,
                 } => {
                     let buffer = buffer.try_raw(snatch_guard)?;
                     unsafe { raw.draw_indirect(buffer, *offset, 1) };
@@ -1114,10 +1169,19 @@ impl RenderBundle {
                     buffer,
                     offset,
                     count: 1,
-                    indexed: true,
+                    family: DrawCommandFamily::DrawIndexed,
                 } => {
                     let buffer = buffer.try_raw(snatch_guard)?;
                     unsafe { raw.draw_indexed_indirect(buffer, *offset, 1) };
+                }
+                Cmd::DrawIndirect {
+                    buffer,
+                    offset,
+                    count: 1,
+                    family: DrawCommandFamily::DrawMeshTasks,
+                } => {
+                    let buffer = buffer.try_raw(snatch_guard)?;
+                    unsafe { raw.draw_mesh_tasks_indirect(buffer, *offset, 1) };
                 }
                 Cmd::DrawIndirect { .. } | Cmd::MultiDrawIndirectCount { .. } => {
                     return Err(ExecutionError::Unimplemented("multi-draw-indirect"))
@@ -1728,7 +1792,7 @@ pub mod bundle_ffi {
             buffer_id,
             offset,
             count: 1,
-            indexed: false,
+            family: crate::command::DrawCommandFamily::Draw,
         });
     }
 
@@ -1741,7 +1805,7 @@ pub mod bundle_ffi {
             buffer_id,
             offset,
             count: 1,
-            indexed: true,
+            family: crate::command::DrawCommandFamily::DrawIndexed,
         });
     }
 

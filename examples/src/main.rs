@@ -182,6 +182,12 @@ const EXAMPLES: &[ExampleDesc] = &[
         webgl: false,
         webgpu: false,
     },
+    ExampleDesc {
+        name: "mesh_shader",
+        function: wgpu_examples::mesh_shader::main,
+        webgl: false,
+        webgpu: false,
+    },
 ];
 
 fn get_example_name() -> Option<String> {

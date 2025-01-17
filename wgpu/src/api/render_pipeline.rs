@@ -194,6 +194,9 @@ pub struct RenderPipelineDescriptor<'a> {
 #[cfg(send_sync)]
 static_assertions::assert_impl_all!(RenderPipelineDescriptor<'_>: Send, Sync);
 
+/// Describes a mesh shader (graphics) pipeline.
+///
+/// For use with [`Device::create_mesh_pipeline`].
 #[derive(Clone, Debug)]
 pub struct MeshPipelineDescriptor<'a> {
     /// Debug label of the pipeline. This will show up in graphics debuggers for easy identification.

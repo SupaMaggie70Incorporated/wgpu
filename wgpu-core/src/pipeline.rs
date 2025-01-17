@@ -670,6 +670,7 @@ pub struct RenderPipeline {
     /// The `label` from the descriptor used to create the resource.
     pub(crate) label: String,
     pub(crate) tracking_data: TrackingData,
+    pub(crate) is_mesh: bool,
 }
 
 impl Drop for RenderPipeline {

@@ -52,7 +52,7 @@ use super::{
     memory_init::TextureSurfaceDiscard, CommandBufferTextureMemoryActions, CommandEncoder,
     QueryResetMap,
 };
-use super::{DrawKind, Rect};
+use super::{DrawCommandFamily, DrawKind, Rect};
 
 pub use wgt::{LoadOp, StoreOp};
 
@@ -500,7 +500,7 @@ struct State<'scope, 'snatch_guard, 'cmd_buf, 'raw_encoder> {
 impl<'scope, 'snatch_guard, 'cmd_buf, 'raw_encoder>
     State<'scope, 'snatch_guard, 'cmd_buf, 'raw_encoder>
 {
-    fn is_ready(&self, indexed: bool) -> Result<(), DrawError> {
+    fn is_ready(&self, family: DrawCommandFamily) -> Result<(), DrawError> {
         if let Some(pipeline) = self.pipeline.as_ref() {
             self.binder.check_compatibility(pipeline.as_ref())?;
             self.binder.check_late_buffer_bindings()?;
@@ -520,7 +520,7 @@ impl<'scope, 'snatch_guard, 'cmd_buf, 'raw_encoder>
                 });
             }
 
-            if indexed {
+            if let DrawCommandFamily::DrawIndexed = family {
                 // Pipeline expects an index buffer
                 if let Some(pipeline_index_format) = pipeline.strip_index_format {
                     // We have a buffer bound
@@ -538,6 +538,11 @@ impl<'scope, 'snatch_guard, 'cmd_buf, 'raw_encoder>
                         });
                     }
                 }
+            }
+            if (family == DrawCommandFamily::DrawMeshTasks) != pipeline.is_mesh {
+                return Err(DrawError::WrongPipelineType {
+                    wanted_mesh_pipeline: !pipeline.is_mesh,
+                });
             }
             Ok(())
         } else {
@@ -1754,7 +1759,7 @@ impl Global {
                     } => {
                         let scope = PassErrorScope::Draw {
                             kind: DrawKind::Draw,
-                            indexed: false,
+                            family: DrawCommandFamily::Draw,
                         };
                         draw(
                             &mut state,
@@ -1774,7 +1779,7 @@ impl Global {
                     } => {
                         let scope = PassErrorScope::Draw {
                             kind: DrawKind::Draw,
-                            indexed: true,
+                            family: DrawCommandFamily::DrawIndexed,
                         };
                         draw_indexed(
                             &mut state,
@@ -1786,11 +1791,23 @@ impl Global {
                         )
                         .map_pass_err(scope)?;
                     }
+                    ArcRenderCommand::DrawMeshTasks {
+                        group_count_x,
+                        group_count_y,
+                        group_count_z,
+                    } => {
+                        let scope = PassErrorScope::Draw {
+                            kind: DrawKind::Draw,
+                            family: DrawCommandFamily::DrawMeshTasks,
+                        };
+                        draw_mesh_tasks(&mut state, group_count_x, group_count_y, group_count_z)
+                            .map_pass_err(scope)?;
+                    }
                     ArcRenderCommand::DrawIndirect {
                         buffer,
                         offset,
                         count,
-                        indexed,
+                        family,
                     } => {
                         let scope = PassErrorScope::Draw {
                             kind: if count != 1 {
@@ -1798,9 +1815,9 @@ impl Global {
                             } else {
                                 DrawKind::DrawIndirect
                             },
-                            indexed,
+                            family,
                         };
-                        multi_draw_indirect(&mut state, cmd_buf, buffer, offset, count, indexed)
+                        multi_draw_indirect(&mut state, cmd_buf, buffer, offset, count, family)
                             .map_pass_err(scope)?;
                     }
                     ArcRenderCommand::MultiDrawIndirectCount {
@@ -1809,11 +1826,11 @@ impl Global {
                         count_buffer,
                         count_buffer_offset,
                         max_count,
-                        indexed,
+                        family,
                     } => {
                         let scope = PassErrorScope::Draw {
                             kind: DrawKind::MultiDrawIndirectCount,
-                            indexed,
+                            family,
                         };
                         multi_draw_indirect_count(
                             &mut state,
@@ -1823,7 +1840,7 @@ impl Global {
                             count_buffer,
                             count_buffer_offset,
                             max_count,
-                            indexed,
+                            family,
                         )
                         .map_pass_err(scope)?;
                     }
@@ -2386,7 +2403,7 @@ fn draw(
 ) -> Result<(), DrawError> {
     api_log!("RenderPass::draw {vertex_count} {instance_count} {first_vertex} {first_instance}");
 
-    state.is_ready(false)?;
+    state.is_ready(DrawCommandFamily::Draw)?;
 
     let last_vertex = first_vertex as u64 + vertex_count as u64;
     let vertex_limit = state.vertex.vertex_limit;
@@ -2427,7 +2444,7 @@ fn draw_indexed(
 ) -> Result<(), DrawError> {
     api_log!("RenderPass::draw_indexed {index_count} {instance_count} {first_index} {base_vertex} {first_instance}");
 
-    state.is_ready(true)?;
+    state.is_ready(DrawCommandFamily::DrawIndexed)?;
 
     let last_index = first_index as u64 + index_count as u64;
     let index_limit = state.index.limit;
@@ -2461,24 +2478,45 @@ fn draw_indexed(
     Ok(())
 }
 
+fn draw_mesh_tasks(
+    state: &mut State,
+    group_count_x: u32,
+    group_count_y: u32,
+    group_count_z: u32,
+) -> Result<(), DrawError> {
+    api_log!("RenderPass::draw_mesh_tasks {group_count_x} {group_count_y} {group_count_z}");
+
+    state.is_ready(DrawCommandFamily::DrawMeshTasks)?;
+
+    unsafe {
+        if group_count_x > 0 && group_count_y > 0 && group_count_z > 0 {
+            state
+                .raw_encoder
+                .draw_mesh_tasks(group_count_x, group_count_y, group_count_z);
+        }
+    }
+    Ok(())
+}
+
 fn multi_draw_indirect(
     state: &mut State,
     cmd_buf: &Arc<CommandBuffer>,
     indirect_buffer: Arc<crate::resource::Buffer>,
     offset: u64,
     count: u32,
-    indexed: bool,
+    family: DrawCommandFamily,
 ) -> Result<(), RenderPassErrorInner> {
     api_log!(
-        "RenderPass::draw_indirect (indexed:{indexed}) {} {offset} {count:?}",
+        "RenderPass::draw_indirect (family:{family:?}) {} {offset} {count:?}",
         indirect_buffer.error_ident()
     );
 
-    state.is_ready(indexed)?;
+    state.is_ready(DrawCommandFamily::DrawIndexed)?;
 
-    let stride = match indexed {
-        false => size_of::<wgt::DrawIndirectArgs>(),
-        true => size_of::<wgt::DrawIndexedIndirectArgs>(),
+    let stride = match family {
+        DrawCommandFamily::Draw => size_of::<wgt::DrawIndirectArgs>(),
+        DrawCommandFamily::DrawIndexed => size_of::<wgt::DrawIndexedIndirectArgs>(),
+        DrawCommandFamily::DrawMeshTasks => size_of::<wgt::DispatchIndirectArgs>(),
     };
 
     if count != 1 {
@@ -2523,14 +2561,19 @@ fn multi_draw_indirect(
         ),
     );
 
-    match indexed {
-        false => unsafe {
+    match family {
+        DrawCommandFamily::Draw => unsafe {
             state.raw_encoder.draw_indirect(indirect_raw, offset, count);
         },
-        true => unsafe {
+        DrawCommandFamily::DrawIndexed => unsafe {
             state
                 .raw_encoder
                 .draw_indexed_indirect(indirect_raw, offset, count);
+        },
+        DrawCommandFamily::DrawMeshTasks => unsafe {
+            state
+                .raw_encoder
+                .draw_mesh_tasks_indirect(indirect_raw, offset, count);
         },
     }
     Ok(())
@@ -2544,19 +2587,20 @@ fn multi_draw_indirect_count(
     count_buffer: Arc<crate::resource::Buffer>,
     count_buffer_offset: u64,
     max_count: u32,
-    indexed: bool,
+    family: DrawCommandFamily,
 ) -> Result<(), RenderPassErrorInner> {
     api_log!(
-        "RenderPass::multi_draw_indirect_count (indexed:{indexed}) {} {offset} {} {count_buffer_offset:?} {max_count:?}",
+        "RenderPass::multi_draw_indirect_count (family:{family:?}) {} {offset} {} {count_buffer_offset:?} {max_count:?}",
         indirect_buffer.error_ident(),
         count_buffer.error_ident()
     );
 
-    state.is_ready(indexed)?;
+    state.is_ready(family)?;
 
-    let stride = match indexed {
-        false => size_of::<wgt::DrawIndirectArgs>(),
-        true => size_of::<wgt::DrawIndexedIndirectArgs>(),
+    let stride = match family {
+        DrawCommandFamily::Draw => size_of::<wgt::DrawIndirectArgs>(),
+        DrawCommandFamily::DrawIndexed => size_of::<wgt::DrawIndexedIndirectArgs>(),
+        DrawCommandFamily::DrawMeshTasks => size_of::<wgt::DispatchIndirectArgs>(),
     } as u64;
 
     state
@@ -2625,8 +2669,8 @@ fn multi_draw_indirect_count(
         ),
     );
 
-    match indexed {
-        false => unsafe {
+    match family {
+        DrawCommandFamily::Draw => unsafe {
             state.raw_encoder.draw_indirect_count(
                 indirect_raw,
                 offset,
@@ -2635,8 +2679,17 @@ fn multi_draw_indirect_count(
                 max_count,
             );
         },
-        true => unsafe {
+        DrawCommandFamily::DrawIndexed => unsafe {
             state.raw_encoder.draw_indexed_indirect_count(
+                indirect_raw,
+                offset,
+                count_raw,
+                count_buffer_offset,
+                max_count,
+            );
+        },
+        DrawCommandFamily::DrawMeshTasks => unsafe {
+            state.raw_encoder.draw_mesh_tasks_indirect_count(
                 indirect_raw,
                 offset,
                 count_raw,
@@ -3046,7 +3099,7 @@ impl Global {
     ) -> Result<(), RenderPassError> {
         let scope = PassErrorScope::Draw {
             kind: DrawKind::Draw,
-            indexed: false,
+            family: DrawCommandFamily::Draw,
         };
         let base = pass.base_mut(scope)?;
 
@@ -3071,7 +3124,7 @@ impl Global {
     ) -> Result<(), RenderPassError> {
         let scope = PassErrorScope::Draw {
             kind: DrawKind::Draw,
-            indexed: true,
+            family: DrawCommandFamily::DrawIndexed,
         };
         let base = pass.base_mut(scope)?;
 
@@ -3086,6 +3139,27 @@ impl Global {
         Ok(())
     }
 
+    pub fn render_pass_draw_mesh_tasks(
+        &self,
+        pass: &mut RenderPass,
+        group_count_x: u32,
+        group_count_y: u32,
+        group_count_z: u32,
+    ) -> Result<(), RenderPassError> {
+        let scope = PassErrorScope::Draw {
+            kind: DrawKind::Draw,
+            family: DrawCommandFamily::DrawMeshTasks,
+        };
+        let base = pass.base_mut(scope)?;
+
+        base.commands.push(ArcRenderCommand::DrawMeshTasks {
+            group_count_x,
+            group_count_y,
+            group_count_z,
+        });
+        Ok(())
+    }
+
     pub fn render_pass_draw_indirect(
         &self,
         pass: &mut RenderPass,
@@ -3094,7 +3168,7 @@ impl Global {
     ) -> Result<(), RenderPassError> {
         let scope = PassErrorScope::Draw {
             kind: DrawKind::DrawIndirect,
-            indexed: false,
+            family: DrawCommandFamily::Draw,
         };
         let base = pass.base_mut(scope)?;
 
@@ -3102,7 +3176,7 @@ impl Global {
             buffer: self.resolve_render_pass_buffer_id(scope, buffer_id)?,
             offset,
             count: 1,
-            indexed: false,
+            family: DrawCommandFamily::Draw,
         });
 
         Ok(())
@@ -3116,7 +3190,7 @@ impl Global {
     ) -> Result<(), RenderPassError> {
         let scope = PassErrorScope::Draw {
             kind: DrawKind::DrawIndirect,
-            indexed: true,
+            family: DrawCommandFamily::DrawIndexed,
         };
         let base = pass.base_mut(scope)?;
 
@@ -3124,7 +3198,29 @@ impl Global {
             buffer: self.resolve_render_pass_buffer_id(scope, buffer_id)?,
             offset,
             count: 1,
-            indexed: true,
+            family: DrawCommandFamily::DrawIndexed,
+        });
+
+        Ok(())
+    }
+
+    pub fn render_pass_draw_mesh_tasks_indirect(
+        &self,
+        pass: &mut RenderPass,
+        buffer_id: id::BufferId,
+        offset: BufferAddress,
+    ) -> Result<(), RenderPassError> {
+        let scope = PassErrorScope::Draw {
+            kind: DrawKind::DrawIndirect,
+            family: DrawCommandFamily::DrawMeshTasks,
+        };
+        let base = pass.base_mut(scope)?;
+
+        base.commands.push(ArcRenderCommand::DrawIndirect {
+            buffer: self.resolve_render_pass_buffer_id(scope, buffer_id)?,
+            offset,
+            count: 1,
+            family: DrawCommandFamily::DrawMeshTasks,
         });
 
         Ok(())
@@ -3139,7 +3235,7 @@ impl Global {
     ) -> Result<(), RenderPassError> {
         let scope = PassErrorScope::Draw {
             kind: DrawKind::MultiDrawIndirect,
-            indexed: false,
+            family: DrawCommandFamily::Draw,
         };
         let base = pass.base_mut(scope)?;
 
@@ -3147,7 +3243,7 @@ impl Global {
             buffer: self.resolve_render_pass_buffer_id(scope, buffer_id)?,
             offset,
             count,
-            indexed: false,
+            family: DrawCommandFamily::Draw,
         });
 
         Ok(())
@@ -3162,7 +3258,7 @@ impl Global {
     ) -> Result<(), RenderPassError> {
         let scope = PassErrorScope::Draw {
             kind: DrawKind::MultiDrawIndirect,
-            indexed: true,
+            family: DrawCommandFamily::DrawIndexed,
         };
         let base = pass.base_mut(scope)?;
 
@@ -3170,7 +3266,30 @@ impl Global {
             buffer: self.resolve_render_pass_buffer_id(scope, buffer_id)?,
             offset,
             count,
-            indexed: true,
+            family: DrawCommandFamily::DrawIndexed,
+        });
+
+        Ok(())
+    }
+
+    pub fn render_pass_multi_draw_mesh_tasks_indirect(
+        &self,
+        pass: &mut RenderPass,
+        buffer_id: id::BufferId,
+        offset: BufferAddress,
+        count: u32,
+    ) -> Result<(), RenderPassError> {
+        let scope = PassErrorScope::Draw {
+            kind: DrawKind::MultiDrawIndirect,
+            family: DrawCommandFamily::DrawMeshTasks,
+        };
+        let base = pass.base_mut(scope)?;
+
+        base.commands.push(ArcRenderCommand::DrawIndirect {
+            buffer: self.resolve_render_pass_buffer_id(scope, buffer_id)?,
+            offset,
+            count,
+            family: DrawCommandFamily::DrawMeshTasks,
         });
 
         Ok(())
@@ -3187,7 +3306,7 @@ impl Global {
     ) -> Result<(), RenderPassError> {
         let scope = PassErrorScope::Draw {
             kind: DrawKind::MultiDrawIndirectCount,
-            indexed: false,
+            family: DrawCommandFamily::Draw,
         };
         let base = pass.base_mut(scope)?;
 
@@ -3198,7 +3317,7 @@ impl Global {
                 count_buffer: self.resolve_render_pass_buffer_id(scope, count_buffer_id)?,
                 count_buffer_offset,
                 max_count,
-                indexed: false,
+                family: DrawCommandFamily::Draw,
             });
 
         Ok(())
@@ -3215,7 +3334,7 @@ impl Global {
     ) -> Result<(), RenderPassError> {
         let scope = PassErrorScope::Draw {
             kind: DrawKind::MultiDrawIndirectCount,
-            indexed: true,
+            family: DrawCommandFamily::DrawIndexed,
         };
         let base = pass.base_mut(scope)?;
 
@@ -3226,7 +3345,35 @@ impl Global {
                 count_buffer: self.resolve_render_pass_buffer_id(scope, count_buffer_id)?,
                 count_buffer_offset,
                 max_count,
-                indexed: true,
+                family: DrawCommandFamily::DrawIndexed,
+            });
+
+        Ok(())
+    }
+
+    pub fn render_pass_multi_draw_mesh_tasks_indirect_count(
+        &self,
+        pass: &mut RenderPass,
+        buffer_id: id::BufferId,
+        offset: BufferAddress,
+        count_buffer_id: id::BufferId,
+        count_buffer_offset: BufferAddress,
+        max_count: u32,
+    ) -> Result<(), RenderPassError> {
+        let scope = PassErrorScope::Draw {
+            kind: DrawKind::MultiDrawIndirectCount,
+            family: DrawCommandFamily::DrawMeshTasks,
+        };
+        let base = pass.base_mut(scope)?;
+
+        base.commands
+            .push(ArcRenderCommand::MultiDrawIndirectCount {
+                buffer: self.resolve_render_pass_buffer_id(scope, buffer_id)?,
+                offset,
+                count_buffer: self.resolve_render_pass_buffer_id(scope, count_buffer_id)?,
+                count_buffer_offset,
+                max_count,
+                family: DrawCommandFamily::DrawMeshTasks,
             });
 
         Ok(())

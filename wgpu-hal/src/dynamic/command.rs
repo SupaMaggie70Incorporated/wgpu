@@ -129,6 +129,12 @@ pub trait DynCommandEncoder: DynResource + std::fmt::Debug {
         first_instance: u32,
         instance_count: u32,
     );
+    unsafe fn draw_mesh_tasks(
+        &mut self,
+        group_count_x: u32,
+        group_count_y: u32,
+        group_count_z: u32,
+    );
     unsafe fn draw_indirect(
         &mut self,
         buffer: &dyn DynBuffer,
@@ -136,6 +142,12 @@ pub trait DynCommandEncoder: DynResource + std::fmt::Debug {
         draw_count: u32,
     );
     unsafe fn draw_indexed_indirect(
+        &mut self,
+        buffer: &dyn DynBuffer,
+        offset: wgt::BufferAddress,
+        draw_count: u32,
+    );
+    unsafe fn draw_mesh_tasks_indirect(
         &mut self,
         buffer: &dyn DynBuffer,
         offset: wgt::BufferAddress,
@@ -150,6 +162,14 @@ pub trait DynCommandEncoder: DynResource + std::fmt::Debug {
         max_count: u32,
     );
     unsafe fn draw_indexed_indirect_count(
+        &mut self,
+        buffer: &dyn DynBuffer,
+        offset: wgt::BufferAddress,
+        count_buffer: &dyn DynBuffer,
+        count_offset: wgt::BufferAddress,
+        max_count: u32,
+    );
+    unsafe fn draw_mesh_tasks_indirect_count(
         &mut self,
         buffer: &dyn DynBuffer,
         offset: wgt::BufferAddress,
@@ -460,6 +480,15 @@ impl<C: CommandEncoder + DynResource> DynCommandEncoder for C {
         };
     }
 
+    unsafe fn draw_mesh_tasks(
+        &mut self,
+        group_count_x: u32,
+        group_count_y: u32,
+        group_count_z: u32,
+    ) {
+        unsafe { C::draw_mesh_tasks(self, group_count_x, group_count_y, group_count_z) };
+    }
+
     unsafe fn draw_indirect(
         &mut self,
         buffer: &dyn DynBuffer,
@@ -478,6 +507,16 @@ impl<C: CommandEncoder + DynResource> DynCommandEncoder for C {
     ) {
         let buffer = buffer.expect_downcast_ref();
         unsafe { C::draw_indexed_indirect(self, buffer, offset, draw_count) };
+    }
+
+    unsafe fn draw_mesh_tasks_indirect(
+        &mut self,
+        buffer: &dyn DynBuffer,
+        offset: wgt::BufferAddress,
+        draw_count: u32,
+    ) {
+        let buffer = buffer.expect_downcast_ref();
+        unsafe { C::draw_mesh_tasks_indirect(self, buffer, offset, draw_count) };
     }
 
     unsafe fn draw_indirect_count(
@@ -507,6 +546,28 @@ impl<C: CommandEncoder + DynResource> DynCommandEncoder for C {
         let count_buffer = count_buffer.expect_downcast_ref();
         unsafe {
             C::draw_indexed_indirect_count(
+                self,
+                buffer,
+                offset,
+                count_buffer,
+                count_offset,
+                max_count,
+            )
+        };
+    }
+
+    unsafe fn draw_mesh_tasks_indirect_count(
+        &mut self,
+        buffer: &dyn DynBuffer,
+        offset: wgt::BufferAddress,
+        count_buffer: &dyn DynBuffer,
+        count_offset: wgt::BufferAddress,
+        max_count: u32,
+    ) {
+        let buffer = buffer.expect_downcast_ref();
+        let count_buffer = count_buffer.expect_downcast_ref();
+        unsafe {
+            C::draw_mesh_tasks_indirect_count(
                 self,
                 buffer,
                 offset,

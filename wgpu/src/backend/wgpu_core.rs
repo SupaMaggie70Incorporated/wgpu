@@ -3048,6 +3048,22 @@ impl dispatch::RenderPassInterface for CoreRenderPass {
         }
     }
 
+    fn draw_mesh_tasks(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
+        if let Err(cause) = self.context.0.render_pass_draw_mesh_tasks(
+            &mut self.pass,
+            group_count_x,
+            group_count_y,
+            group_count_z,
+        ) {
+            self.context.handle_error(
+                &self.error_sink,
+                cause,
+                self.pass.label(),
+                "RenderPass::draw_mesh_tasks",
+            );
+        }
+    }
+
     fn draw_indirect(
         &mut self,
         indirect_buffer: &dispatch::DispatchBuffer,
@@ -3086,6 +3102,27 @@ impl dispatch::RenderPassInterface for CoreRenderPass {
                 cause,
                 self.pass.label(),
                 "RenderPass::draw_indexed_indirect",
+            );
+        }
+    }
+
+    fn draw_mesh_tasks_indirect(
+        &mut self,
+        indirect_buffer: &dispatch::DispatchBuffer,
+        indirect_offset: crate::BufferAddress,
+    ) {
+        let indirect_buffer = indirect_buffer.as_core();
+
+        if let Err(cause) = self.context.0.render_pass_draw_mesh_tasks_indirect(
+            &mut self.pass,
+            indirect_buffer.id,
+            indirect_offset,
+        ) {
+            self.context.handle_error(
+                &self.error_sink,
+                cause,
+                self.pass.label(),
+                "RenderPass::draw_mesh_tasks_indirect",
             );
         }
     }
@@ -3132,6 +3169,29 @@ impl dispatch::RenderPassInterface for CoreRenderPass {
                 cause,
                 self.pass.label(),
                 "RenderPass::multi_draw_indexed_indirect",
+            );
+        }
+    }
+
+    fn multi_draw_mesh_tasks_indirect(
+        &mut self,
+        indirect_buffer: &dispatch::DispatchBuffer,
+        indirect_offset: crate::BufferAddress,
+        count: u32,
+    ) {
+        let indirect_buffer = indirect_buffer.as_core();
+
+        if let Err(cause) = self.context.0.render_pass_multi_draw_mesh_tasks_indirect(
+            &mut self.pass,
+            indirect_buffer.id,
+            indirect_offset,
+            count,
+        ) {
+            self.context.handle_error(
+                &self.error_sink,
+                cause,
+                self.pass.label(),
+                "RenderPass::multi_draw_mesh_tasks_indirect",
             );
         }
     }
@@ -3192,6 +3252,38 @@ impl dispatch::RenderPassInterface for CoreRenderPass {
                 cause,
                 self.pass.label(),
                 "RenderPass::multi_draw_indexed_indirect_count",
+            );
+        }
+    }
+
+    fn multi_draw_mesh_tasks_indirect_count(
+        &mut self,
+        indirect_buffer: &dispatch::DispatchBuffer,
+        indirect_offset: crate::BufferAddress,
+        count_buffer: &dispatch::DispatchBuffer,
+        count_buffer_offset: crate::BufferAddress,
+        max_count: u32,
+    ) {
+        let indirect_buffer = indirect_buffer.as_core();
+        let count_buffer = count_buffer.as_core();
+
+        if let Err(cause) = self
+            .context
+            .0
+            .render_pass_multi_draw_mesh_tasks_indirect_count(
+                &mut self.pass,
+                indirect_buffer.id,
+                indirect_offset,
+                count_buffer.id,
+                count_buffer_offset,
+                max_count,
+            )
+        {
+            self.context.handle_error(
+                &self.error_sink,
+                cause,
+                self.pass.label(),
+                "RenderPass::multi_draw_mesh_tasks_indirect_count",
             );
         }
     }
