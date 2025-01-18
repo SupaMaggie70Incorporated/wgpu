@@ -28,7 +28,14 @@ pub fn ensure_block_returns(block: &mut crate::Block) {
                 }
             }
         }
-        Some(&mut (S::Emit(_) | S::Break | S::Continue | S::Return { .. } | S::Kill)) => (),
+        Some(
+            &mut (S::Emit(_)
+            | S::Break
+            | S::Continue
+            | S::Return { .. }
+            | S::Kill
+            | S::MeshFunction(crate::MeshFunction::EmitMeshTasks { .. })),
+        ) => (),
         Some(
             &mut (S::Loop { .. }
             | S::Store { .. }
@@ -41,7 +48,8 @@ pub fn ensure_block_returns(block: &mut crate::Block) {
             | S::SubgroupBallot { .. }
             | S::SubgroupCollectiveOperation { .. }
             | S::SubgroupGather { .. }
-            | S::Barrier(_)),
+            | S::Barrier(_)
+            | S::MeshFunction(crate::MeshFunction::SetMeshOutputs { .. })),
         )
         | None => block.push(S::Return { value: None }, Default::default()),
     }

@@ -228,9 +228,9 @@ impl VaryingContext<'_> {
                     ),
                     Bi::Position { .. } => (
                         match self.stage {
-                            St::Vertex => self.output,
+                            St::Vertex | St::Mesh => self.output,
                             St::Fragment => !self.output,
-                            St::Compute => false,
+                            St::Compute | St::Task => false,
                         },
                         *ty_inner
                             == Ti::Vector {
@@ -240,8 +240,8 @@ impl VaryingContext<'_> {
                     ),
                     Bi::ViewIndex => (
                         match self.stage {
-                            St::Vertex | St::Fragment => !self.output,
-                            St::Compute => false,
+                            St::Vertex | St::Fragment | St::Mesh => !self.output,
+                            St::Compute | St::Task => false,
                         },
                         *ty_inner == Ti::Scalar(crate::Scalar::I32),
                     ),
@@ -266,7 +266,7 @@ impl VaryingContext<'_> {
                         *ty_inner == Ti::Scalar(crate::Scalar::U32),
                     ),
                     Bi::LocalInvocationIndex => (
-                        self.stage == St::Compute && !self.output,
+                        self.stage.compute_like() && !self.output,
                         *ty_inner == Ti::Scalar(crate::Scalar::U32),
                     ),
                     Bi::GlobalInvocationId
@@ -274,7 +274,7 @@ impl VaryingContext<'_> {
                     | Bi::WorkGroupId
                     | Bi::WorkGroupSize
                     | Bi::NumWorkGroups => (
-                        self.stage == St::Compute && !self.output,
+                        self.stage.compute_like() && !self.output,
                         *ty_inner
                             == Ti::Vector {
                                 size: Vs::Tri,
@@ -282,15 +282,39 @@ impl VaryingContext<'_> {
                             },
                     ),
                     Bi::NumSubgroups | Bi::SubgroupId => (
-                        self.stage == St::Compute && !self.output,
+                        self.stage.compute_like() && !self.output,
                         *ty_inner == Ti::Scalar(crate::Scalar::U32),
                     ),
                     Bi::SubgroupSize | Bi::SubgroupInvocationId => (
                         match self.stage {
-                            St::Compute | St::Fragment => !self.output,
+                            St::Compute | St::Fragment | St::Task | St::Mesh => !self.output,
                             St::Vertex => false,
                         },
                         *ty_inner == Ti::Scalar(crate::Scalar::U32),
+                    ),
+                    Bi::CullPrimitive => (
+                        self.stage == St::Mesh && self.output,
+                        *ty_inner == Ti::Scalar(crate::Scalar::BOOL),
+                    ),
+                    Bi::PointIndices => (
+                        self.stage == St::Mesh && self.output,
+                        *ty_inner == Ti::Scalar(crate::Scalar::U32),
+                    ),
+                    Bi::LineIndices => (
+                        self.stage == St::Mesh && self.output,
+                        *ty_inner
+                            == Ti::Vector {
+                                size: Vs::Bi,
+                                scalar: crate::Scalar::U32,
+                            },
+                    ),
+                    Bi::TriangleIndices => (
+                        self.stage == St::Mesh && self.output,
+                        *ty_inner
+                            == Ti::Vector {
+                                size: Vs::Tri,
+                                scalar: crate::Scalar::U32,
+                            },
                     ),
                 };
 
@@ -376,10 +400,12 @@ impl VaryingContext<'_> {
                     }
                 }
 
+                // TODO: update this to reflect the fact that per-primitive outputs aren't interpolated for fragment and mesh stages
                 let needs_interpolation = match self.stage {
                     crate::ShaderStage::Vertex => self.output,
                     crate::ShaderStage::Fragment => !self.output,
-                    crate::ShaderStage::Compute => false,
+                    crate::ShaderStage::Compute | crate::ShaderStage::Task => false,
+                    crate::ShaderStage::Mesh => self.output,
                 };
 
                 // It doesn't make sense to specify a sampling when `interpolation` is `Flat`, but
@@ -562,7 +588,10 @@ impl super::Validator {
                 TypeFlags::CONSTRUCTIBLE | TypeFlags::CREATION_RESOLVED,
                 false,
             ),
-            crate::AddressSpace::WorkGroup => (TypeFlags::DATA | TypeFlags::SIZED, false),
+            // TODO: investigate how TaskPayload compares
+            crate::AddressSpace::WorkGroup | crate::AddressSpace::TaskPayload => {
+                (TypeFlags::DATA | TypeFlags::SIZED, false)
+            }
             crate::AddressSpace::PushConstant => {
                 if !self.capabilities.contains(Capabilities::PUSH_CONSTANT) {
                     return Err(GlobalVariableError::UnsupportedCapability(
@@ -658,6 +687,8 @@ impl super::Validator {
                 crate::ShaderStage::Vertex => ShaderStages::VERTEX,
                 crate::ShaderStage::Fragment => ShaderStages::FRAGMENT,
                 crate::ShaderStage::Compute => ShaderStages::COMPUTE,
+                crate::ShaderStage::Mesh => ShaderStages::MESH,
+                crate::ShaderStage::Task => ShaderStages::TASK,
             };
 
             if !info.available_stages.contains(stage_bit) {
@@ -761,7 +792,10 @@ impl super::Validator {
                     } => storage_usage(access),
                     _ => GlobalUse::READ | GlobalUse::QUERY,
                 },
-                crate::AddressSpace::Private | crate::AddressSpace::WorkGroup => {
+                // TODO: update this to reflect the nuance around taskpayload(writable in task stage, readable in mesh stage)
+                crate::AddressSpace::Private
+                | crate::AddressSpace::WorkGroup
+                | crate::AddressSpace::TaskPayload => {
                     GlobalUse::READ | GlobalUse::WRITE | GlobalUse::QUERY
                 }
                 crate::AddressSpace::PushConstant => GlobalUse::READ,

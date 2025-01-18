@@ -629,7 +629,8 @@ impl FunctionInfo {
                     // local data is non-uniform
                     As::Function | As::Private => false,
                     // workgroup memory is exclusively accessed by the group
-                    As::WorkGroup => true,
+                    // task payload memory is very similar to workgroup memory
+                    As::WorkGroup | As::TaskPayload => true,
                     // uniform data
                     As::Uniform | As::PushConstant => true,
                     // storage data is only uniform when read-only
@@ -1090,6 +1091,29 @@ impl FunctionInfo {
                     }
                     FunctionUniformity::new()
                 }
+                S::MeshFunction(func) => match func {
+                    crate::MeshFunction::EmitMeshTasks { group_size } => {
+                        for g in group_size {
+                            let _ = self.add_ref(g);
+                        }
+                        // TODO: reexamine this
+                        FunctionUniformity {
+                            result: Uniformity {
+                                non_uniform_result: None,
+                                requirements: UniformityRequirements::WORK_GROUP_BARRIER,
+                            },
+                            exit: ExitFlags::MAY_KILL,
+                        }
+                    }
+                    crate::MeshFunction::SetMeshOutputs {
+                        vertex_count,
+                        primitive_count,
+                    } => {
+                        let _ = self.add_ref(vertex_count);
+                        let _ = self.add_ref(primitive_count);
+                        FunctionUniformity::new()
+                    }
+                },
                 S::SubgroupBallot {
                     result: _,
                     predicate,

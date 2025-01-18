@@ -113,6 +113,18 @@ impl FunctionTracer<'_> {
                         self.expressions_used.insert(query);
                         self.trace_ray_query_function(fun);
                     }
+                    St::MeshFunction(crate::MeshFunction::EmitMeshTasks { group_size }) => {
+                        for g in group_size {
+                            self.expressions_used.insert(g);
+                        }
+                    }
+                    St::MeshFunction(crate::MeshFunction::SetMeshOutputs {
+                        vertex_count,
+                        primitive_count,
+                    }) => {
+                        self.expressions_used.insert(vertex_count);
+                        self.expressions_used.insert(primitive_count);
+                    }
                     St::SubgroupBallot { result, predicate } => {
                         if let Some(predicate) = predicate {
                             self.expressions_used.insert(predicate);
@@ -314,6 +326,18 @@ impl FunctionMap {
                     } => {
                         adjust(query);
                         self.adjust_ray_query_function(fun);
+                    }
+                    St::MeshFunction(crate::MeshFunction::EmitMeshTasks { ref mut group_size }) => {
+                        for g in group_size {
+                            adjust(g);
+                        }
+                    }
+                    St::MeshFunction(crate::MeshFunction::SetMeshOutputs {
+                        ref mut vertex_count,
+                        ref mut primitive_count,
+                    }) => {
+                        adjust(vertex_count);
+                        adjust(primitive_count);
                     }
                     St::SubgroupBallot {
                         ref mut result,

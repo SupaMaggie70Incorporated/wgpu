@@ -822,7 +822,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 self.write_type(module, global.ty)?;
                 ""
             }
-            crate::AddressSpace::WorkGroup => {
+            // TODO: verify this is correct
+            crate::AddressSpace::WorkGroup | crate::AddressSpace::TaskPayload => {
                 write!(self.out, "groupshared ")?;
                 self.write_type(module, global.ty)?;
                 ""
@@ -2297,6 +2298,25 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     writeln!(self.out, ".Abort();")?;
                 }
             },
+            Statement::MeshFunction(crate::MeshFunction::EmitMeshTasks { group_size }) => {
+                write!(self.out, "{level}DispatchMesh(")?;
+                self.write_expr(module, group_size[0], func_ctx)?;
+                for &g in &group_size[1..] {
+                    write!(self.out, ", ")?;
+                    self.write_expr(module, g, func_ctx)?;
+                }
+                write!(self.out, ");")?;
+            }
+            Statement::MeshFunction(crate::MeshFunction::SetMeshOutputs {
+                vertex_count,
+                primitive_count,
+            }) => {
+                write!(self.out, "{level}SetMeshOutputCounts(")?;
+                self.write_expr(module, vertex_count, func_ctx)?;
+                write!(self.out, ", ")?;
+                self.write_expr(module, primitive_count, func_ctx)?;
+                write!(self.out, ");")?;
+            }
             Statement::SubgroupBallot { result, predicate } => {
                 write!(self.out, "{level}")?;
                 let name = Baked(result).to_string();
@@ -2679,7 +2699,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                                 crate::AddressSpace::Function
                                 | crate::AddressSpace::Private
                                 | crate::AddressSpace::WorkGroup
-                                | crate::AddressSpace::PushConstant,
+                                | crate::AddressSpace::PushConstant
+                                | crate::AddressSpace::TaskPayload,
                             )
                             | None => true,
                             Some(crate::AddressSpace::Uniform) => false, // TODO: needs checks for dynamic uniform buffers, see https://github.com/gfx-rs/wgpu/issues/4483

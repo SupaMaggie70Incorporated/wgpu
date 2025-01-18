@@ -1374,6 +1374,8 @@ impl Frontend {
                 result: ty.map(|ty| FunctionResult { ty, binding: None }),
                 ..Default::default()
             },
+            mesh_info: None,
+            task_payload: None,
         });
 
         Ok(())

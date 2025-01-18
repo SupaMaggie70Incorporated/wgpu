@@ -598,6 +598,9 @@ impl ResolvedBinding {
                     Bi::CullDistance | Bi::ViewIndex | Bi::DrawID => {
                         return Err(Error::UnsupportedBuiltIn(built_in))
                     }
+                    Bi::CullPrimitive => "primitive_culled",
+                    // TODO: figure out how to make this written as a function call
+                    Bi::PointIndices | Bi::LineIndices | Bi::TriangleIndices => unimplemented!(),
                 };
                 write!(out, "{name}")?;
             }

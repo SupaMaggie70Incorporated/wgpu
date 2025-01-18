@@ -183,8 +183,8 @@ impl<W: Write> Writer<W> {
         for (index, ep) in module.entry_points.iter().enumerate() {
             let attributes = match ep.stage {
                 ShaderStage::Vertex | ShaderStage::Fragment => vec![Attribute::Stage(ep.stage)],
-                ShaderStage::Compute => vec![
-                    Attribute::Stage(ShaderStage::Compute),
+                ShaderStage::Compute | ShaderStage::Mesh | ShaderStage::Task => vec![
+                    Attribute::Stage(ep.stage),
                     Attribute::WorkGroupSize(ep.workgroup_size),
                 ],
             };
@@ -228,6 +228,8 @@ impl<W: Write> Writer<W> {
                     ShaderStage::Compute => "ComputeOutput",
                     ShaderStage::Fragment => "FragmentOutput",
                     ShaderStage::Vertex => "VertexOutput",
+                    ShaderStage::Task => "TaskOutput",
+                    ShaderStage::Mesh => "MeshOutput",
                 };
 
                 write!(self.out, "{name}")?;
@@ -350,6 +352,8 @@ impl<W: Write> Writer<W> {
                         ShaderStage::Vertex => "vertex",
                         ShaderStage::Fragment => "fragment",
                         ShaderStage::Compute => "compute",
+                        ShaderStage::Task => "task",
+                        ShaderStage::Mesh => "mesh",
                     };
                     write!(self.out, "@{stage_str} ")?;
                 }
@@ -975,6 +979,25 @@ impl<W: Write> Writer<W> {
                 }
             }
             Statement::RayQuery { .. } => unreachable!(),
+            Statement::MeshFunction(crate::MeshFunction::EmitMeshTasks { group_size }) => {
+                write!(self.out, "{level}emitMeshTasks(")?;
+                self.write_expr(module, group_size[0], func_ctx)?;
+                for &a in &group_size[1..] {
+                    write!(self.out, ", ")?;
+                    self.write_expr(module, a, func_ctx)?;
+                }
+                writeln!(self.out, ");")?;
+            }
+            Statement::MeshFunction(crate::MeshFunction::SetMeshOutputs {
+                vertex_count,
+                primitive_count,
+            }) => {
+                write!(self.out, "{level}setMeshOutputs(")?;
+                self.write_expr(module, vertex_count, func_ctx)?;
+                write!(self.out, ", ")?;
+                self.write_expr(module, primitive_count, func_ctx)?;
+                writeln!(self.out, ");")?;
+            }
             Statement::SubgroupBallot { result, predicate } => {
                 write!(self.out, "{level}")?;
                 let res_name = Baked(result).to_string();
@@ -1999,6 +2022,10 @@ fn builtin_str(built_in: crate::BuiltIn) -> Result<&'static str, Error> {
         | Bi::PointCoord
         | Bi::WorkGroupSize
         | Bi::DrawID => return Err(Error::Custom(format!("Unsupported builtin {built_in:?}"))),
+        Bi::CullPrimitive => "cull_primitive",
+        Bi::PointIndices => "point_indices",
+        Bi::LineIndices => "line_indices",
+        Bi::TriangleIndices => "triangle_indices",
     })
 }
 
@@ -2144,6 +2171,7 @@ const fn address_space_str(
             As::WorkGroup => "workgroup",
             As::Handle => return (None, None),
             As::Function => "function",
+            As::TaskPayload => "task_payload",
         }),
         None,
     )

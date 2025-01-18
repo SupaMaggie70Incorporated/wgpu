@@ -112,7 +112,8 @@ impl crate::AddressSpace {
             | crate::AddressSpace::Uniform
             | crate::AddressSpace::Storage { .. }
             | crate::AddressSpace::Handle
-            | crate::AddressSpace::PushConstant => false,
+            | crate::AddressSpace::PushConstant
+            | crate::AddressSpace::TaskPayload => false,
         }
     }
 }
@@ -442,6 +443,8 @@ impl fmt::Display for VaryingName<'_> {
                     (ShaderStage::Vertex, true) | (ShaderStage::Fragment, false) => "vs2fs",
                     // fragment to pipeline
                     (ShaderStage::Fragment, true) => "fs2p",
+                    // TODO: figure out what this is and work on it
+                    (ShaderStage::Mesh | ShaderStage::Task, _) => unimplemented!(),
                 };
                 write!(f, "_{prefix}_location{location}",)
             }
@@ -458,6 +461,8 @@ impl ShaderStage {
             ShaderStage::Compute => "cs",
             ShaderStage::Fragment => "fs",
             ShaderStage::Vertex => "vs",
+            ShaderStage::Task => "ts",
+            ShaderStage::Mesh => "ms",
         }
     }
 }
@@ -1199,6 +1204,9 @@ impl<'a, W: Write> Writer<'a, W> {
             crate::AddressSpace::Storage { .. } => {
                 self.write_interface_block(handle, global)?;
             }
+            crate::AddressSpace::TaskPayload => {
+                self.write_interface_block(handle, global)?;
+            }
             // A global variable in the `Function` address space is a
             // contradiction in terms.
             crate::AddressSpace::Function => unreachable!(),
@@ -1507,9 +1515,12 @@ impl<'a, W: Write> Writer<'a, W> {
         // We ignore all interpolation and auxiliary modifiers that aren't used in fragment
         // shaders' input globals or vertex shaders' output globals.
         let emit_interpolation_and_auxiliary = match self.entry_point.stage {
+            // TODO: make this more nuanced for mesh and fragment shaders which can have per primitive and per vertex data
             ShaderStage::Vertex => output,
             ShaderStage::Fragment => !output,
             ShaderStage::Compute => false,
+            ShaderStage::Task => false,
+            ShaderStage::Mesh => unimplemented!(),
         };
 
         // Write the I/O locations, if allowed
@@ -2487,6 +2498,25 @@ impl<'a, W: Write> Writer<'a, W> {
                 self.write_image_atomic(ctx, image, coordinate, array_index, fun, value)?
             }
             Statement::RayQuery { .. } => unreachable!(),
+            Statement::MeshFunction(crate::MeshFunction::EmitMeshTasks { group_size }) => {
+                write!(self.out, "{level}EmitMeshTasksEXT(")?;
+                self.write_expr(group_size[0], ctx)?;
+                for &g in &group_size[1..] {
+                    write!(self.out, ", ")?;
+                    self.write_expr(g, ctx)?;
+                }
+                write!(self.out, ");")?;
+            }
+            Statement::MeshFunction(crate::MeshFunction::SetMeshOutputs {
+                vertex_count,
+                primitive_count,
+            }) => {
+                write!(self.out, "{level}SetMeshOutputsEXT(")?;
+                self.write_expr(vertex_count, ctx)?;
+                write!(self.out, ", ")?;
+                self.write_expr(primitive_count, ctx)?;
+                write!(self.out, ");")?;
+            }
             Statement::SubgroupBallot { result, predicate } => {
                 write!(self.out, "{level}")?;
                 let res_name = Baked(result).to_string();
@@ -4862,6 +4892,11 @@ const fn glsl_built_in(built_in: crate::BuiltIn, options: VaryingOptions) -> &'s
         Bi::SubgroupId => "gl_SubgroupID",
         Bi::SubgroupSize => "gl_SubgroupSize",
         Bi::SubgroupInvocationId => "gl_SubgroupInvocationID",
+        // mesh
+        // TODO: figure out how to map these to glsl things as glsl treats them as arrays
+        Bi::CullPrimitive | Bi::PointIndices | Bi::LineIndices | Bi::TriangleIndices => {
+            unimplemented!()
+        }
     }
 }
 
@@ -4877,6 +4912,7 @@ const fn glsl_storage_qualifier(space: crate::AddressSpace) -> Option<&'static s
         As::Handle => Some("uniform"),
         As::WorkGroup => Some("shared"),
         As::PushConstant => Some("uniform"),
+        As::TaskPayload => Some("taskPayloadSharedEXT"),
     }
 }
 
