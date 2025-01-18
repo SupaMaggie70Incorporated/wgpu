@@ -2161,6 +2161,13 @@ impl dispatch::DeviceInterface for WebDevice {
         .into()
     }
 
+    fn create_mesh_pipeline(
+        &self,
+        desc: &crate::MeshPipelineDescriptor<'_>,
+    ) -> dispatch::DispatchRenderPipeline {
+        unreachable!()
+    }
+
     fn create_compute_pipeline(
         &self,
         desc: &crate::ComputePipelineDescriptor<'_>,
@@ -3344,6 +3351,10 @@ impl dispatch::RenderPassInterface for WebRenderPassEncoder {
             )
     }
 
+    fn draw_mesh_tasks(&mut self, _group_count_x: u32, _group_count_y: u32, _group_count_z: u32) {
+        unreachable!()
+    }
+
     fn draw_indirect(
         &mut self,
         indirect_buffer: &dispatch::DispatchBuffer,
@@ -3362,6 +3373,14 @@ impl dispatch::RenderPassInterface for WebRenderPassEncoder {
         let buffer = indirect_buffer.as_webgpu();
         self.inner
             .draw_indexed_indirect_with_f64(&buffer.inner, indirect_offset as f64);
+    }
+
+    fn draw_mesh_tasks_indirect(
+        &mut self,
+        _indirect_buffer: &dispatch::DispatchBuffer,
+        _indirect_offset: crate::BufferAddress,
+    ) {
+        unreachable!()
     }
 
     fn multi_draw_indirect(
@@ -3394,6 +3413,15 @@ impl dispatch::RenderPassInterface for WebRenderPassEncoder {
         }
     }
 
+    fn multi_draw_mesh_tasks_indirect(
+        &mut self,
+        _indirect_buffer: &dispatch::DispatchBuffer,
+        _indirect_offset: crate::BufferAddress,
+        _count: u32,
+    ) {
+        unreachable!()
+    }
+
     fn multi_draw_indirect_count(
         &mut self,
         _indirect_buffer: &dispatch::DispatchBuffer,
@@ -3416,6 +3444,17 @@ impl dispatch::RenderPassInterface for WebRenderPassEncoder {
         _max_count: u32,
     ) {
         panic!("MULTI_DRAW_INDIRECT_COUNT feature must be enabled to call multi_draw_indexed_indirect_count")
+    }
+
+    fn multi_draw_mesh_tasks_indirect_count(
+        &mut self,
+        _indirect_buffer: &dispatch::DispatchBuffer,
+        _indirect_offset: crate::BufferAddress,
+        _count_buffer: &dispatch::DispatchBuffer,
+        _count_buffer_offset: crate::BufferAddress,
+        _max_count: u32,
+    ) {
+        unreachable!()
     }
 
     fn insert_debug_marker(&mut self, _label: &str) {
