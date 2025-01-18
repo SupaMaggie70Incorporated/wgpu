@@ -885,6 +885,7 @@ pub trait Device: WasmNotSendSync {
             <Self::A as Api>::PipelineCache,
         >,
     ) -> Result<<Self::A as Api>::RenderPipeline, PipelineError>;
+    #[allow(clippy::type_complexity)]
     unsafe fn create_mesh_pipeline(
         &self,
         desc: &MeshPipelineDescriptor<
