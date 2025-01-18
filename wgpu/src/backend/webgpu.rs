@@ -2165,7 +2165,7 @@ impl dispatch::DeviceInterface for WebDevice {
         &self,
         desc: &crate::MeshPipelineDescriptor<'_>,
     ) -> dispatch::DispatchRenderPipeline {
-        unreachable!()
+        panic!("MESH_SHADER feature must be enabled to call create_mesh_pipeline")
     }
 
     fn create_compute_pipeline(
@@ -3352,7 +3352,7 @@ impl dispatch::RenderPassInterface for WebRenderPassEncoder {
     }
 
     fn draw_mesh_tasks(&mut self, _group_count_x: u32, _group_count_y: u32, _group_count_z: u32) {
-        unreachable!()
+        panic!("MESH_SHADER feature must be enabled to call draw_mesh_tasks")
     }
 
     fn draw_indirect(
@@ -3380,7 +3380,7 @@ impl dispatch::RenderPassInterface for WebRenderPassEncoder {
         _indirect_buffer: &dispatch::DispatchBuffer,
         _indirect_offset: crate::BufferAddress,
     ) {
-        unreachable!()
+        panic!("MESH_SHADER feature must be enabled to call draw_mesh_tasks_indirect")
     }
 
     fn multi_draw_indirect(
@@ -3419,7 +3419,7 @@ impl dispatch::RenderPassInterface for WebRenderPassEncoder {
         _indirect_offset: crate::BufferAddress,
         _count: u32,
     ) {
-        unreachable!()
+        panic!("MESH_SHADER feature must be enabled to call multi_draw_mesh_tasks_indirect")
     }
 
     fn multi_draw_indirect_count(
@@ -3454,7 +3454,7 @@ impl dispatch::RenderPassInterface for WebRenderPassEncoder {
         _count_buffer_offset: crate::BufferAddress,
         _max_count: u32,
     ) {
-        unreachable!()
+        panic!("MESH_SHADER feature must be enabled to call multi_draw_mesh_tasks_indirect_count")
     }
 
     fn insert_debug_marker(&mut self, _label: &str) {
