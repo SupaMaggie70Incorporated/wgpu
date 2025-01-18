@@ -2163,7 +2163,7 @@ impl dispatch::DeviceInterface for WebDevice {
 
     fn create_mesh_pipeline(
         &self,
-        desc: &crate::MeshPipelineDescriptor<'_>,
+        _desc: &crate::MeshPipelineDescriptor<'_>,
     ) -> dispatch::DispatchRenderPipeline {
         panic!("MESH_SHADER feature must be enabled to call create_mesh_pipeline")
     }
