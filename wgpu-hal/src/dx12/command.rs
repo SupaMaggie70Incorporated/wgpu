@@ -1107,6 +1107,14 @@ impl crate::CommandEncoder for super::CommandEncoder {
             )
         }
     }
+    unsafe fn draw_mesh_tasks(
+        &mut self,
+        _group_count_x: u32,
+        _group_count_y: u32,
+        _group_count_z: u32,
+    ) {
+        unreachable!()
+    }
     unsafe fn draw_indirect(
         &mut self,
         buffer: &super::Buffer,
@@ -1142,6 +1150,14 @@ impl crate::CommandEncoder for super::CommandEncoder {
                 0,
             )
         }
+    }
+    unsafe fn draw_mesh_tasks_indirect(
+        &mut self,
+        _buffer: &<Self::A as crate::Api>::Buffer,
+        _offset: wgt::BufferAddress,
+        _draw_count: u32,
+    ) {
+        unreachable!()
     }
     unsafe fn draw_indirect_count(
         &mut self,
@@ -1182,6 +1198,16 @@ impl crate::CommandEncoder for super::CommandEncoder {
                 count_offset,
             )
         }
+    }
+    unsafe fn draw_mesh_tasks_indirect_count(
+        &mut self,
+        _buffer: &<Self::A as crate::Api>::Buffer,
+        _offset: wgt::BufferAddress,
+        _count_buffer: &<Self::A as crate::Api>::Buffer,
+        _count_offset: wgt::BufferAddress,
+        _max_count: u32,
+    ) {
+        unreachable!()
     }
 
     // compute
