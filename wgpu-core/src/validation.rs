@@ -1226,6 +1226,8 @@ impl Interface {
                                         )
                                     }
                                     naga::ShaderStage::Compute => (false, 0),
+                                    // TODO: add validation for these
+                                    naga::ShaderStage::Task | naga::ShaderStage::Mesh => todo!(),
                                 };
                                 if compatible {
                                     Ok(num_components)

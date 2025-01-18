@@ -5,24 +5,30 @@ use crate::{front::wgsl::error::Error, Span};
 
 /// Tracks the status of every enable-extension known to Naga.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct EnableExtensions {}
+pub struct EnableExtensions {
+    mesh_shader: bool,
+}
 
 impl EnableExtensions {
     pub(crate) const fn empty() -> Self {
-        Self {}
+        Self { mesh_shader: false }
     }
 
     /// Add an enable-extension to the set requested by a module.
     #[allow(unreachable_code)]
     pub(crate) fn add(&mut self, ext: ImplementedEnableExtension) {
-        let _field: &mut bool = match ext {};
+        let _field: &mut bool = match ext {
+            ImplementedEnableExtension::MeshShader => &mut self.mesh_shader,
+        };
         *_field = true;
     }
 
     /// Query whether an enable-extension tracked here has been requested.
     #[allow(unused)]
     pub(crate) const fn contains(&self, ext: ImplementedEnableExtension) -> bool {
-        match ext {}
+        match ext {
+            ImplementedEnableExtension::MeshShader => self.mesh_shader,
+        }
     }
 }
 
@@ -46,6 +52,7 @@ impl EnableExtension {
     const F16: &'static str = "f16";
     const CLIP_DISTANCES: &'static str = "clip_distances";
     const DUAL_SOURCE_BLENDING: &'static str = "dual_source_blending";
+    const MESH_SHADER: &'static str = "mesh_shading";
 
     /// Convert from a sentinel word in WGSL into its associated [`EnableExtension`], if possible.
     pub(crate) fn from_ident(word: &str, span: Span) -> Result<Self, Error<'_>> {
@@ -57,6 +64,7 @@ impl EnableExtension {
             Self::DUAL_SOURCE_BLENDING => {
                 Self::Unimplemented(UnimplementedEnableExtension::DualSourceBlending)
             }
+            Self::MESH_SHADER => Self::Implemented(ImplementedEnableExtension::MeshShader),
             _ => return Err(Error::UnknownEnableExtension(span, word)),
         })
     }
@@ -64,7 +72,9 @@ impl EnableExtension {
     /// Maps this [`EnableExtension`] into the sentinel word associated with it in WGSL.
     pub const fn to_ident(self) -> &'static str {
         match self {
-            Self::Implemented(kind) => match kind {},
+            Self::Implemented(kind) => match kind {
+                ImplementedEnableExtension::MeshShader => Self::MESH_SHADER,
+            },
             Self::Unimplemented(kind) => match kind {
                 UnimplementedEnableExtension::F16 => Self::F16,
                 UnimplementedEnableExtension::ClipDistances => Self::CLIP_DISTANCES,
@@ -76,7 +86,10 @@ impl EnableExtension {
 
 /// A variant of [`EnableExtension::Implemented`].
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
-pub enum ImplementedEnableExtension {}
+pub enum ImplementedEnableExtension {
+    /// Enables the `mesh_shader` extension, native only
+    MeshShader,
+}
 
 /// A variant of [`EnableExtension::Unimplemented`].
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]

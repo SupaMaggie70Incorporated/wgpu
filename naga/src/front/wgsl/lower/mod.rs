@@ -1346,6 +1346,8 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                 workgroup_size,
                 workgroup_size_overrides,
                 function,
+                mesh_info: None,
+                task_payload: None,
             });
             Ok(LoweredGlobalDecl::EntryPoint)
         } else {

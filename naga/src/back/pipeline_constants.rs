@@ -823,6 +823,18 @@ fn adjust_stmt(new_pos: &HandleVec<Expression, Handle<Expression>>, stmt: &mut S
                 crate::RayQueryFunction::Terminate => {}
             }
         }
+        Statement::MeshFunction(crate::MeshFunction::EmitMeshTasks { ref mut group_size }) => {
+            for g in group_size {
+                adjust(g);
+            }
+        }
+        Statement::MeshFunction(crate::MeshFunction::SetMeshOutputs {
+            ref mut vertex_count,
+            ref mut primitive_count,
+        }) => {
+            adjust(vertex_count);
+            adjust(primitive_count);
+        }
         Statement::Break | Statement::Continue | Statement::Kill | Statement::Barrier(_) => {}
     }
 }

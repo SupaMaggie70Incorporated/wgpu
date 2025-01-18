@@ -4492,6 +4492,7 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                 | S::Atomic { .. }
                 | S::ImageAtomic { .. }
                 | S::RayQuery { .. }
+                | S::MeshFunction(..)
                 | S::SubgroupBallot { .. }
                 | S::SubgroupCollectiveOperation { .. }
                 | S::SubgroupGather { .. } => {}

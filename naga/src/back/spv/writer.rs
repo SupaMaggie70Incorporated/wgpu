@@ -764,6 +764,53 @@ impl Writer {
                 .to_words(&mut self.logical_layout.execution_modes);
                 spirv::ExecutionModel::GLCompute
             }
+            crate::ShaderStage::Task => {
+                let execution_mode = spirv::ExecutionMode::LocalSize;
+                //self.check(execution_mode.required_capabilities())?;
+                Instruction::execution_mode(
+                    function_id,
+                    execution_mode,
+                    &entry_point.workgroup_size,
+                )
+                .to_words(&mut self.logical_layout.execution_modes);
+                spirv::ExecutionModel::TaskEXT
+            }
+            crate::ShaderStage::Mesh => {
+                let execution_mode = spirv::ExecutionMode::LocalSize;
+                //self.check(execution_mode.required_capabilities())?;
+                Instruction::execution_mode(
+                    function_id,
+                    execution_mode,
+                    &entry_point.workgroup_size,
+                )
+                .to_words(&mut self.logical_layout.execution_modes);
+                let mesh_info = entry_point.mesh_info.as_ref().unwrap();
+                Instruction::execution_mode(
+                    function_id,
+                    match mesh_info.topology {
+                        crate::MeshOutputTopology::Points => spirv::ExecutionMode::OutputPoints,
+                        crate::MeshOutputTopology::Lines => spirv::ExecutionMode::OutputLinesEXT,
+                        crate::MeshOutputTopology::Triangles => {
+                            spirv::ExecutionMode::OutputTrianglesEXT
+                        }
+                    },
+                    &[],
+                )
+                .to_words(&mut self.logical_layout.execution_modes);
+                Instruction::execution_mode(
+                    function_id,
+                    spirv::ExecutionMode::OutputVertices,
+                    std::slice::from_ref(&mesh_info.max_vertices),
+                )
+                .to_words(&mut self.logical_layout.execution_modes);
+                Instruction::execution_mode(
+                    function_id,
+                    spirv::ExecutionMode::OutputPrimitivesEXT,
+                    std::slice::from_ref(&mesh_info.max_primitives),
+                )
+                .to_words(&mut self.logical_layout.execution_modes);
+                spirv::ExecutionModel::MeshEXT
+            }
         };
         //self.check(exec_model.required_capabilities())?;
 
@@ -1610,6 +1657,10 @@ impl Writer {
                         )?;
                         BuiltIn::SubgroupLocalInvocationId
                     }
+                    Bi::CullPrimitive => BuiltIn::CullPrimitiveEXT,
+                    Bi::PointIndices => BuiltIn::PrimitivePointIndicesEXT,
+                    Bi::LineIndices => BuiltIn::PrimitiveLineIndicesEXT,
+                    Bi::TriangleIndices => BuiltIn::PrimitiveTriangleIndicesEXT,
                 };
 
                 self.decorate(id, Decoration::BuiltIn, &[built_in as u32]);

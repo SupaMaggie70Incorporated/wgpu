@@ -198,6 +198,8 @@ pub enum FunctionError {
     EmitResult(Handle<crate::Expression>),
     #[error("Expression not visited by the appropriate statement")]
     UnvisitedExpression(Handle<crate::Expression>),
+    #[error("U32 {0:?} is not a matching expression")]
+    InvalidMeshFunctionType(Handle<crate::Expression>),
 }
 
 bitflags::bitflags! {
@@ -1461,6 +1463,32 @@ impl super::Validator {
                             self.emit_expression(result, context)?;
                         }
                         crate::RayQueryFunction::Terminate => {}
+                    }
+                }
+                S::MeshFunction(func) => {
+                    // TODO: ensure this is the last statement executed
+                    let ensure_correct =
+                        |e: Handle<crate::Expression>| -> Result<(), WithSpan<FunctionError>> {
+                            let t = context.resolve_type(e, &self.valid_expression_set)?;
+                            match *t {
+                                Ti::Scalar(crate::Scalar::U32) => Ok(()),
+                                _ => Err(FunctionError::InvalidMeshFunctionType(e)
+                                    .with_span_static(span, "invalid u32")),
+                            }
+                        };
+                    match func {
+                        crate::MeshFunction::EmitMeshTasks { group_size } => {
+                            for g in group_size {
+                                ensure_correct(g)?;
+                            }
+                        }
+                        crate::MeshFunction::SetMeshOutputs {
+                            vertex_count,
+                            primitive_count,
+                        } => {
+                            ensure_correct(vertex_count)?;
+                            ensure_correct(primitive_count)?;
+                        }
                     }
                 }
                 S::SubgroupBallot { result, predicate } => {
