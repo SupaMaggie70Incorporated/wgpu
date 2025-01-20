@@ -2151,6 +2151,8 @@
                 ],
                 diagnostic_filter_leaf: None,
             ),
+            mesh_info: None,
+            task_payload: None,
         ),
         (
             name: "foo_frag",
@@ -2344,6 +2346,8 @@
                 ],
                 diagnostic_filter_leaf: None,
             ),
+            mesh_info: None,
+            task_payload: None,
         ),
         (
             name: "assign_through_ptr",
@@ -2427,6 +2431,8 @@
                 ],
                 diagnostic_filter_leaf: None,
             ),
+            mesh_info: None,
+            task_payload: None,
         ),
         (
             name: "assign_to_ptr_components",
@@ -2492,6 +2498,8 @@
                 ],
                 diagnostic_filter_leaf: None,
             ),
+            mesh_info: None,
+            task_payload: None,
         ),
     ],
     diagnostic_filters: [],
