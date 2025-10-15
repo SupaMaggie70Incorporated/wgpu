@@ -20,10 +20,10 @@ use crate::{
     api_log,
     command::{
         extract_texture_selector, validate_linear_texture_data, validate_texture_buffer_copy,
-        validate_texture_copy_range, ClearError, CommandAllocator, CommandBuffer, CommandEncoder,
-        CommandEncoderError, CopySide, TexelCopyTextureInfo, TransferError,
+        validate_texture_copy_dst_format, validate_texture_copy_range, ClearError,
+        CommandAllocator, CommandBuffer, CommandEncoder, CommandEncoderError, CopySide,
+        TransferError,
     },
-    conv,
     device::{DeviceError, WaitIdleError},
     get_lowest_common_denom,
     global::Global,
@@ -183,9 +183,9 @@ impl Drop for Queue {
                     fence.as_ref(),
                     last_successful_submission_index,
                     #[cfg(not(target_arch = "wasm32"))]
-                    timeout_ms,
+                    Some(core::time::Duration::from_millis(timeout_ms)),
                     #[cfg(target_arch = "wasm32")]
-                    0, // WebKit and Chromium don't support a non-0 timeout
+                    Some(core::time::Duration::ZERO), // WebKit and Chromium don't support a non-0 timeout
                 )
             };
             // Note: If we don't panic below we are in UB land (destroying resources while they are still in use by the GPU).
@@ -542,19 +542,19 @@ impl Queue {
             return Ok(());
         };
 
-        let snatch_guard = self.device.snatchable_lock.read();
-
         // Platform validation requires that the staging buffer always be
         // freed, even if an error occurs. All paths from here must call
         // `device.pending_writes.consume`.
         let mut staging_buffer = StagingBuffer::new(&self.device, data_size)?;
-        let mut pending_writes = self.pending_writes.lock();
 
         let staging_buffer = {
             profiling::scope!("copy");
             staging_buffer.write(data);
             staging_buffer.flush()
         };
+
+        let snatch_guard = self.device.snatchable_lock.read();
+        let mut pending_writes = self.pending_writes.lock();
 
         let result = self.write_staging_buffer_impl(
             &snatch_guard,
@@ -564,7 +564,12 @@ impl Queue {
             buffer_offset,
         );
 
+        drop(snatch_guard);
+
         pending_writes.consume(staging_buffer);
+
+        drop(pending_writes);
+
         result
     }
 
@@ -595,14 +600,14 @@ impl Queue {
 
         let buffer = buffer.get()?;
 
-        let snatch_guard = self.device.snatchable_lock.read();
-        let mut pending_writes = self.pending_writes.lock();
-
         // At this point, we have taken ownership of the staging_buffer from the
         // user. Platform validation requires that the staging buffer always
         // be freed, even if an error occurs. All paths from here must call
         // `device.pending_writes.consume`.
         let staging_buffer = staging_buffer.flush();
+
+        let snatch_guard = self.device.snatchable_lock.read();
+        let mut pending_writes = self.pending_writes.lock();
 
         let result = self.write_staging_buffer_impl(
             &snatch_guard,
@@ -612,7 +617,12 @@ impl Queue {
             buffer_offset,
         );
 
+        drop(snatch_guard);
+
         pending_writes.consume(staging_buffer);
+
+        drop(pending_writes);
+
         result
     }
 
@@ -747,33 +757,27 @@ impl Queue {
 
         let (selector, dst_base) = extract_texture_selector(&destination, size, &dst)?;
 
-        if !conv::is_valid_copy_dst_texture_format(dst.desc.format, destination.aspect) {
-            return Err(TransferError::CopyToForbiddenTextureFormat {
-                format: dst.desc.format,
-                aspect: destination.aspect,
-            }
-            .into());
-        }
+        validate_texture_copy_dst_format(dst.desc.format, destination.aspect)?;
 
         validate_texture_buffer_copy(
             &destination,
             dst_base.aspect,
             &dst.desc,
-            data_layout.offset,
-            false, // alignment not required for buffer offset
+            data_layout,
+            false, // alignment not required for buffer offset or bytes per row
         )?;
 
         // Note: `_source_bytes_per_array_layer` is ignored since we
         // have a staging copy, and it can have a different value.
-        let (required_bytes_in_copy, _source_bytes_per_array_layer) = validate_linear_texture_data(
-            data_layout,
-            dst.desc.format,
-            destination.aspect,
-            data.len() as wgt::BufferAddress,
-            CopySide::Source,
-            size,
-            false,
-        )?;
+        let (required_bytes_in_copy, _source_bytes_per_array_layer, _) =
+            validate_linear_texture_data(
+                data_layout,
+                dst.desc.format,
+                destination.aspect,
+                data.len() as wgt::BufferAddress,
+                CopySide::Source,
+                size,
+            )?;
 
         if dst.desc.format.is_depth_stencil_format() {
             self.device
@@ -951,6 +955,8 @@ impl Queue {
         destination: wgt::CopyExternalImageDestInfo<Fallible<Texture>>,
         size: wgt::Extent3d,
     ) -> Result<(), QueueWriteError> {
+        use crate::conv;
+
         profiling::scope!("Queue::copy_external_image_to_texture");
 
         self.device.check_is_valid()?;
@@ -1200,7 +1206,7 @@ impl Queue {
                             if let Ok(ref mut cmd_buf_data) = cmd_buf_data {
                                 trace.add(Action::Submit(
                                     submit_index,
-                                    cmd_buf_data.commands.take().unwrap(),
+                                    cmd_buf_data.trace_commands.take().unwrap(),
                                 ));
                             }
                         }
@@ -1465,6 +1471,8 @@ impl Queue {
         profiling::scope!("Queue::compact_blas");
         api_log!("Queue::compact_blas");
 
+        let new_label = blas.label.clone() + " (compacted)";
+
         self.device.check_is_valid()?;
         self.same_device_as(blas.as_ref())?;
 
@@ -1486,7 +1494,7 @@ impl Queue {
             device
                 .raw()
                 .create_acceleration_structure(&hal::AccelerationStructureDescriptor {
-                    label: None,
+                    label: hal_label(Some(&new_label), device.instance_flags),
                     size: size_info.acceleration_structure_size,
                     format: hal::AccelerationStructureFormat::BottomLevel,
                     allow_compaction: false,
@@ -1528,7 +1536,7 @@ impl Queue {
             // Bypass the submit checks which update this because we don't submit this normally.
             built_index: RwLock::new(rank::BLAS_BUILT_INDEX, Some(built_index)),
             handle,
-            label: blas.label.clone() + " compacted",
+            label: new_label,
             tracking_data: TrackingData::new(blas.device.tracker_indices.blas_s.clone()),
             compaction_buffer: None,
             compacted_state: Mutex::new(rank::BLAS_COMPACTION_STATE, BlasCompactState::Compacted),
@@ -1609,7 +1617,7 @@ impl Global {
     pub fn queue_write_texture(
         &self,
         queue_id: QueueId,
-        destination: &TexelCopyTextureInfo,
+        destination: &wgt::TexelCopyTextureInfo<id::TextureId>,
         data: &[u8],
         data_layout: &wgt::TexelCopyBufferLayout,
         size: &wgt::Extent3d,

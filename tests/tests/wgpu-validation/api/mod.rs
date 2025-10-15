@@ -1,7 +1,11 @@
 mod binding_arrays;
 mod buffer;
+mod buffer_mapping;
 mod buffer_slice;
+mod command_buffer_actions;
 mod device;
+mod experimental;
 mod external_texture;
 mod instance;
+mod render_pipeline;
 mod texture;

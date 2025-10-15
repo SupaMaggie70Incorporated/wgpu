@@ -237,7 +237,10 @@ impl crate::framework::Example for Example {
             let img_data = include_bytes!("../../../../logo.png");
             let decoder = png::Decoder::new(std::io::Cursor::new(img_data));
             let mut reader = decoder.read_info().unwrap();
-            let mut buf = vec![0; reader.output_buffer_size()];
+            let buf_len = reader
+                .output_buffer_size()
+                .expect("output buffer would not fit in memory");
+            let mut buf = vec![0; buf_len];
             let info = reader.next_frame(&mut buf).unwrap();
 
             let size = wgpu::Extent3d {
@@ -275,7 +278,7 @@ impl crate::framework::Example for Example {
             address_mode_w: wgpu::AddressMode::ClampToEdge,
             mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::MipmapFilterMode::Nearest,
             ..Default::default()
         });
 

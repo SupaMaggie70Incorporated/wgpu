@@ -1,7 +1,7 @@
 //! This library describes the API surface of WebGPU that is agnostic of the backend.
 //! This API is used for targeting both Web and Native.
 
-#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![allow(
     // We don't use syntax sugar where it's not necessary.
     clippy::match_like_matches_macro,
@@ -16,13 +16,14 @@ extern crate alloc;
 
 use alloc::borrow::Cow;
 use alloc::{string::String, vec, vec::Vec};
-use core::cmp::Ordering;
 use core::{
+    cmp::Ordering,
     fmt,
     hash::{Hash, Hasher},
     mem,
     num::NonZeroU32,
     ops::Range,
+    time::Duration,
 };
 
 use bytemuck::{Pod, Zeroable};
@@ -41,11 +42,13 @@ pub mod error;
 mod features;
 pub mod instance;
 pub mod math;
+mod tokens;
 mod transfers;
 
 pub use counters::*;
 pub use features::*;
 pub use instance::*;
+pub use tokens::*;
 pub use transfers::*;
 
 /// Integral type used for [`Buffer`] offsets and sizes.
@@ -664,9 +667,9 @@ pub struct Limits {
     /// Defaults to 65535. Higher is "better".
     pub max_compute_workgroups_per_dimension: u32,
 
-    /// Minimal number of invocations in a subgroup. Higher is "better".
+    /// Minimal number of invocations in a subgroup. Lower is "better".
     pub min_subgroup_size: u32,
-    /// Maximal number of invocations in a subgroup. Lower is "better".
+    /// Maximal number of invocations in a subgroup. Higher is "better".
     pub max_subgroup_size: u32,
     /// Amount of storage available for push constants in bytes. Defaults to 0. Higher is "better".
     /// Requesting more than 0 during device creation requires [`Features::PUSH_CONSTANTS`] to be enabled.
@@ -1190,7 +1193,7 @@ impl DownlevelCapabilities {
 bitflags::bitflags! {
     /// Binary flags listing features that may or may not be present on downlevel adapters.
     ///
-    /// A downlevel adapter is a GPU adapter that WGPU supports, but with potentially limited
+    /// A downlevel adapter is a GPU adapter that wgpu supports, but with potentially limited
     /// features, due to the lack of hardware feature support.
     ///
     /// Flags that are **not** present for a downlevel adapter or device usually indicates
@@ -1323,6 +1326,12 @@ bitflags::bitflags! {
         /// Not Supported by:
         /// - GL ES / WebGL
         const NONBLOCKING_QUERY_RESOLVE = 1 << 22;
+
+        /// Allows shaders to use `quantizeToF16`, `pack2x16float`, and `unpack2x16float`, which
+        /// operate on `f16`-precision values stored in `f32`s.
+        ///
+        /// Not supported by Vulkan on Mesa when [`Features::SHADER_F16`] is absent.
+        const SHADER_F16_IN_F32 = 1 << 23;
     }
 }
 
@@ -1462,6 +1471,9 @@ pub struct DeviceDescriptor<L> {
     /// Exactly the specified limits, and no better or worse,
     /// will be allowed in validation of API calls on the resulting device.
     pub required_limits: Limits,
+    /// Specifies whether `self.required_features` is allowed to contain experimental features.
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub experimental_features: ExperimentalFeatures,
     /// Hints for memory allocation strategies.
     pub memory_hints: MemoryHints,
     /// Whether API tracing for debugging is enabled,
@@ -1477,6 +1489,7 @@ impl<L> DeviceDescriptor<L> {
             label: fun(&self.label),
             required_features: self.required_features,
             required_limits: self.required_limits.clone(),
+            experimental_features: self.experimental_features,
             memory_hints: self.memory_hints.clone(),
             trace: self.trace.clone(),
         }
@@ -4490,37 +4503,42 @@ pub enum PollType<T> {
     ///
     /// On WebGPU, this has no effect. Callbacks are invoked from the
     /// window event loop.
-    WaitForSubmissionIndex(T),
-    /// Same as `WaitForSubmissionIndex` but waits for the most recent submission.
-    Wait,
+    Wait {
+        /// Submission index to wait for.
+        ///
+        /// If not specified, will wait for the most recent submission at the time of the poll.
+        /// By the time the method returns, more submissions may have taken place.
+        submission_index: Option<T>,
+
+        /// Max time to wait for the submission to complete.
+        ///
+        /// If not specified, will wait indefinitely (or until an error is detected).
+        /// If waiting for the GPU device takes this long or longer, the poll will return [`PollError::Timeout`].
+        timeout: Option<Duration>,
+    },
+
     /// Check the device for a single time without blocking.
     Poll,
 }
 
 impl<T> PollType<T> {
-    /// Construct a [`Self::Wait`] variant
+    /// Wait indefinitely until for the most recent submission to complete.
+    ///
+    /// This is a convenience function that creates a [`Self::Wait`] variant with
+    /// no timeout and no submission index.
     #[must_use]
-    pub fn wait() -> Self {
-        // This function seems a little silly, but it is useful to allow
-        // <https://github.com/gfx-rs/wgpu/pull/5012> to be split up, as
-        // it has meaning in that PR.
-        Self::Wait
-    }
-
-    /// Construct a [`Self::WaitForSubmissionIndex`] variant
-    #[must_use]
-    pub fn wait_for(submission_index: T) -> Self {
-        // This function seems a little silly, but it is useful to allow
-        // <https://github.com/gfx-rs/wgpu/pull/5012> to be split up, as
-        // it has meaning in that PR.
-        Self::WaitForSubmissionIndex(submission_index)
+    pub const fn wait_indefinitely() -> Self {
+        Self::Wait {
+            submission_index: None,
+            timeout: None,
+        }
     }
 
     /// This `PollType` represents a wait of some kind.
     #[must_use]
     pub fn is_wait(&self) -> bool {
         match *self {
-            Self::WaitForSubmissionIndex(..) | Self::Wait => true,
+            Self::Wait { .. } => true,
             Self::Poll => false,
         }
     }
@@ -4532,8 +4550,13 @@ impl<T> PollType<T> {
         F: FnOnce(T) -> U,
     {
         match self {
-            Self::WaitForSubmissionIndex(i) => PollType::WaitForSubmissionIndex(func(i)),
-            Self::Wait => PollType::Wait,
+            Self::Wait {
+                submission_index,
+                timeout,
+            } => PollType::Wait {
+                submission_index: submission_index.map(func),
+                timeout,
+            },
             Self::Poll => PollType::Poll,
         }
     }
@@ -4549,6 +4572,12 @@ pub enum PollError {
         error("The requested Wait timed out before the submission was completed.")
     )]
     Timeout,
+    /// The requested Wait was given a wrong submission index.
+    #[cfg_attr(
+        feature = "std",
+        error("Tried to wait using a submission index ({0}) that has not been returned by a successful submission (last successful submission: {1})")
+    )]
+    WrongSubmissionIndex(u64, u64),
 }
 
 /// Status of device poll operation.
@@ -5247,6 +5276,10 @@ bitflags::bitflags! {
     /// The usages determine what kind of memory the buffer is allocated from and what
     /// actions the buffer can partake in.
     ///
+    /// Specifying only usages the application will actually perform may increase performance.
+    /// Additionally, on the WebGL backend, there are restrictions on [`BufferUsages::INDEX`];
+    /// see [`DownlevelFlags::UNRESTRICTED_INDEX_BUFFER`] for more information.
+    ///
     /// Corresponds to [WebGPU `GPUBufferUsageFlags`](
     /// https://gpuweb.github.io/gpuweb/#typedefdef-gpubufferusageflags).
     #[repr(transparent)]
@@ -5343,7 +5376,7 @@ bitflags::bitflags! {
 }
 
 /// A buffer transition for use with `CommandEncoder::transition_resources`.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct BufferTransition<T> {
     /// The buffer to transition.
     pub buffer: T,
@@ -5365,6 +5398,10 @@ pub struct BufferDescriptor<L> {
     pub size: BufferAddress,
     /// Usages of a buffer. If the buffer is used in any way that isn't specified here, the operation
     /// will panic.
+    ///
+    /// Specifying only usages the application will actually perform may increase performance.
+    /// Additionally, on the WebGL backend, there are restrictions on [`BufferUsages::INDEX`];
+    /// see [`DownlevelFlags::UNRESTRICTED_INDEX_BUFFER`] for more information.
     pub usage: BufferUsages,
     /// Allows a buffer to be mapped immediately after they are made. It does not have to be [`BufferUsages::MAP_READ`] or
     /// [`BufferUsages::MAP_WRITE`], all buffers are allowed to be mapped at creation.
@@ -5642,7 +5679,7 @@ bitflags::bitflags! {
 }
 
 /// A texture transition for use with `CommandEncoder::transition_resources`.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct TextureTransition<T> {
     /// The texture to transition.
     pub texture: T,
@@ -6550,7 +6587,7 @@ pub struct SamplerDescriptor<L> {
     /// How to filter the texture when it needs to be minified (made smaller)
     pub min_filter: FilterMode,
     /// How to filter between mip map levels
-    pub mipmap_filter: FilterMode,
+    pub mipmap_filter: MipmapFilterMode,
     /// Minimum level of detail (i.e. mip level) to use
     pub lod_min_clamp: f32,
     /// Maximum level of detail (i.e. mip level) to use
@@ -6655,12 +6692,32 @@ pub enum AddressMode {
 pub enum FilterMode {
     /// Nearest neighbor sampling.
     ///
-    /// This creates a pixelated effect when used as a mag filter
+    /// This creates a pixelated effect.
     #[default]
     Nearest = 0,
     /// Linear Interpolation
     ///
-    /// This makes textures smooth but blurry when used as a mag filter.
+    /// This makes textures smooth but blurry.
+    Linear = 1,
+}
+
+/// Texel mixing mode when sampling between texels.
+///
+/// Corresponds to [WebGPU `GPUMipmapFilterMode`](
+/// https://gpuweb.github.io/gpuweb/#enumdef-gpumipmapfiltermode).
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+pub enum MipmapFilterMode {
+    /// Nearest neighbor sampling.
+    ///
+    /// Return the value of the texel nearest to the texture coordinates.
+    #[default]
+    Nearest = 0,
+    /// Linear Interpolation
+    ///
+    /// Select two texels in each dimension and return a linear interpolation between their values.
     Linear = 1,
 }
 
@@ -7798,7 +7855,7 @@ pub struct ShaderRuntimeChecks {
 impl ShaderRuntimeChecks {
     /// Creates a new configuration where the shader is fully checked.
     #[must_use]
-    pub fn checked() -> Self {
+    pub const fn checked() -> Self {
         unsafe { Self::all(true) }
     }
 
@@ -7809,7 +7866,7 @@ impl ShaderRuntimeChecks {
     /// See the documentation for the `set_*` methods for the safety requirements
     /// of each sub-configuration.
     #[must_use]
-    pub fn unchecked() -> Self {
+    pub const fn unchecked() -> Self {
         unsafe { Self::all(false) }
     }
 
@@ -7821,7 +7878,7 @@ impl ShaderRuntimeChecks {
     /// See the documentation for the `set_*` methods for the safety requirements
     /// of each sub-configuration.
     #[must_use]
-    pub unsafe fn all(all_checks: bool) -> Self {
+    pub const unsafe fn all(all_checks: bool) -> Self {
         Self {
             bounds_checks: all_checks,
             force_loop_bounding: all_checks,

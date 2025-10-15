@@ -3,7 +3,7 @@ use std::{fs, process::Command};
 
 const DIR_IN: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../naga/tests/in");
 
-use wgpu_test::naga::*;
+use naga_test::*;
 
 struct InputWithInfo {
     inner: Input,
@@ -450,15 +450,17 @@ fn backends(c: &mut Criterion) {
                 zero_initialize_workgroup_memory: true,
             };
             for input in &inputs.inner {
-                if input.options.targets.unwrap().contains(Targets::GLSL) {
-                    let module = input.module.as_ref().unwrap();
-                    let info = input.module_info.as_ref().unwrap();
-                    for ep in module.entry_points.iter() {
-                        let pipeline_options = naga::back::glsl::PipelineOptions {
-                            shader_stage: ep.stage,
-                            entry_point: ep.name.clone(),
-                            multiview: None,
-                        };
+                if !input.options.targets.unwrap().contains(Targets::GLSL) {
+                    continue;
+                }
+                let module = input.module.as_ref().unwrap();
+                let info = input.module_info.as_ref().unwrap();
+                for ep in module.entry_points.iter() {
+                    let pipeline_options = naga::back::glsl::PipelineOptions {
+                        shader_stage: ep.stage,
+                        entry_point: ep.name.clone(),
+                        multiview: None,
+                    };
 
                         // might be `Err` if missing features
                         if let Ok(mut writer) = naga::back::glsl::Writer::new(

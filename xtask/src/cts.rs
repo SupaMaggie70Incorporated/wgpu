@@ -50,19 +50,17 @@ const CTS_GIT_URL: &str = "https://github.com/gpuweb/cts.git";
 /// Path to default CTS test list.
 const CTS_DEFAULT_TEST_LIST: &str = "cts_runner/test.lst";
 
-static TEST_LINE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    RegexBuilder::new(r#"(?:fails-if\s*\(\s*(?<fails_if>\w+)\s*\)\s+)?(?<selector>.*)"#)
-        .build()
-        .unwrap()
-});
-
 #[derive(Default)]
 struct TestLine {
     pub selector: OsString,
-    pub fails_if: Option<String>,
+    pub fails_if: Vec<String>,
 }
 
-pub fn run_cts(shell: Shell, mut args: Arguments) -> anyhow::Result<()> {
+pub fn run_cts(
+    shell: Shell,
+    mut args: Arguments,
+    passthrough_args: Option<Vec<OsString>>,
+) -> anyhow::Result<()> {
     let skip_checkout = args.contains("--skip-checkout");
     let llvm_cov = args.contains("--llvm-cov");
     let release = args.contains("--release");
@@ -89,12 +87,24 @@ pub fn run_cts(shell: Shell, mut args: Arguments) -> anyhow::Result<()> {
         .collect::<Vec<_>>();
 
     if tests.is_empty() && list_files.is_empty() {
-        log::info!("Reading default test list from {CTS_DEFAULT_TEST_LIST}");
-        list_files.push(OsString::from(CTS_DEFAULT_TEST_LIST));
+        if passthrough_args.is_none() {
+            log::info!("Reading default test list from {CTS_DEFAULT_TEST_LIST}");
+            list_files.push(OsString::from(CTS_DEFAULT_TEST_LIST));
+        }
+    } else if passthrough_args.is_some() {
+        bail!("Test(s) and test list(s) are incompatible with passthrough arguments.");
     }
 
     for file in list_files {
         tests.extend(shell.read_file(file)?.lines().filter_map(|line| {
+            static TEST_LINE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+                RegexBuilder::new(
+                    r#"(?:fails-if\s*\(\s*(?<fails_if>\w+(?:,\w+)*?)\s*\)\s+)?(?<selector>.*)"#,
+                )
+                .build()
+                .unwrap()
+            });
+
             let trimmed = line.trim();
             let is_comment = trimmed.starts_with("//") || trimmed.starts_with("#");
             let captures = TEST_LINE_REGEX
@@ -102,7 +112,15 @@ pub fn run_cts(shell: Shell, mut args: Arguments) -> anyhow::Result<()> {
                 .expect("Invalid test line: {trimmed}");
             (!trimmed.is_empty() && !is_comment).then(|| TestLine {
                 selector: OsString::from(&captures["selector"]),
-                fails_if: captures.name("fails_if").map(|m| m.as_str().to_string()),
+                fails_if: captures
+                    .name("fails_if")
+                    .map(|m| {
+                        m.as_str()
+                            .split_terminator(',')
+                            .map(|m| m.to_string())
+                            .collect()
+                    })
+                    .unwrap_or_default(),
             })
         }))
     }
@@ -208,10 +226,29 @@ pub fn run_cts(shell: Shell, mut args: Arguments) -> anyhow::Result<()> {
         &["run"][..]
     };
 
+    if let Some(passthrough_args) = passthrough_args {
+        let mut cmd = shell
+            .cmd("cargo")
+            .args(run_flags)
+            .args(["--manifest-path".as_ref(), wgpu_cargo_toml.as_os_str()])
+            .args(["-p", "cts_runner"])
+            .args(["--bin", "cts_runner"]);
+
+        if release {
+            cmd = cmd.arg("--release")
+        }
+
+        cmd.args(["--", "./tools/run_deno", "--verbose"])
+            .args(&passthrough_args)
+            .run()?;
+
+        return Ok(());
+    }
+
     log::info!("Running CTS");
     for test in &tests {
-        match (&test.fails_if, &running_on_backend) {
-            (Some(backend), Some(running_on_backend)) if backend == running_on_backend => {
+        if let Some(running_on_backend) = &running_on_backend {
+            if test.fails_if.contains(running_on_backend) {
                 log::info!(
                     "Skipping {} on {} backend",
                     test.selector.to_string_lossy(),
@@ -219,7 +256,6 @@ pub fn run_cts(shell: Shell, mut args: Arguments) -> anyhow::Result<()> {
                 );
                 continue;
             }
-            _ => {}
         }
 
         log::info!("Running {}", test.selector.to_string_lossy());

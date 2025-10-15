@@ -156,7 +156,7 @@ async fn request_device_error_message() {
             let expected = "TypeError";
         } else {
             // This message appears whenever wgpu-core is used as the implementation.
-            let expected = "Unsupported features were requested: Features {";
+            let expected = "Unsupported features were requested:";
         }
     }
     assert!(device_error.contains(expected), "{device_error}");
@@ -504,7 +504,7 @@ static DEVICE_DESTROY_THEN_LOST: GpuTestConfiguration = GpuTestConfiguration::ne
         // Make sure the device queues are empty, which ensures that the closure
         // has been called.
         assert!(ctx
-            .async_poll(wgpu::PollType::wait())
+            .async_poll(wgpu::PollType::wait_indefinitely())
             .await
             .unwrap()
             .is_queue_empty());

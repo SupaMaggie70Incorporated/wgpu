@@ -23,7 +23,10 @@ async fn read_png(path: impl AsRef<Path>, width: u32, height: u32) -> Option<Vec
     let decoder = png::Decoder::new(std::io::Cursor::new(data));
     let mut reader = decoder.read_info().ok()?;
 
-    let mut buffer = vec![0; reader.output_buffer_size()];
+    let buffer_len = reader
+        .output_buffer_size()
+        .expect("output buffer would not fit in memory");
+    let mut buffer = vec![0; buffer_len];
     let info = reader.next_frame(&mut buffer).ok()?;
     if info.width != width {
         log::warn!("image comparison invalid: size mismatch");
@@ -170,7 +173,7 @@ pub async fn compare_image_output(
                 width,
                 height,
                 test_with_alpha,
-                png::Compression::Best,
+                png::Compression::High,
             )
             .await;
             return;
@@ -574,7 +577,7 @@ impl ReadbackBuffers {
     ) -> Vec<u8> {
         let buffer_slice = buffer.slice(..);
         buffer_slice.map_async(MapMode::Read, |_| ());
-        ctx.async_poll(PollType::wait()).await.unwrap();
+        ctx.async_poll(PollType::wait_indefinitely()).await.unwrap();
         let (block_width, block_height) = self.texture_format.block_dimensions();
         let expected_bytes_per_row = (self.texture_width / block_width)
             * self.texture_format.block_copy_size(aspect).unwrap_or(4);

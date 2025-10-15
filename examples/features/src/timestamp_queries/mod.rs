@@ -161,7 +161,7 @@ impl Queries {
         self.destination_buffer
             .slice(..)
             .map_async(wgpu::MapMode::Read, |_| ());
-        device.poll(wgpu::PollType::wait()).unwrap();
+        device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
 
         let timestamps = {
             let timestamp_view = self
@@ -210,6 +210,7 @@ async fn run() {
             label: None,
             required_features: features,
             required_limits: wgpu::Limits::downlevel_defaults(),
+            experimental_features: wgpu::ExperimentalFeatures::disabled(),
             memory_hints: wgpu::MemoryHints::MemoryUsage,
             trace: wgpu::Trace::Off,
         })
