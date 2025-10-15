@@ -9,7 +9,6 @@ OpMemoryModel Logical GLSL450
 OpEntryPoint Vertex %30 "vert_main" %11 %13 %15 %16 %17 %19 %21 %23 %24 %25 %26 %27 %28
 OpEntryPoint Fragment %137 "frag_main" %108 %111 %114 %116 %118 %121 %124 %127 %129 %131 %133 %135
 OpExecutionMode %137 OriginUpperLeft
-%3 = OpString "interpolate.wgsl"
 OpSource Unknown 0 %3 "//TODO: merge with \"interface\"?
 
 // NOTE: invalid combinations are tested in the
@@ -52,6 +51,7 @@ fn vert_main() -> FragmentInput {
 @fragment
 fn frag_main(val : FragmentInput) { }
 "
+%3 = OpString "interpolate.wgsl"
 OpMemberName %9 0 "position"
 OpMemberName %9 1 "_flat"
 OpMemberName %9 2 "flat_first"

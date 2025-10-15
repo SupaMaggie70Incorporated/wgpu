@@ -8,7 +8,6 @@ OpExtension "SPV_KHR_storage_buffer_storage_class"
 OpMemoryModel Logical GLSL450
 OpEntryPoint GLCompute %18 "main" %26
 OpExecutionMode %18 LocalSize 1 1 1
-%3 = OpString "workgroup-var-init.wgsl"
 OpSource Unknown 0 %3 "struct WStruct {
     arr: array<u32, 512>,
     atom: atomic<i32>,
@@ -24,6 +23,7 @@ var<storage, read_write> output: array<u32, 512>;
 fn main() {
     output = w_mem.arr;
 }"
+%3 = OpString "workgroup-var-init.wgsl"
 OpMemberName %11 0 "arr"
 OpMemberName %11 1 "atom"
 OpMemberName %11 2 "atom_arr"

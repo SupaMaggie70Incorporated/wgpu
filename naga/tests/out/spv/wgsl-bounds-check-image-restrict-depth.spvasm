@@ -8,7 +8,6 @@ OpCapability ImageQuery
 OpMemoryModel Logical GLSL450
 OpEntryPoint Fragment %91 "fragment_shader" %89
 OpExecutionMode %91 OriginUpperLeft
-%3 = OpString "bounds-check-image-restrict-depth.wgsl"
 OpSource Unknown 0 %3 "// Cases from bounds-check-image-restrict that GLSL does not yet support.
 
 @group(0) @binding(0)
@@ -46,6 +45,7 @@ fn fragment_shader() -> @location(0) vec4<f32> {
     return vec4<f32>(0.,0.,0.,0.);
 }
 "
+%3 = OpString "bounds-check-image-restrict-depth.wgsl"
 OpName %12 "image_depth_2d"
 OpName %14 "image_depth_2d_array"
 OpName %16 "image_depth_multisampled_2d"
