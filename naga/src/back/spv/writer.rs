@@ -14,7 +14,8 @@ use super::{
 };
 use crate::{
     arena::{Handle, HandleVec, UniqueArena},
-    back::spv::{BindingInfo, WrappedFunction},
+    back::spv::{helpers::BindingDecorations, BindingInfo, WrappedFunction},
+    non_max_u32::NonMaxU32,
     proc::{Alignment, TypeResolution},
     valid::{FunctionInfo, ModuleInfo},
 };

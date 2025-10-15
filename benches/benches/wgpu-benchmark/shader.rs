@@ -462,20 +462,19 @@ fn backends(c: &mut Criterion) {
                         multiview: None,
                     };
 
-                        // might be `Err` if missing features
-                        if let Ok(mut writer) = naga::back::glsl::Writer::new(
-                            &mut string,
-                            module,
-                            info,
-                            &options,
-                            &pipeline_options,
-                            naga::proc::BoundsCheckPolicies::default(),
-                        ) {
-                            let _ = writer.write(); // might be `Err` if unsupported
-                        }
-
-                        string.clear();
+                    // might be `Err` if missing features
+                    if let Ok(mut writer) = naga::back::glsl::Writer::new(
+                        &mut string,
+                        module,
+                        info,
+                        &options,
+                        &pipeline_options,
+                        naga::proc::BoundsCheckPolicies::default(),
+                    ) {
+                        let _ = writer.write(); // might be `Err` if unsupported
                     }
+
+                    string.clear();
                 }
             }
         });
