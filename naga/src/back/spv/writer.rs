@@ -1549,21 +1549,23 @@ impl Writer {
             match (context.writer.zero_initialize_workgroup_memory, interface) {
                 (
                     super::ZeroInitializeWorkgroupMemoryMode::Polyfill,
-                    Some(ref mut interface @ FunctionInterface { stage, .. }),
-                ) => {
-                    if stage.compute_like() {
-                        context.writer.generate_workgroup_vars_init_block(
-                            next_id,
-                            ir_module,
-                            info,
-                            local_invocation_id,
-                            interface,
-                            context.function,
-                        )
-                    } else {
-                        None
-                    }
-                }
+                    Some(
+                        ref mut interface @ FunctionInterface {
+                            stage:
+                                crate::ShaderStage::Compute
+                                | crate::ShaderStage::Mesh
+                                | crate::ShaderStage::Task,
+                            ..
+                        },
+                    ),
+                ) => context.writer.generate_workgroup_vars_init_block(
+                    next_id,
+                    ir_module,
+                    info,
+                    local_invocation_id,
+                    interface,
+                    context.function,
+                ),
                 _ => None,
             };
 
@@ -2695,6 +2697,14 @@ impl Writer {
                             &[spirv::Capability::Geometry],
                         )?;
                         BuiltIn::PrimitiveId
+                    }
+                    Bi::Barycentric => {
+                        self.require_any(
+                            "`barycentric` built-in",
+                            &[spirv::Capability::FragmentBarycentricKHR],
+                        )?;
+                        self.use_extension("SPV_KHR_fragment_shader_barycentric");
+                        BuiltIn::BaryCoordKHR
                     }
                     Bi::SampleIndex => {
                         self.require_any(

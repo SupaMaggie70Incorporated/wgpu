@@ -1627,8 +1627,8 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                 workgroup_size,
                 workgroup_size_overrides,
                 function,
-                mesh_info,
-                task_payload,
+                mesh_info: None,
+                task_payload: None,
             });
             Ok(LoweredGlobalDecl::EntryPoint(
                 ctx.module.entry_points.len() - 1,
@@ -4225,7 +4225,7 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                     interpolation,
                     sampling,
                     blend_src,
-                    per_primitive,
+                    per_primitive: false,
                 };
                 binding.apply_default_interpolation(&ctx.module.types[ty].inner);
                 Some(binding)

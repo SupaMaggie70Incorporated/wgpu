@@ -3916,6 +3916,7 @@ impl BlockContext<'_> {
                                 }
                                 _ => unimplemented!(),
                             };
+
                             let mut cas_instr = Instruction::new(spirv::Op::AtomicCompareExchange);
                             cas_instr.set_type(scalar_type_id);
                             cas_instr.set_result(cas_result_id);
@@ -4071,6 +4072,7 @@ impl BlockContext<'_> {
                 } => {
                     self.write_subgroup_gather(mode, argument, result, &mut block)?;
                 }
+                Statement::MeshFunction(_) => unreachable!(),
             }
         }
 

@@ -1879,7 +1879,7 @@ impl<'a, W: Write> Writer<'a, W> {
         writeln!(self.out, ") {{")?;
 
         if self.options.zero_initialize_workgroup_memory
-            && ctx.ty.is_compute_entry_point(self.module)
+            && ctx.ty.is_compute_like_entry_point(self.module)
         {
             self.write_workgroup_variables_initialization(&ctx)?;
         }
@@ -5238,6 +5238,7 @@ const fn glsl_built_in(built_in: crate::BuiltIn, options: VaryingOptions) -> &'s
         Bi::PointCoord => "gl_PointCoord",
         Bi::FrontFacing => "gl_FrontFacing",
         Bi::PrimitiveIndex => "uint(gl_PrimitiveID)",
+        Bi::Barycentric => "gl_BaryCoordEXT",
         Bi::SampleIndex => "gl_SampleID",
         Bi::SampleMask => {
             if options.output {

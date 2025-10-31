@@ -111,7 +111,12 @@ pub fn map_texture_usage(
             flags.contains(wgt::TextureFormatFeatureFlags::STORAGE_READ_WRITE),
         );
     }
-    let is_color = aspect.contains(hal::FormatAspects::COLOR);
+    let is_color = aspect.intersects(
+        hal::FormatAspects::COLOR
+            | hal::FormatAspects::PLANE_0
+            | hal::FormatAspects::PLANE_1
+            | hal::FormatAspects::PLANE_2,
+    );
     u.set(
         wgt::TextureUses::COLOR_TARGET,
         usage.contains(wgt::TextureUsages::RENDER_ATTACHMENT) && is_color,
@@ -123,6 +128,10 @@ pub fn map_texture_usage(
     u.set(
         wgt::TextureUses::STORAGE_ATOMIC,
         usage.contains(wgt::TextureUsages::STORAGE_ATOMIC),
+    );
+    u.set(
+        wgt::TextureUses::TRANSIENT,
+        usage.contains(wgt::TextureUsages::TRANSIENT),
     );
     u
 }
@@ -182,6 +191,10 @@ pub fn map_texture_usage_from_hal(uses: wgt::TextureUses) -> wgt::TextureUsages 
     u.set(
         wgt::TextureUsages::STORAGE_ATOMIC,
         uses.contains(wgt::TextureUses::STORAGE_ATOMIC),
+    );
+    u.set(
+        wgt::TextureUsages::TRANSIENT,
+        uses.contains(wgt::TextureUses::TRANSIENT),
     );
     u
 }

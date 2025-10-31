@@ -1779,7 +1779,7 @@ impl dispatch::DeviceInterface for CoreDevice {
             sample_count: desc.sample_count,
             multiview: desc.multiview,
         };
-        let encoder = match wgc::command::RenderBundleEncoder::new(&descriptor, self.id, None) {
+        let encoder = match wgc::command::RenderBundleEncoder::new(&descriptor, self.id) {
             Ok(encoder) => encoder,
             Err(e) => panic!("Error in Device::create_render_bundle_encoder: {e}"),
         };
@@ -2577,13 +2577,13 @@ impl dispatch::CommandEncoderInterface for CoreCommandEncoder {
 
     fn finish(&mut self) -> dispatch::DispatchCommandBuffer {
         let descriptor = wgt::CommandBufferDescriptor::default();
-        let (id, error) = self
-            .context
-            .0
-            .command_encoder_finish(self.id, &descriptor, None);
-        if let Some(cause) = error {
+        let (id, opt_label_and_error) =
             self.context
-                .handle_error_nolabel(&self.error_sink, cause, "a CommandEncoder");
+                .0
+                .command_encoder_finish(self.id, &descriptor, None);
+        if let Some((label, cause)) = opt_label_and_error {
+            self.context
+                .handle_error(&self.error_sink, cause, Some(&label), "a CommandEncoder");
         }
         CoreCommandBuffer {
             context: self.context.clone(),
