@@ -7,7 +7,6 @@ OpCapability Shader
 OpMemoryModel Logical GLSL450
 OpEntryPoint Fragment %29 "main" %27
 OpExecutionMode %29 OriginUpperLeft
-%3 = OpString "texture-arg.wgsl"
 OpSource Unknown 0 %3 "@group(0) @binding(0)
 var Texture: texture_2d<f32>;
 @group(0) @binding(1)
@@ -22,6 +21,7 @@ fn main() -> @location(0) vec4<f32> {
     return test(Texture, Sampler);
 }
 "
+%3 = OpString "texture-arg.wgsl"
 OpName %9 "Texture"
 OpName %11 "Sampler"
 OpName %14 "Passed_Texture"

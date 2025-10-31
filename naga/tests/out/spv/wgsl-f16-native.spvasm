@@ -20,7 +20,6 @@ OpExecutionMode %136 OriginUpperLeft
 OpExecutionMode %199 OriginUpperLeft
 OpExecutionMode %265 OriginUpperLeft
 OpExecutionMode %299 OriginUpperLeft
-%3 = OpString "f16-native.wgsl"
 OpSource Unknown 0 %3 "enable f16;
 
 @fragment
@@ -100,6 +99,7 @@ fn test_component_access(input: F16IO) -> F16IO {
     output.vec2_f16.y = input.vec2_f16.x;
     return output;
 }"
+%3 = OpString "f16-native.wgsl"
 OpMemberName %12 0 "scalar_f16"
 OpMemberName %12 1 "scalar_f32"
 OpMemberName %12 2 "vec2_f16"
