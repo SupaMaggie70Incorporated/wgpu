@@ -1,32 +1,9 @@
-use std::process::Stdio;
-
 // Same as in mesh shader tests
-fn compile_glsl(device: &wgpu::Device, shader_stage: &'static str) -> wgpu::ShaderModule {
-    let cmd = std::process::Command::new("glslc")
-        .args([
-            &format!(
-                "{}/src/mesh_shader/shader.{shader_stage}",
-                env!("CARGO_MANIFEST_DIR")
-            ),
-            "-o",
-            "-",
-            "--target-env=vulkan1.2",
-            "--target-spv=spv1.4",
-        ])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("Failed to call glslc");
-    let output = cmd.wait_with_output().expect("Error waiting for glslc");
-    assert!(output.status.success());
-    unsafe {
-        device.create_shader_module_passthrough(wgpu::ShaderModuleDescriptorPassthrough {
-            entry_point: "main".into(),
-            label: None,
-            spirv: Some(wgpu::util::make_spirv_raw(&output.stdout)),
-            ..Default::default()
-        })
-    }
+fn compile_wgsl(device: &wgpu::Device) -> wgpu::ShaderModule {
+    device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: None,
+        source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
+    })
 }
 fn compile_hlsl(device: &wgpu::Device, entry: &str, stage_str: &str) -> wgpu::ShaderModule {
     let out_path = format!(
@@ -71,21 +48,22 @@ impl crate::framework::Example for Example {
         device: &wgpu::Device,
         _queue: &wgpu::Queue,
     ) -> Self {
-        let (ts, ms, fs) = if adapter.get_info().backend == wgpu::Backend::Vulkan {
-            (
-                compile_glsl(device, "task"),
-                compile_glsl(device, "mesh"),
-                compile_glsl(device, "frag"),
-            )
-        } else if adapter.get_info().backend == wgpu::Backend::Dx12 {
-            (
-                compile_hlsl(device, "Task", "as"),
-                compile_hlsl(device, "Mesh", "ms"),
-                compile_hlsl(device, "Frag", "ps"),
-            )
-        } else {
-            panic!("Example can only run on vulkan or dx12");
-        };
+        let (ts, ms, fs, ts_name, ms_name, fs_name) =
+            if adapter.get_info().backend == wgpu::Backend::Vulkan {
+                let s = compile_wgsl(device);
+                (s.clone(), s.clone(), s, "ts_main", "ms_main", "fs_main")
+            } else if adapter.get_info().backend == wgpu::Backend::Dx12 {
+                (
+                    compile_hlsl(device, "Task", "as"),
+                    compile_hlsl(device, "Mesh", "ms"),
+                    compile_hlsl(device, "Frag", "ps"),
+                    "main",
+                    "main",
+                    "main",
+                )
+            } else {
+                panic!("Example can only run on vulkan or dx12");
+            };
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[],
@@ -96,17 +74,17 @@ impl crate::framework::Example for Example {
             layout: Some(&pipeline_layout),
             task: Some(wgpu::TaskState {
                 module: &ts,
-                entry_point: Some("main"),
+                entry_point: Some(ts_name),
                 compilation_options: Default::default(),
             }),
             mesh: wgpu::MeshState {
                 module: &ms,
-                entry_point: Some("main"),
+                entry_point: Some(ms_name),
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &fs,
-                entry_point: Some("main"),
+                entry_point: Some(fs_name),
                 compilation_options: Default::default(),
                 targets: &[Some(config.view_formats[0].into())],
             }),
