@@ -854,7 +854,6 @@ impl Writer {
             );
             // This is the information that is passed to the function writer
             // so that it can write the final return logic
-
             let mut mesh_return_info = super::MeshReturnInfo {
                 out_variable_id: self.global_variables[mesh_info.output_variable].var_id,
                 out_type_id: self
@@ -3159,11 +3158,11 @@ impl Writer {
                     source_code: debug_info.source_code,
                     source_file_id,
                 });
-                for ins in
-                    Instruction::source_auto_continued(debug_info.language, 0, &debug_info_inner)
-                {
-                    ins.to_words(&mut self.logical_layout.debugs);
-                }
+                self.debugs.append(&mut Instruction::source_auto_continued(
+                    debug_info.language,
+                    0,
+                    &debug_info_inner,
+                ));
             }
         }
 

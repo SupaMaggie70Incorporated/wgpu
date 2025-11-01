@@ -8,6 +8,7 @@ OpExtension "SPV_KHR_storage_buffer_storage_class"
 OpMemoryModel Logical GLSL450
 OpEntryPoint GLCompute %47 "main"
 OpExecutionMode %47 LocalSize 1 1 1
+%3 = OpString "pointers.wgsl"
 OpSource Unknown 0 %3 "fn f() {
    var v: mat2x2<f32>;
    let px = &v[0];
@@ -42,7 +43,6 @@ fn main() {
     index_dynamic_array(1, 1);
 }
 "
-%3 = OpString "pointers.wgsl"
 OpMemberName %9 0 "arr"
 OpName %9 "DynamicArray"
 OpName %11 "dynamic_array"

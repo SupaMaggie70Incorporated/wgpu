@@ -8,6 +8,7 @@ OpMemoryModel Logical GLSL450
 OpEntryPoint Vertex %21 "vs_main" %12 %15 %17 %19
 OpEntryPoint Fragment %49 "fs_main" %43 %46 %48
 OpExecutionMode %49 OriginUpperLeft
+%3 = OpString "debug-symbol-simple.wgsl"
 OpSource Unknown 0 %3 "struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) color: vec3<f32>,
@@ -41,7 +42,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     return vec4<f32>(color, 1.0);
 }"
-%3 = OpString "debug-symbol-simple.wgsl"
 OpMemberName %6 0 "position"
 OpMemberName %6 1 "color"
 OpName %6 "VertexInput"

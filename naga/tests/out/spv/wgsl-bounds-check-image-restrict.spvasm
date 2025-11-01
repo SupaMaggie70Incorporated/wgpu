@@ -10,6 +10,7 @@ OpCapability ImageQuery
 OpMemoryModel Logical GLSL450
 OpEntryPoint Fragment %174 "fragment_shader" %172
 OpExecutionMode %174 OriginUpperLeft
+%3 = OpString "bounds-check-image-restrict.wgsl"
 OpSource Unknown 0 %3 "@group(0) @binding(0)
 var image_1d: texture_1d<f32>;
 
@@ -100,7 +101,6 @@ fn fragment_shader() -> @location(0) vec4<f32> {
     return vec4<f32>(0.,0.,0.,0.);
 }
 "
-%3 = OpString "bounds-check-image-restrict.wgsl"
 OpName %19 "image_1d"
 OpName %21 "image_2d"
 OpName %23 "image_2d_array"

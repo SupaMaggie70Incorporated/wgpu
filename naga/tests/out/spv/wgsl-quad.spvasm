@@ -10,6 +10,7 @@ OpEntryPoint Fragment %45 "frag_main" %42 %44
 OpEntryPoint Fragment %61 "fs_extra" %60
 OpExecutionMode %45 OriginUpperLeft
 OpExecutionMode %61 OriginUpperLeft
+%3 = OpString "quad.wgsl"
 OpSource Unknown 0 %3 "// vertex
 const c_scale: f32 = 1.2;
 
@@ -49,7 +50,6 @@ fn fs_extra() -> @location(0) vec4<f32> {
     return vec4<f32>(0.0, 0.5, 0.0, 0.5);
 }
 "
-%3 = OpString "quad.wgsl"
 OpMemberName %7 0 "uv"
 OpMemberName %7 1 "position"
 OpName %7 "VertexOutput"

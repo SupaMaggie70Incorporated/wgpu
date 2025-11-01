@@ -23,6 +23,7 @@ OpExecutionMode %303 OriginUpperLeft
 OpExecutionMode %461 OriginUpperLeft
 OpExecutionMode %516 OriginUpperLeft
 OpExecutionMode %550 OriginUpperLeft
+%3 = OpString "image.wgsl"
 OpSource Unknown 0 %3 "@group(0) @binding(0)
 var image_mipmapped_src: texture_2d<u32>;
 @group(0) @binding(3)
@@ -224,7 +225,6 @@ fn depth_no_comparison() -> @location(0) vec4<f32> {
     return s2d + s2d_gather + s2d_level;
 }
 "
-%3 = OpString "image.wgsl"
 OpName %29 "image_mipmapped_src"
 OpName %31 "image_multisampled_src"
 OpName %33 "image_depth_multisampled_src"

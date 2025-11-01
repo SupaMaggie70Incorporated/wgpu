@@ -8,6 +8,7 @@ OpExtension "SPV_KHR_storage_buffer_storage_class"
 OpMemoryModel Logical GLSL450
 OpEntryPoint GLCompute %24 "main" %21
 OpExecutionMode %24 LocalSize 64 1 1
+%3 = OpString "boids.wgsl"
 OpSource Unknown 0 %3 "const NUM_PARTICLES: u32 = 1500u;
 
 struct Particle {
@@ -116,7 +117,6 @@ fn main(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
   particlesDst.particles[index].vel = vVel;
 }
 "
-%3 = OpString "boids.wgsl"
 OpMemberName %7 0 "pos"
 OpMemberName %7 1 "vel"
 OpName %7 "Particle"

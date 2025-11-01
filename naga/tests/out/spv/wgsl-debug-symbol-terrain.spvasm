@@ -14,6 +14,7 @@ OpEntryPoint Fragment %615 "fs_main" %608 %610 %612 %614
 OpExecutionMode %367 LocalSize 64 1 1
 OpExecutionMode %495 OriginUpperLeft
 OpExecutionMode %615 OriginUpperLeft
+%3 = OpString "debug-symbol-terrain.wgsl"
 OpSource Unknown 0 %3 "// Taken from https://github.com/sotrh/learn-wgpu/blob/11820796f5e1dbce42fb1119f04ddeb4b167d2a0/code/intermediate/tutorial13-terrain/src/terrain.wgsl
 // ============================
 // Terrain Generation
@@ -319,7 +320,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     return vec4<f32>(result, 1.0);
 }
 "
-%3 = OpString "debug-symbol-terrain.wgsl"
 OpMemberName %13 0 "chunk_size"
 OpMemberName %13 1 "chunk_corner"
 OpMemberName %13 2 "min_max_height"
