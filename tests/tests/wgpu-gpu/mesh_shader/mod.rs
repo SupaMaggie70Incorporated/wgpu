@@ -94,7 +94,7 @@ fn get_shaders(
             s.clone(),
             info.use_frag.then_some(s),
             "ts_main",
-            "ms_main",
+            if info.use_task { "ms_main" } else { "ms_no_ts" },
             "fs_main",
         )
     } else if backend == wgpu::Backend::Dx12 {

@@ -68,6 +68,27 @@ fn ms_main(@builtin(local_invocation_index) index: u32, @builtin(global_invocati
     mesh_output.primitives[0].cull = !taskPayload.visible;
     mesh_output.primitives[0].colorMask = vec4<f32>(1.0, 0.0, 1.0, 1.0);
 }
+// Don't use task payload if no task shader is present
+@mesh(mesh_output)
+@workgroup_size(1)
+fn ms_no_ts(@builtin(local_invocation_index) index: u32, @builtin(global_invocation_id) id: vec3<u32>) {
+    mesh_output.vertex_count = 3;
+    mesh_output.primitive_count = 1;
+    workgroupData = 2.0;
+
+    mesh_output.vertices[0].position = positions[0];
+    mesh_output.vertices[0].color = colors[0];
+
+    mesh_output.vertices[1].position = positions[1];
+    mesh_output.vertices[1].color = colors[1];
+
+    mesh_output.vertices[2].position = positions[2];
+    mesh_output.vertices[2].color = colors[2];
+
+    mesh_output.primitives[0].index = vec3<u32>(0, 1, 2);
+    mesh_output.primitives[0].cull = false;
+    mesh_output.primitives[0].colorMask = vec4<f32>(1.0, 0.0, 1.0, 1.0);
+}
 @fragment
 fn fs_main(vertex: VertexOutput, primitive: PrimitiveInput) -> @location(0) vec4<f32> {
     return vertex.color * primitive.colorMask;
