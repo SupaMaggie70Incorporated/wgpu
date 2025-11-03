@@ -2,8 +2,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 
 use wgpu::{util::DeviceExt, Backends};
 use wgpu_test::{
-    fail, gpu_test, FailureCase, GpuTestConfiguration, GpuTestInitializer, TestParameters,
-    TestingContext,
+    gpu_test, FailureCase, GpuTestConfiguration, GpuTestInitializer, TestParameters, TestingContext,
 };
 
 /// Backends that support mesh shaders
@@ -20,7 +19,6 @@ pub fn all_tests(tests: &mut Vec<GpuTestInitializer>) {
         MESH_MULTI_DRAW_INDIRECT_COUNT,
         MESH_PIPELINE_BASIC_MESH_NO_DRAW,
         MESH_PIPELINE_BASIC_TASK_MESH_FRAG_NO_DRAW,
-        MESH_DISABLED,
     ]);
 }
 
@@ -86,21 +84,14 @@ fn get_shaders(
     &'static str,
     &'static str,
 ) {
-    // On backends that don't support mesh shaders, or for the MESH_DISABLED
-    // test, compile a dummy shader so we can construct a structurally valid
-    // pipeline description and test that `create_mesh_pipeline` fails.
-    // (In the case that the platform does support mesh shaders, the dummy
-    // shader is used to avoid requiring EXPERIMENTAL_PASSTHROUGH_SHADERS.)
+    // In the case that the platform does support mesh shaders, the dummy
+    // shader is used to avoid requiring EXPERIMENTAL_PASSTHROUGH_SHADERS.
     let dummy_shader = device.create_shader_module(wgpu::include_wgsl!("non_mesh.wgsl"));
     if backend == wgpu::Backend::Vulkan {
         let s = compile_wgsl(device);
         (
             info.use_task.then(|| s.clone()),
-            if info.use_mesh {
-                s.clone()
-            } else {
-                dummy_shader
-            },
+            s.clone(),
             info.use_frag.then_some(s),
             "ts_main",
             "ms_main",
@@ -110,11 +101,7 @@ fn get_shaders(
         (
             info.use_task
                 .then(|| compile_hlsl(device, "Task", "as", test_name)),
-            if info.use_mesh {
-                compile_hlsl(device, "Mesh", "ms", test_name)
-            } else {
-                dummy_shader
-            },
+            compile_hlsl(device, "Mesh", "ms", test_name),
             info.use_frag
                 .then(|| compile_hlsl(device, "Frag", "ps", test_name)),
             "main",
@@ -123,7 +110,7 @@ fn get_shaders(
         )
     } else {
         assert!(!MESH_SHADER_BACKENDS.contains(Backends::from(backend)));
-        assert!(!info.use_task && !info.use_mesh && !info.use_frag);
+        assert!(!info.use_task && !info.use_frag);
         (None, dummy_shader, None, "main", "main", "main")
     }
 }
@@ -159,7 +146,6 @@ fn create_depth(
 
 struct MeshPipelineTestInfo {
     use_task: bool,
-    use_mesh: bool,
     use_frag: bool,
     draw: bool,
 }
@@ -259,7 +245,6 @@ fn mesh_draw(ctx: &TestingContext, draw_type: DrawType) {
     let test_hash = hash_testing_context(ctx).to_string();
     let info = MeshPipelineTestInfo {
         use_task: true,
-        use_mesh: true,
         use_frag: true,
         draw: true,
     };
@@ -387,7 +372,6 @@ pub static MESH_PIPELINE_BASIC_MESH: GpuTestConfiguration =
             &ctx,
             MeshPipelineTestInfo {
                 use_task: false,
-                use_mesh: true,
                 use_frag: false,
                 draw: true,
             },
@@ -400,7 +384,6 @@ pub static MESH_PIPELINE_BASIC_TASK_MESH: GpuTestConfiguration =
             &ctx,
             MeshPipelineTestInfo {
                 use_task: true,
-                use_mesh: true,
                 use_frag: false,
                 draw: true,
             },
@@ -413,7 +396,6 @@ pub static MESH_PIPELINE_BASIC_MESH_FRAG: GpuTestConfiguration =
             &ctx,
             MeshPipelineTestInfo {
                 use_task: false,
-                use_mesh: true,
                 use_frag: true,
                 draw: true,
             },
@@ -426,7 +408,6 @@ pub static MESH_PIPELINE_BASIC_TASK_MESH_FRAG: GpuTestConfiguration =
             &ctx,
             MeshPipelineTestInfo {
                 use_task: true,
-                use_mesh: true,
                 use_frag: true,
                 draw: true,
             },
@@ -439,7 +420,6 @@ pub static MESH_PIPELINE_BASIC_MESH_NO_DRAW: GpuTestConfiguration =
             &ctx,
             MeshPipelineTestInfo {
                 use_task: false,
-                use_mesh: true,
                 use_frag: false,
                 draw: false,
             },
@@ -452,7 +432,6 @@ pub static MESH_PIPELINE_BASIC_TASK_MESH_FRAG_NO_DRAW: GpuTestConfiguration =
             &ctx,
             MeshPipelineTestInfo {
                 use_task: true,
-                use_mesh: true,
                 use_frag: true,
                 draw: false,
             },
@@ -474,33 +453,4 @@ pub static MESH_MULTI_DRAW_INDIRECT: GpuTestConfiguration =
 pub static MESH_MULTI_DRAW_INDIRECT_COUNT: GpuTestConfiguration =
     default_gpu_test_config(DrawType::MultiIndirectCount).run_sync(|ctx| {
         mesh_draw(&ctx, DrawType::MultiIndirectCount);
-    });
-
-/// When the mesh shading feature is disabled, calls to `create_mesh_pipeline`
-/// should be rejected. This should be the case on all backends, not just the
-/// ones where the feature could be turned on.
-#[gpu_test]
-pub static MESH_DISABLED: GpuTestConfiguration = GpuTestConfiguration::new()
-    .parameters(TestParameters::default().features(wgpu::Features::EXPERIMENTAL_MESH_SHADER))
-    .run_sync(|ctx| {
-        fail(
-            &ctx.device,
-            || {
-                mesh_pipeline_build(
-                    &ctx,
-                    MeshPipelineTestInfo {
-                        use_task: false,
-                        use_mesh: false,
-                        use_frag: false,
-                        draw: true,
-                    },
-                );
-            },
-            Some(concat![
-                "Features Features { ",
-                "features_wgpu: FeaturesWGPU(EXPERIMENTAL_MESH_SHADER), ",
-                "features_webgpu: FeaturesWebGPU(0x0) ",
-                "} are required but not enabled on the device",
-            ]),
-        )
     });
