@@ -156,3 +156,23 @@ impl crate::framework::Example for Example {
 pub fn main() {
     crate::framework::run::<Example>("mesh_shader");
 }
+
+#[cfg(test)]
+#[wgpu_test::gpu_test]
+pub static TEST: crate::framework::ExampleTestParams<Example> =
+    crate::framework::ExampleTestParams {
+        name: "mesh_shader",
+        // Generated on 1080ti on Vk/Windows
+        image_path: "/examples/features/src/mesh_shader/screenshot.png",
+        width: 1024,
+        height: 768,
+        optional_features: wgpu::Features::default(),
+        base_test_parameters: wgpu_test::TestParameters::default()
+            .features(
+                wgpu::Features::EXPERIMENTAL_MESH_SHADER
+                    | wgpu::Features::EXPERIMENTAL_PASSTHROUGH_SHADERS,
+            )
+            .limits(wgpu::Limits::defaults().using_recommended_minimum_mesh_shader_values()),
+        comparisons: &[wgpu_test::ComparisonType::Mean(0.005)],
+        _phantom: std::marker::PhantomData::<Example>,
+    };
