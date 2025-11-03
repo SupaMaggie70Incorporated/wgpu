@@ -943,8 +943,8 @@ impl Writer {
                     .write_mesh_return_global_variable(builtin_block_ty_id, vert_array_size_id)?;
                 iface.varying_ids.push(v.var_id);
                 if self.flags.contains(WriterFlags::DEBUG) {
-                    Instruction::name(v.var_id, "naga_vertex_builtin_outputs")
-                        .to_words(&mut self.logical_layout.debugs);
+                    self.debugs
+                        .push(Instruction::name(v.var_id, "naga_vertex_builtin_outputs"));
                 }
                 mesh_return_info.vertex_builtin_block = Some(v);
             }
@@ -1018,8 +1018,10 @@ impl Writer {
                     .to_words(&mut self.logical_layout.annotations);
                 iface.varying_ids.push(v.var_id);
                 if self.flags.contains(WriterFlags::DEBUG) {
-                    Instruction::name(v.var_id, "naga_primitive_builtin_outputs")
-                        .to_words(&mut self.logical_layout.debugs);
+                    self.debugs.push(Instruction::name(
+                        v.var_id,
+                        "naga_primitive_builtin_outputs",
+                    ));
                 }
                 mesh_return_info.primitive_builtin_block = Some(v);
             }
@@ -1083,8 +1085,10 @@ impl Writer {
                             .to_words(&mut self.logical_layout.annotations);
                             iface.varying_ids.push(v.var_id);
                             if self.flags.contains(WriterFlags::DEBUG) {
-                                Instruction::name(v.var_id, "naga_primitive_indices_outputs")
-                                    .to_words(&mut self.logical_layout.debugs);
+                                self.debugs.push(Instruction::name(
+                                    v.var_id,
+                                    "naga_primitive_indices_outputs",
+                                ));
                             }
                             mesh_return_info.primitive_indices = Some(v);
                         }
