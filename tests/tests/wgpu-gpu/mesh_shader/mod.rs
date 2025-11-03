@@ -480,25 +480,27 @@ pub static MESH_MULTI_DRAW_INDIRECT_COUNT: GpuTestConfiguration =
 /// should be rejected. This should be the case on all backends, not just the
 /// ones where the feature could be turned on.
 #[gpu_test]
-pub static MESH_DISABLED: GpuTestConfiguration = GpuTestConfiguration::new().run_sync(|ctx| {
-    fail(
-        &ctx.device,
-        || {
-            mesh_pipeline_build(
-                &ctx,
-                MeshPipelineTestInfo {
-                    use_task: false,
-                    use_mesh: false,
-                    use_frag: false,
-                    draw: true,
-                },
-            );
-        },
-        Some(concat![
-            "Features Features { ",
-            "features_wgpu: FeaturesWGPU(EXPERIMENTAL_MESH_SHADER), ",
-            "features_webgpu: FeaturesWebGPU(0x0) ",
-            "} are required but not enabled on the device",
-        ]),
-    )
-});
+pub static MESH_DISABLED: GpuTestConfiguration = GpuTestConfiguration::new()
+    .parameters(TestParameters::default().features(wgpu::Features::EXPERIMENTAL_MESH_SHADER))
+    .run_sync(|ctx| {
+        fail(
+            &ctx.device,
+            || {
+                mesh_pipeline_build(
+                    &ctx,
+                    MeshPipelineTestInfo {
+                        use_task: false,
+                        use_mesh: false,
+                        use_frag: false,
+                        draw: true,
+                    },
+                );
+            },
+            Some(concat![
+                "Features Features { ",
+                "features_wgpu: FeaturesWGPU(EXPERIMENTAL_MESH_SHADER), ",
+                "features_webgpu: FeaturesWebGPU(0x0) ",
+                "} are required but not enabled on the device",
+            ]),
+        )
+    });
