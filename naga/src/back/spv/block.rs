@@ -441,7 +441,7 @@ impl Writer {
                         body.push(Instruction::access_chain(
                             self.get_pointer_type_id(member.ty_id, spirv::StorageClass::Output),
                             ptr_to_copy_to,
-                            return_info.vertex_builtin_block.as_ref().unwrap().var_id,
+                            return_info.vertex_builtin_block.unwrap(),
                             &[
                                 val_i,
                                 self.get_constant_scalar(crate::Literal::U32(builtin_index)),
@@ -455,7 +455,7 @@ impl Writer {
                         body.push(Instruction::access_chain(
                             self.get_pointer_type_id(member.ty_id, spirv::StorageClass::Output),
                             ptr_to_copy_to,
-                            return_info.vertex_bindings[binding_index].var_id,
+                            return_info.vertex_bindings[binding_index],
                             &[val_i, zero_u32],
                         ));
                         binding_index += 1;
@@ -536,7 +536,7 @@ impl Writer {
                         body.push(Instruction::access_chain(
                             self.get_pointer_type_id(member.ty_id, spirv::StorageClass::Output),
                             ptr_to_copy_to,
-                            return_info.primitive_indices.as_ref().unwrap().var_id,
+                            return_info.primitive_indices.unwrap(),
                             &[val_i],
                         ));
                     }
@@ -544,7 +544,7 @@ impl Writer {
                         body.push(Instruction::access_chain(
                             self.get_pointer_type_id(member.ty_id, spirv::StorageClass::Output),
                             ptr_to_copy_to,
-                            return_info.primitive_builtin_block.as_ref().unwrap().var_id,
+                            return_info.primitive_builtin_block.unwrap(),
                             &[
                                 val_i,
                                 self.get_constant_scalar(crate::Literal::U32(builtin_index)),
@@ -556,7 +556,7 @@ impl Writer {
                         body.push(Instruction::access_chain(
                             self.get_pointer_type_id(member.ty_id, spirv::StorageClass::Output),
                             ptr_to_copy_to,
-                            return_info.primitive_bindings[binding_index].var_id,
+                            return_info.primitive_bindings[binding_index],
                             &[val_i, zero_u32],
                         ));
                         binding_index += 1;

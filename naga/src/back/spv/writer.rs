@@ -735,7 +735,7 @@ impl Writer {
         &mut self,
         ty: u32,
         array_size_id: u32,
-    ) -> Result<super::MeshReturnGlobalVariable, Error> {
+    ) -> Result<Word, Error> {
         let array_ty = self.id_gen.next();
         Instruction::type_array(array_ty, ty, array_size_id)
             .to_words(&mut self.logical_layout.declarations);
@@ -743,10 +743,7 @@ impl Writer {
         let var_id = self.id_gen.next();
         Instruction::variable(ptr_ty, var_id, spirv::StorageClass::Output, None)
             .to_words(&mut self.logical_layout.declarations);
-        Ok(super::MeshReturnGlobalVariable {
-            _inner_ty: ty,
-            var_id,
-        })
+        Ok(var_id)
     }
 
     /// This does various setup things to allow mesh shader entry points
@@ -941,10 +938,10 @@ impl Writer {
                 }
                 let v = self
                     .write_mesh_return_global_variable(builtin_block_ty_id, vert_array_size_id)?;
-                iface.varying_ids.push(v.var_id);
+                iface.varying_ids.push(v);
                 if self.flags.contains(WriterFlags::DEBUG) {
                     self.debugs
-                        .push(Instruction::name(v.var_id, "naga_vertex_builtin_outputs"));
+                        .push(Instruction::name(v, "naga_vertex_builtin_outputs"));
                 }
                 mesh_return_info.vertex_builtin_block = Some(v);
             }
@@ -1014,14 +1011,12 @@ impl Writer {
                 }
                 let v = self
                     .write_mesh_return_global_variable(builtin_block_ty_id, prim_array_size_id)?;
-                Instruction::decorate(v.var_id, spirv::Decoration::PerPrimitiveEXT, &[])
+                Instruction::decorate(v, spirv::Decoration::PerPrimitiveEXT, &[])
                     .to_words(&mut self.logical_layout.annotations);
-                iface.varying_ids.push(v.var_id);
+                iface.varying_ids.push(v);
                 if self.flags.contains(WriterFlags::DEBUG) {
-                    self.debugs.push(Instruction::name(
-                        v.var_id,
-                        "naga_primitive_builtin_outputs",
-                    ));
+                    self.debugs
+                        .push(Instruction::name(v, "naga_primitive_builtin_outputs"));
                 }
                 mesh_return_info.primitive_builtin_block = Some(v);
             }
@@ -1043,7 +1038,7 @@ impl Writer {
                             .to_words(&mut self.logical_layout.annotations);
                             let v =
                                 self.write_mesh_return_global_variable(s_type, vert_array_size_id)?;
-                            iface.varying_ids.push(v.var_id);
+                            iface.varying_ids.push(v);
                             mesh_return_info.vertex_bindings.push(v);
                         }
                         crate::Binding::BuiltIn(_) => (),
@@ -1060,14 +1055,10 @@ impl Writer {
                                 member.ty_id,
                                 prim_array_size_id,
                             )?;
+                            Instruction::decorate(v, spirv::Decoration::PerPrimitiveEXT, &[])
+                                .to_words(&mut self.logical_layout.annotations);
                             Instruction::decorate(
-                                v.var_id,
-                                spirv::Decoration::PerPrimitiveEXT,
-                                &[],
-                            )
-                            .to_words(&mut self.logical_layout.annotations);
-                            Instruction::decorate(
-                                v.var_id,
+                                v,
                                 spirv::Decoration::BuiltIn,
                                 &[match member.binding.to_built_in().unwrap() {
                                     crate::BuiltIn::PointIndex => {
@@ -1083,12 +1074,10 @@ impl Writer {
                                 } as Word],
                             )
                             .to_words(&mut self.logical_layout.annotations);
-                            iface.varying_ids.push(v.var_id);
+                            iface.varying_ids.push(v);
                             if self.flags.contains(WriterFlags::DEBUG) {
-                                self.debugs.push(Instruction::name(
-                                    v.var_id,
-                                    "naga_primitive_indices_outputs",
-                                ));
+                                self.debugs
+                                    .push(Instruction::name(v, "naga_primitive_indices_outputs"));
                             }
                             mesh_return_info.primitive_indices = Some(v);
                         }
@@ -1107,13 +1096,9 @@ impl Writer {
                             .to_words(&mut self.logical_layout.annotations);
                             let v =
                                 self.write_mesh_return_global_variable(s_type, prim_array_size_id)?;
-                            Instruction::decorate(
-                                v.var_id,
-                                spirv::Decoration::PerPrimitiveEXT,
-                                &[],
-                            )
-                            .to_words(&mut self.logical_layout.annotations);
-                            iface.varying_ids.push(v.var_id);
+                            Instruction::decorate(v, spirv::Decoration::PerPrimitiveEXT, &[])
+                                .to_words(&mut self.logical_layout.annotations);
+                            iface.varying_ids.push(v);
                             mesh_return_info.primitive_bindings.push(v);
                         }
                         crate::Binding::BuiltIn(_) => (),
