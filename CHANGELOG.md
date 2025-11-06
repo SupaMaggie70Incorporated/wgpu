@@ -14,6 +14,7 @@ You can add additional user facing information if it's a major breaking change. 
 ```
 
 Top level categories:
+
 - Major changes
 - Added/New Features
 - Changes
@@ -150,6 +151,10 @@ By @SupaMaggie70Incorporated in [#8206](https://github.com/gfx-rs/wgpu/pull/8206
 
 - Fixed a validation error regarding atomic memory semantics. By @atlv24 in [#8391](https://github.com/gfx-rs/wgpu/pull/8391).
 - Add mesh shader writer support, allowing WGSL shaders to be used on the vulkan backend. By @inner-daemons in [#8456](https://github.com/gfx-rs/wgpu/pull/8456f).
+
+#### WebGPU
+
+- Fixed a bug where the texture aspect was not passed through when calling `copy_texture_to_buffer` in WebGPU, causing the copy to fail for depth/stencil textures. By @Tim-Evans-Seequent in [#8445](https://github.com/gfx-rs/wgpu/pull/8445).
 
 #### hal
 
