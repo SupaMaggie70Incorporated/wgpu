@@ -1050,6 +1050,7 @@ impl Writer {
             }
         }
         // Write primitive binding output blocks (1 array per output struct member)
+        // Also write indices output block
         for member in &mesh_return_info.primitive_members {
             match member.binding {
                 crate::Binding::BuiltIn(
@@ -1057,6 +1058,7 @@ impl Writer {
                     | crate::BuiltIn::LineIndices
                     | crate::BuiltIn::TriangleIndices,
                 ) => {
+                    // This is written here instead of as part of the builtin block
                     let v =
                         self.write_mesh_return_global_variable(member.ty_id, prim_array_size_id)?;
                     Instruction::decorate(v, spirv::Decoration::PerPrimitiveEXT, &[])
@@ -1098,6 +1100,7 @@ impl Writer {
                     Instruction::decorate(v, spirv::Decoration::PerPrimitiveEXT, &[])
                         .to_words(&mut self.logical_layout.annotations);
                     iface.varying_ids.push(v);
+
                     mesh_return_info.primitive_bindings.push(v);
                 }
                 crate::Binding::BuiltIn(_) => (),
