@@ -261,6 +261,9 @@ impl Writer {
         // output variables if there are any)
         for (index, res_member) in result_members.iter().enumerate() {
             if res_member.built_in == Some(crate::BuiltIn::MeshTaskSize) {
+                // If its a function like `fn a() -> @builtin(...) vec3<u32> ...`
+                // then just use the output value. If it's a struct, extract the
+                // value from the struct.
                 let member_value_id = match ir_result.binding {
                     Some(_) => value_id,
                     None => {
@@ -275,6 +278,7 @@ impl Writer {
                     }
                 };
 
+                // Extract the vec3<u32> into 3 u32's
                 let values = [self.id_gen.next(), self.id_gen.next(), self.id_gen.next()];
                 for (i, &value) in values.iter().enumerate() {
                     let instruction = Instruction::composite_extract(
@@ -289,6 +293,7 @@ impl Writer {
                 for id in values {
                     instruction.add_operand(id);
                 }
+                // We have to include the task payload in our call
                 if let Some(task_payload) = task_payload {
                     instruction.add_operand(task_payload);
                 }
@@ -305,36 +310,37 @@ impl Writer {
         return_info: &super::MeshReturnInfo,
         body: &mut Vec<Instruction>,
     ) -> Result<(), Error> {
-        let output_value_id = self.id_gen.next();
-        body.push(Instruction::load(
-            return_info.out_type_id,
-            output_value_id,
-            return_info.out_variable_id,
-            None,
-        ));
+        // This is the actual value (not pointer)
+        // of the data to be outputted
+        let out_var_id = return_info.out_variable_id;
         // Load the actual vertex and primitive counts
-        let vert_count_id = self.id_gen.next();
-        body.push(Instruction::composite_extract(
-            self.get_u32_type_id(),
-            vert_count_id,
-            output_value_id,
-            &[return_info
+        let mut load_u32_by_member_index = |member_index: u32| {
+            let ptr_id = self.id_gen.next();
+            let u32_id = self.get_u32_type_id();
+            body.push(Instruction::access_chain(
+                self.get_pointer_type_id(u32_id, spirv::StorageClass::Workgroup),
+                ptr_id,
+                out_var_id,
+                &[self.get_constant_scalar(crate::Literal::U32(member_index))],
+            ));
+            let id = self.id_gen.next();
+            body.push(Instruction::load(u32_id, id, ptr_id, None));
+            id
+        };
+        let vert_count_id = load_u32_by_member_index(
+            return_info
                 .out_members
                 .iter()
                 .position(|a| a.binding == crate::Binding::BuiltIn(crate::BuiltIn::VertexCount))
-                .unwrap() as u32],
-        ));
-        let prim_count_id = self.id_gen.next();
-        body.push(Instruction::composite_extract(
-            self.get_u32_type_id(),
-            prim_count_id,
-            output_value_id,
-            &[return_info
+                .unwrap() as u32,
+        );
+        let prim_count_id = load_u32_by_member_index(
+            return_info
                 .out_members
                 .iter()
                 .position(|a| a.binding == crate::Binding::BuiltIn(crate::BuiltIn::PrimitiveCount))
-                .unwrap() as u32],
-        ));
+                .unwrap() as u32,
+        );
         let vert_array_ptr = self.id_gen.next();
         body.push(Instruction::access_chain(
             self.get_pointer_type_id(
@@ -3641,7 +3647,7 @@ impl BlockContext<'_> {
                             self.ir_function.result.as_ref().unwrap(),
                             &context.results,
                             &mut block.body,
-                            context.task_payload,
+                            context.task_payload_variable_id,
                         )?,
                         None => Instruction::return_value(value_id),
                     };

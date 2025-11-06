@@ -757,6 +757,11 @@ impl Writer {
         ep_context: &mut EntryPointContext,
     ) -> Result<(), Error> {
         if let Some(ref mesh_info) = iface.mesh_info {
+            // In case for some reason the shader always writes out nothing, and doesn't use the global variable
+            /*iface
+            .varying_ids
+            .push(self.global_variables[mesh_info.output_variable].var_id);*/
+
             // Collect the members in the output structs
             let out_members: Vec<super::MeshReturnMember> =
                 match &ir_module.types[ir_module.global_variables[mesh_info.output_variable].ty] {
@@ -827,6 +832,7 @@ impl Writer {
                         &[spirv::BuiltIn::LocalInvocationIndex as u32],
                     )
                     .to_words(&mut self.logical_layout.annotations);
+                    iface.varying_ids.push(var);
 
                     let loaded_value = self.id_gen.next();
                     prelude
@@ -853,8 +859,6 @@ impl Writer {
             // so that it can write the final return logic
             let mut mesh_return_info = super::MeshReturnInfo {
                 out_variable_id: self.global_variables[mesh_info.output_variable].var_id,
-                out_type_id: self
-                    .get_handle_type_id(ir_module.global_variables[mesh_info.output_variable].ty),
                 out_members,
 
                 vertex_type_id: self.get_handle_type_id(mesh_info.vertex_output_type),
@@ -1128,7 +1132,7 @@ impl Writer {
         let mut ep_context = EntryPointContext {
             argument_ids: Vec::new(),
             results: Vec::new(),
-            task_payload: if let Some(ref i) = interface {
+            task_payload_variable_id: if let Some(ref i) = interface {
                 i.task_payload.map(|a| self.global_variables[a].var_id)
             } else {
                 None

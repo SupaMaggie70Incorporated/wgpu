@@ -152,8 +152,6 @@ struct MeshReturnMember {
 struct MeshReturnInfo {
     /// Id of the workgroup variable containing the data to be output
     out_variable_id: Word,
-    /// ID of the type of the workgroup variable
-    out_type_id: Word,
     /// All members of the output variable struct type
     out_members: Vec<MeshReturnMember>,
 
@@ -182,7 +180,7 @@ struct MeshReturnInfo {
 struct EntryPointContext {
     argument_ids: Vec<Word>,
     results: Vec<ResultMember>,
-    task_payload: Option<Word>,
+    task_payload_variable_id: Option<Word>,
     mesh_state: Option<MeshReturnInfo>,
 }
 

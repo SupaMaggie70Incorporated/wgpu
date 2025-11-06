@@ -908,6 +908,38 @@
             task_payload: Some(0),
         ),
         (
+            name: "ms_no_write",
+            stage: Mesh,
+            early_depth_test: None,
+            workgroup_size: (1, 1, 1),
+            workgroup_size_overrides: None,
+            function: (
+                name: Some("ms_no_write"),
+                arguments: [],
+                result: None,
+                local_variables: [],
+                expressions: [],
+                named_expressions: {},
+                body: [
+                    Return(
+                        value: None,
+                    ),
+                ],
+                diagnostic_filter_leaf: None,
+            ),
+            mesh_info: Some((
+                topology: Triangles,
+                max_vertices: 3,
+                max_vertices_override: None,
+                max_primitives: 1,
+                max_primitives_override: None,
+                vertex_output_type: 4,
+                primitive_output_type: 7,
+                output_variable: 2,
+            )),
+            task_payload: Some(0),
+        ),
+        (
             name: "fs_main",
             stage: Fragment,
             early_depth_test: None,
