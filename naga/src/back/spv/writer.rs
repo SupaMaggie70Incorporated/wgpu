@@ -2625,6 +2625,14 @@ impl Writer {
             crate::Binding::BuiltIn(built_in) => {
                 use crate::BuiltIn as Bi;
                 let mut others = ArrayVec::new();
+
+                if matches!(
+                    built_in,
+                    Bi::CullPrimitive | Bi::PointIndex | Bi::LineIndices | Bi::TriangleIndices
+                ) {
+                    self.require_mesh_shaders()?;
+                }
+
                 let built_in = match built_in {
                     Bi::Position { invariant } => {
                         if invariant {
