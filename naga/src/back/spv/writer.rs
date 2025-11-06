@@ -731,6 +731,7 @@ impl Writer {
         Ok(())
     }
 
+    /// Sets up an output variable that will handle part of the mesh shader output
     fn write_mesh_return_global_variable(
         &mut self,
         ty: u32,
@@ -756,38 +757,12 @@ impl Writer {
         prelude: &mut Block,
         ep_context: &mut EntryPointContext,
     ) -> Result<(), Error> {
-        if let Some(ref mesh_info) = iface.mesh_info {
-            // In case for some reason the shader always writes out nothing, and doesn't use the global variable
-            /*iface
-            .varying_ids
-            .push(self.global_variables[mesh_info.output_variable].var_id);*/
-
-            // Collect the members in the output structs
-            let out_members: Vec<super::MeshReturnMember> =
-                match &ir_module.types[ir_module.global_variables[mesh_info.output_variable].ty] {
-                    &crate::Type {
-                        inner: crate::TypeInner::Struct { ref members, .. },
-                        ..
-                    } => members
-                        .iter()
-                        .map(|a| super::MeshReturnMember {
-                            ty_id: self.get_handle_type_id(a.ty),
-                            binding: a.binding.clone().unwrap(),
-                        })
-                        .collect(),
-                    _ => unreachable!(),
-                };
-            let vertex_array_type_id = out_members
-                .iter()
-                .find(|a| a.binding == crate::Binding::BuiltIn(crate::BuiltIn::Vertices))
-                .unwrap()
-                .ty_id;
-            let primitive_array_type_id = out_members
-                .iter()
-                .find(|a| a.binding == crate::Binding::BuiltIn(crate::BuiltIn::Primitives))
-                .unwrap()
-                .ty_id;
-            let vertex_members = match &ir_module.types[mesh_info.vertex_output_type] {
+        let Some(ref mesh_info) = iface.mesh_info else {
+            return Ok(());
+        };
+        // Collect the members in the output structs
+        let out_members: Vec<super::MeshReturnMember> =
+            match &ir_module.types[ir_module.global_variables[mesh_info.output_variable].ty] {
                 &crate::Type {
                     inner: crate::TypeInner::Struct { ref members, .. },
                     ..
@@ -800,317 +775,338 @@ impl Writer {
                     .collect(),
                 _ => unreachable!(),
             };
-            let primitive_members = match &ir_module.types[mesh_info.primitive_output_type] {
-                &crate::Type {
-                    inner: crate::TypeInner::Struct { ref members, .. },
-                    ..
-                } => members
-                    .iter()
-                    .map(|a| super::MeshReturnMember {
-                        ty_id: self.get_handle_type_id(a.ty),
-                        binding: a.binding.clone().unwrap(),
-                    })
-                    .collect(),
-                _ => unreachable!(),
-            };
-            // In the final return, we do a giant memcpy, for which this is helpful
-            let local_invocation_index_id = match local_invocation_index_id {
-                Some(a) => a,
-                None => {
-                    let u32_id = self.get_u32_type_id();
-                    let var = self.id_gen.next();
-                    Instruction::variable(
-                        self.get_pointer_type_id(u32_id, spirv::StorageClass::Input),
-                        var,
-                        spirv::StorageClass::Input,
-                        None,
-                    )
-                    .to_words(&mut self.logical_layout.declarations);
-                    Instruction::decorate(
-                        var,
-                        spirv::Decoration::BuiltIn,
-                        &[spirv::BuiltIn::LocalInvocationIndex as u32],
-                    )
-                    .to_words(&mut self.logical_layout.annotations);
-                    iface.varying_ids.push(var);
-
-                    let loaded_value = self.id_gen.next();
-                    prelude
-                        .body
-                        .push(Instruction::load(u32_id, loaded_value, var, None));
-                    loaded_value
-                }
-            };
-            let u32_id = self.get_u32_type_id();
-            // A general function variable that we guarantee to allow in the final return. It must be
-            // declared at the top of the function. Currently it is used in the memcpy part to keep
-            // index to copy track of the current
-            let function_variable = self.id_gen.next();
-            prelude.body.insert(
-                0,
+        let vertex_array_type_id = out_members
+            .iter()
+            .find(|a| a.binding == crate::Binding::BuiltIn(crate::BuiltIn::Vertices))
+            .unwrap()
+            .ty_id;
+        let primitive_array_type_id = out_members
+            .iter()
+            .find(|a| a.binding == crate::Binding::BuiltIn(crate::BuiltIn::Primitives))
+            .unwrap()
+            .ty_id;
+        let vertex_members = match &ir_module.types[mesh_info.vertex_output_type] {
+            &crate::Type {
+                inner: crate::TypeInner::Struct { ref members, .. },
+                ..
+            } => members
+                .iter()
+                .map(|a| super::MeshReturnMember {
+                    ty_id: self.get_handle_type_id(a.ty),
+                    binding: a.binding.clone().unwrap(),
+                })
+                .collect(),
+            _ => unreachable!(),
+        };
+        let primitive_members = match &ir_module.types[mesh_info.primitive_output_type] {
+            &crate::Type {
+                inner: crate::TypeInner::Struct { ref members, .. },
+                ..
+            } => members
+                .iter()
+                .map(|a| super::MeshReturnMember {
+                    ty_id: self.get_handle_type_id(a.ty),
+                    binding: a.binding.clone().unwrap(),
+                })
+                .collect(),
+            _ => unreachable!(),
+        };
+        // In the final return, we do a giant memcpy, for which this is helpful
+        let local_invocation_index_id = match local_invocation_index_id {
+            Some(a) => a,
+            None => {
+                let u32_id = self.get_u32_type_id();
+                let var = self.id_gen.next();
                 Instruction::variable(
-                    self.get_pointer_type_id(u32_id, spirv::StorageClass::Function),
-                    function_variable,
-                    spirv::StorageClass::Function,
+                    self.get_pointer_type_id(u32_id, spirv::StorageClass::Input),
+                    var,
+                    spirv::StorageClass::Input,
                     None,
-                ),
-            );
-            // This is the information that is passed to the function writer
-            // so that it can write the final return logic
-            let mut mesh_return_info = super::MeshReturnInfo {
-                out_variable_id: self.global_variables[mesh_info.output_variable].var_id,
-                out_members,
+                )
+                .to_words(&mut self.logical_layout.declarations);
+                Instruction::decorate(
+                    var,
+                    spirv::Decoration::BuiltIn,
+                    &[spirv::BuiltIn::LocalInvocationIndex as u32],
+                )
+                .to_words(&mut self.logical_layout.annotations);
+                iface.varying_ids.push(var);
 
-                vertex_type_id: self.get_handle_type_id(mesh_info.vertex_output_type),
-                vertex_array_type_id,
-                vertex_members,
-                primitive_type_id: self.get_handle_type_id(mesh_info.primitive_output_type),
-                primitive_array_type_id,
-                primitive_members,
-                vertex_bindings: Vec::new(),
-                vertex_builtin_block: None,
-                primitive_bindings: Vec::new(),
-                primitive_builtin_block: None,
-                primitive_indices: None,
-                local_invocation_index_id,
-                workgroup_size: self.get_constant_scalar(crate::Literal::U32(
-                    iface.workgroup_size.iter().product(),
-                )),
+                let loaded_value = self.id_gen.next();
+                prelude
+                    .body
+                    .push(Instruction::load(u32_id, loaded_value, var, None));
+                loaded_value
+            }
+        };
+        let u32_id = self.get_u32_type_id();
+        // A general function variable that we guarantee to allow in the final return. It must be
+        // declared at the top of the function. Currently it is used in the memcpy part to keep
+        // track of the current index to copy.
+        let function_variable = self.id_gen.next();
+        prelude.body.insert(
+            0,
+            Instruction::variable(
+                self.get_pointer_type_id(u32_id, spirv::StorageClass::Function),
                 function_variable,
-            };
-            let vert_array_size_id =
-                self.get_constant_scalar(crate::Literal::U32(mesh_info.max_vertices));
-            let prim_array_size_id =
-                self.get_constant_scalar(crate::Literal::U32(mesh_info.max_primitives));
-            // Create the actual output variables and types.
-            // According to SPIR-V,
-            // * All builtins must be in the same output `Block`
-            // * Each member with `location` must be in its own `Block`.
-            // * Some builtins like CullPrimitiveEXT don't care as much (older validation layers don't know this!)
-            // * Some builtins like the indices ones need to be in their
-            //   own output variable without a struct wrapper
-            if mesh_return_info
-                .vertex_members
-                .iter()
-                .any(|a| matches!(a.binding, crate::Binding::BuiltIn(..)))
-            {
-                let builtin_block_ty_id = self.id_gen.next();
-                let mut ins = Instruction::type_struct(builtin_block_ty_id, &[]);
-                let mut bi_index = 0;
-                let mut decorations = Vec::new();
-                for member in &mesh_return_info.vertex_members {
-                    if let crate::Binding::BuiltIn(_) = member.binding {
-                        ins.add_operand(member.ty_id);
-                        let binding = self.map_binding(
-                            ir_module,
-                            iface.stage,
-                            spirv::StorageClass::Output,
-                            // Unused except in fragment shaders with other conditions, so we can pass null
-                            Handle::new(NonMaxU32::new(0).unwrap()),
-                            &member.binding,
-                        )?;
-                        match binding {
-                            BindingDecorations::BuiltIn(bi, others) => {
+                spirv::StorageClass::Function,
+                None,
+            ),
+        );
+        // This is the information that is passed to the function writer
+        // so that it can write the final return logic
+        let mut mesh_return_info = super::MeshReturnInfo {
+            out_variable_id: self.global_variables[mesh_info.output_variable].var_id,
+            out_members,
+
+            vertex_type_id: self.get_handle_type_id(mesh_info.vertex_output_type),
+            vertex_array_type_id,
+            vertex_members,
+            primitive_type_id: self.get_handle_type_id(mesh_info.primitive_output_type),
+            primitive_array_type_id,
+            primitive_members,
+            vertex_bindings: Vec::new(),
+            vertex_builtin_block: None,
+            primitive_bindings: Vec::new(),
+            primitive_builtin_block: None,
+            primitive_indices: None,
+            local_invocation_index_id,
+            workgroup_size: self
+                .get_constant_scalar(crate::Literal::U32(iface.workgroup_size.iter().product())),
+            function_variable,
+        };
+        let vert_array_size_id =
+            self.get_constant_scalar(crate::Literal::U32(mesh_info.max_vertices));
+        let prim_array_size_id =
+            self.get_constant_scalar(crate::Literal::U32(mesh_info.max_primitives));
+
+        // Create the actual output variables and types.
+        // According to SPIR-V,
+        // * All builtins must be in the same output `Block` (except vertex/primitive builtins)
+        // * Each member with `location` must be in its own `Block`
+        // * Some builtins like CullPrimitiveEXT don't care as much (older validation layers don't know this! Wonderful!)
+        // * Some builtins like the indices ones need to be in their own output variable without a struct wrapper
+
+        // Write vertex builtin block
+        if mesh_return_info
+            .vertex_members
+            .iter()
+            .any(|a| matches!(a.binding, crate::Binding::BuiltIn(..)))
+        {
+            let builtin_block_ty_id = self.id_gen.next();
+            let mut ins = Instruction::type_struct(builtin_block_ty_id, &[]);
+            let mut bi_index = 0;
+            let mut decorations = Vec::new();
+            for member in &mesh_return_info.vertex_members {
+                if let crate::Binding::BuiltIn(_) = member.binding {
+                    ins.add_operand(member.ty_id);
+                    let binding = self.map_binding(
+                        ir_module,
+                        iface.stage,
+                        spirv::StorageClass::Output,
+                        // Unused except in fragment shaders with other conditions, so we can pass null
+                        Handle::new(NonMaxU32::new(0).unwrap()),
+                        &member.binding,
+                    )?;
+                    match binding {
+                        BindingDecorations::BuiltIn(bi, others) => {
+                            decorations.push(Instruction::member_decorate(
+                                builtin_block_ty_id,
+                                bi_index,
+                                spirv::Decoration::BuiltIn,
+                                &[bi as Word],
+                            ));
+                            for other in others {
                                 decorations.push(Instruction::member_decorate(
                                     builtin_block_ty_id,
                                     bi_index,
-                                    spirv::Decoration::BuiltIn,
-                                    &[bi as Word],
+                                    other,
+                                    &[],
                                 ));
-                                for other in others {
-                                    decorations.push(Instruction::member_decorate(
-                                        builtin_block_ty_id,
-                                        bi_index,
-                                        other,
-                                        &[],
-                                    ));
-                                }
                             }
-                            _ => unreachable!(),
                         }
-                        bi_index += 1;
+                        _ => unreachable!(),
                     }
+                    bi_index += 1;
                 }
-                ins.to_words(&mut self.logical_layout.declarations);
-                decorations.push(Instruction::decorate(
-                    builtin_block_ty_id,
-                    spirv::Decoration::Block,
-                    &[],
-                ));
-                for dec in decorations {
-                    dec.to_words(&mut self.logical_layout.annotations);
-                }
-                let v = self
-                    .write_mesh_return_global_variable(builtin_block_ty_id, vert_array_size_id)?;
-                iface.varying_ids.push(v);
-                if self.flags.contains(WriterFlags::DEBUG) {
-                    self.debugs
-                        .push(Instruction::name(v, "naga_vertex_builtin_outputs"));
-                }
-                mesh_return_info.vertex_builtin_block = Some(v);
             }
-            if mesh_return_info.primitive_members.iter().any(|a| {
-                !matches!(
-                    a.binding,
-                    crate::Binding::BuiltIn(
+            ins.to_words(&mut self.logical_layout.declarations);
+            decorations.push(Instruction::decorate(
+                builtin_block_ty_id,
+                spirv::Decoration::Block,
+                &[],
+            ));
+            for dec in decorations {
+                dec.to_words(&mut self.logical_layout.annotations);
+            }
+            let v =
+                self.write_mesh_return_global_variable(builtin_block_ty_id, vert_array_size_id)?;
+            iface.varying_ids.push(v);
+            if self.flags.contains(WriterFlags::DEBUG) {
+                self.debugs
+                    .push(Instruction::name(v, "naga_vertex_builtin_outputs"));
+            }
+            mesh_return_info.vertex_builtin_block = Some(v);
+        }
+        // Write primitive builtin block
+        if mesh_return_info.primitive_members.iter().any(|a| {
+            !matches!(
+                a.binding,
+                crate::Binding::BuiltIn(
+                    crate::BuiltIn::PointIndex
+                        | crate::BuiltIn::LineIndices
+                        | crate::BuiltIn::TriangleIndices
+                ) | crate::Binding::Location { .. }
+            )
+        }) {
+            let builtin_block_ty_id = self.id_gen.next();
+            let mut ins = Instruction::type_struct(builtin_block_ty_id, &[]);
+            let mut bi_index = 0;
+            let mut decorations = Vec::new();
+            for member in &mesh_return_info.primitive_members {
+                if let crate::Binding::BuiltIn(bi) = member.binding {
+                    // These need to be in their own block, unlike other builtins
+                    if matches!(
+                        bi,
                         crate::BuiltIn::PointIndex
                             | crate::BuiltIn::LineIndices
-                            | crate::BuiltIn::TriangleIndices
-                    ) | crate::Binding::Location { .. }
-                )
-            }) {
-                let builtin_block_ty_id = self.id_gen.next();
-                let mut ins = Instruction::type_struct(builtin_block_ty_id, &[]);
-                let mut bi_index = 0;
-                let mut decorations = Vec::new();
-                for member in &mesh_return_info.primitive_members {
-                    if let crate::Binding::BuiltIn(bi) = member.binding {
-                        if matches!(
-                            bi,
-                            crate::BuiltIn::PointIndex
-                                | crate::BuiltIn::LineIndices
-                                | crate::BuiltIn::TriangleIndices,
-                        ) {
-                            continue;
-                        }
-                        ins.add_operand(member.ty_id);
-                        let binding = self.map_binding(
-                            ir_module,
-                            iface.stage,
-                            spirv::StorageClass::Output,
-                            // Unused except in fragment shaders with other conditions, so we can pass null
-                            Handle::new(NonMaxU32::new(0).unwrap()),
-                            &member.binding,
-                        )?;
-                        match binding {
-                            BindingDecorations::BuiltIn(bi, others) => {
+                            | crate::BuiltIn::TriangleIndices,
+                    ) {
+                        continue;
+                    }
+                    ins.add_operand(member.ty_id);
+                    let binding = self.map_binding(
+                        ir_module,
+                        iface.stage,
+                        spirv::StorageClass::Output,
+                        // Unused except in fragment shaders with other conditions, so we can pass null
+                        Handle::new(NonMaxU32::new(0).unwrap()),
+                        &member.binding,
+                    )?;
+                    match binding {
+                        BindingDecorations::BuiltIn(bi, others) => {
+                            decorations.push(Instruction::member_decorate(
+                                builtin_block_ty_id,
+                                bi_index,
+                                spirv::Decoration::BuiltIn,
+                                &[bi as Word],
+                            ));
+                            for other in others {
                                 decorations.push(Instruction::member_decorate(
                                     builtin_block_ty_id,
                                     bi_index,
-                                    spirv::Decoration::BuiltIn,
-                                    &[bi as Word],
+                                    other,
+                                    &[],
                                 ));
-                                for other in others {
-                                    decorations.push(Instruction::member_decorate(
-                                        builtin_block_ty_id,
-                                        bi_index,
-                                        other,
-                                        &[],
-                                    ));
-                                }
+                            }
+                        }
+                        _ => unreachable!(),
+                    }
+                    bi_index += 1;
+                }
+            }
+            ins.to_words(&mut self.logical_layout.declarations);
+            decorations.push(Instruction::decorate(
+                builtin_block_ty_id,
+                spirv::Decoration::Block,
+                &[],
+            ));
+            for dec in decorations {
+                dec.to_words(&mut self.logical_layout.annotations);
+            }
+            let v =
+                self.write_mesh_return_global_variable(builtin_block_ty_id, prim_array_size_id)?;
+            Instruction::decorate(v, spirv::Decoration::PerPrimitiveEXT, &[])
+                .to_words(&mut self.logical_layout.annotations);
+            iface.varying_ids.push(v);
+            if self.flags.contains(WriterFlags::DEBUG) {
+                self.debugs
+                    .push(Instruction::name(v, "naga_primitive_builtin_outputs"));
+            }
+            mesh_return_info.primitive_builtin_block = Some(v);
+        }
+
+        // Write vertex binding output blocks (1 array per output struct member)
+        for member in &mesh_return_info.vertex_members {
+            match member.binding {
+                crate::Binding::Location { location, .. } => {
+                    let s_type = self.id_gen.next();
+                    Instruction::type_struct(s_type, &[member.ty_id])
+                        .to_words(&mut self.logical_layout.declarations);
+                    Instruction::decorate(s_type, spirv::Decoration::Block, &[])
+                        .to_words(&mut self.logical_layout.annotations);
+                    Instruction::member_decorate(
+                        s_type,
+                        0,
+                        spirv::Decoration::Location,
+                        &[location],
+                    )
+                    .to_words(&mut self.logical_layout.annotations);
+                    let v = self.write_mesh_return_global_variable(s_type, vert_array_size_id)?;
+                    iface.varying_ids.push(v);
+                    mesh_return_info.vertex_bindings.push(v);
+                }
+                crate::Binding::BuiltIn(_) => (),
+            }
+        }
+        // Write primitive binding output blocks (1 array per output struct member)
+        for member in &mesh_return_info.primitive_members {
+            match member.binding {
+                crate::Binding::BuiltIn(
+                    crate::BuiltIn::PointIndex
+                    | crate::BuiltIn::LineIndices
+                    | crate::BuiltIn::TriangleIndices,
+                ) => {
+                    let v =
+                        self.write_mesh_return_global_variable(member.ty_id, prim_array_size_id)?;
+                    Instruction::decorate(v, spirv::Decoration::PerPrimitiveEXT, &[])
+                        .to_words(&mut self.logical_layout.annotations);
+                    Instruction::decorate(
+                        v,
+                        spirv::Decoration::BuiltIn,
+                        &[match member.binding.to_built_in().unwrap() {
+                            crate::BuiltIn::PointIndex => spirv::BuiltIn::PrimitivePointIndicesEXT,
+                            crate::BuiltIn::LineIndices => spirv::BuiltIn::PrimitiveLineIndicesEXT,
+                            crate::BuiltIn::TriangleIndices => {
+                                spirv::BuiltIn::PrimitiveTriangleIndicesEXT
                             }
                             _ => unreachable!(),
-                        }
-                        bi_index += 1;
-                    }
-                }
-                ins.to_words(&mut self.logical_layout.declarations);
-                decorations.push(Instruction::decorate(
-                    builtin_block_ty_id,
-                    spirv::Decoration::Block,
-                    &[],
-                ));
-                for dec in decorations {
-                    dec.to_words(&mut self.logical_layout.annotations);
-                }
-                let v = self
-                    .write_mesh_return_global_variable(builtin_block_ty_id, prim_array_size_id)?;
-                Instruction::decorate(v, spirv::Decoration::PerPrimitiveEXT, &[])
+                        } as Word],
+                    )
                     .to_words(&mut self.logical_layout.annotations);
-                iface.varying_ids.push(v);
-                if self.flags.contains(WriterFlags::DEBUG) {
-                    self.debugs
-                        .push(Instruction::name(v, "naga_primitive_builtin_outputs"));
-                }
-                mesh_return_info.primitive_builtin_block = Some(v);
-            }
-            {
-                for member in &mesh_return_info.vertex_members {
-                    match member.binding {
-                        crate::Binding::Location { location, .. } => {
-                            let s_type = self.id_gen.next();
-                            Instruction::type_struct(s_type, &[member.ty_id])
-                                .to_words(&mut self.logical_layout.declarations);
-                            Instruction::decorate(s_type, spirv::Decoration::Block, &[])
-                                .to_words(&mut self.logical_layout.annotations);
-                            Instruction::member_decorate(
-                                s_type,
-                                0,
-                                spirv::Decoration::Location,
-                                &[location],
-                            )
-                            .to_words(&mut self.logical_layout.annotations);
-                            let v =
-                                self.write_mesh_return_global_variable(s_type, vert_array_size_id)?;
-                            iface.varying_ids.push(v);
-                            mesh_return_info.vertex_bindings.push(v);
-                        }
-                        crate::Binding::BuiltIn(_) => (),
+                    iface.varying_ids.push(v);
+                    if self.flags.contains(WriterFlags::DEBUG) {
+                        self.debugs
+                            .push(Instruction::name(v, "naga_primitive_indices_outputs"));
                     }
+                    mesh_return_info.primitive_indices = Some(v);
                 }
-                for member in &mesh_return_info.primitive_members {
-                    match member.binding {
-                        crate::Binding::BuiltIn(
-                            crate::BuiltIn::PointIndex
-                            | crate::BuiltIn::LineIndices
-                            | crate::BuiltIn::TriangleIndices,
-                        ) => {
-                            let v = self.write_mesh_return_global_variable(
-                                member.ty_id,
-                                prim_array_size_id,
-                            )?;
-                            Instruction::decorate(v, spirv::Decoration::PerPrimitiveEXT, &[])
-                                .to_words(&mut self.logical_layout.annotations);
-                            Instruction::decorate(
-                                v,
-                                spirv::Decoration::BuiltIn,
-                                &[match member.binding.to_built_in().unwrap() {
-                                    crate::BuiltIn::PointIndex => {
-                                        spirv::BuiltIn::PrimitivePointIndicesEXT
-                                    }
-                                    crate::BuiltIn::LineIndices => {
-                                        spirv::BuiltIn::PrimitiveLineIndicesEXT
-                                    }
-                                    crate::BuiltIn::TriangleIndices => {
-                                        spirv::BuiltIn::PrimitiveTriangleIndicesEXT
-                                    }
-                                    _ => unreachable!(),
-                                } as Word],
-                            )
-                            .to_words(&mut self.logical_layout.annotations);
-                            iface.varying_ids.push(v);
-                            if self.flags.contains(WriterFlags::DEBUG) {
-                                self.debugs
-                                    .push(Instruction::name(v, "naga_primitive_indices_outputs"));
-                            }
-                            mesh_return_info.primitive_indices = Some(v);
-                        }
-                        crate::Binding::Location { location, .. } => {
-                            let s_type = self.id_gen.next();
-                            Instruction::type_struct(s_type, &[member.ty_id])
-                                .to_words(&mut self.logical_layout.declarations);
-                            Instruction::decorate(s_type, spirv::Decoration::Block, &[])
-                                .to_words(&mut self.logical_layout.annotations);
-                            Instruction::member_decorate(
-                                s_type,
-                                0,
-                                spirv::Decoration::Location,
-                                &[location],
-                            )
-                            .to_words(&mut self.logical_layout.annotations);
-                            let v =
-                                self.write_mesh_return_global_variable(s_type, prim_array_size_id)?;
-                            Instruction::decorate(v, spirv::Decoration::PerPrimitiveEXT, &[])
-                                .to_words(&mut self.logical_layout.annotations);
-                            iface.varying_ids.push(v);
-                            mesh_return_info.primitive_bindings.push(v);
-                        }
-                        crate::Binding::BuiltIn(_) => (),
-                    }
+                crate::Binding::Location { location, .. } => {
+                    let s_type = self.id_gen.next();
+                    Instruction::type_struct(s_type, &[member.ty_id])
+                        .to_words(&mut self.logical_layout.declarations);
+                    Instruction::decorate(s_type, spirv::Decoration::Block, &[])
+                        .to_words(&mut self.logical_layout.annotations);
+                    Instruction::member_decorate(
+                        s_type,
+                        0,
+                        spirv::Decoration::Location,
+                        &[location],
+                    )
+                    .to_words(&mut self.logical_layout.annotations);
+                    let v = self.write_mesh_return_global_variable(s_type, prim_array_size_id)?;
+                    Instruction::decorate(v, spirv::Decoration::PerPrimitiveEXT, &[])
+                        .to_words(&mut self.logical_layout.annotations);
+                    iface.varying_ids.push(v);
+                    mesh_return_info.primitive_bindings.push(v);
                 }
+                crate::Binding::BuiltIn(_) => (),
             }
-            ep_context.mesh_state = Some(mesh_return_info);
         }
+
+        // Store this where it can be read later during function write
+        ep_context.mesh_state = Some(mesh_return_info);
+
         Ok(())
     }
 

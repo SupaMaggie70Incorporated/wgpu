@@ -224,6 +224,7 @@ impl Writer {
         task_payload: Option<Word>,
     ) -> Result<Instruction, Error> {
         for (index, res_member) in result_members.iter().enumerate() {
+            // This isn't a real builtin, and is handled elsewhere
             if res_member.built_in == Some(crate::BuiltIn::MeshTaskSize) {
                 continue;
             }
@@ -289,6 +290,7 @@ impl Writer {
                     );
                     body.push(instruction);
                 }
+                // TODO: make this guaranteed to be uniform
                 let mut instruction = Instruction::new(spirv::Op::EmitMeshTasksEXT);
                 for id in values {
                     instruction.add_operand(id);
@@ -341,6 +343,7 @@ impl Writer {
                 .position(|a| a.binding == crate::Binding::BuiltIn(crate::BuiltIn::PrimitiveCount))
                 .unwrap() as u32,
         );
+        // Get pointers to the arrays of data to extract
         let vert_array_ptr = self.id_gen.next();
         body.push(Instruction::access_chain(
             self.get_pointer_type_id(
@@ -374,8 +377,7 @@ impl Writer {
             ))],
         ));
 
-        // Call this. It must be called exactly once, which the user shouldn't be assumed
-        // to have done correctly.
+        // This must be called exactly once before any other mesh outputs are written
         {
             let mut ins = Instruction::new(spirv::Op::SetMeshOutputsEXT);
             ins.add_operand(vert_count_id);
@@ -384,7 +386,7 @@ impl Writer {
         }
 
         // All this for a `for i in 0..num_vertices` lol
-        // This is basically just a memcpy but the result is split up to multiple places
+        // This is basically just unzipping an array and copying to many arrays
         let u32_type_id = self.get_u32_type_id();
         let zero_u32 = self.get_constant_scalar(crate::Literal::U32(0));
         let vertex_loop_header = self.id_gen.next();
@@ -400,7 +402,8 @@ impl Writer {
         ));
         body.push(Instruction::branch(vertex_loop_header));
 
-        // Vertex copies
+        // This generates the instructions used to copy all parts of a single output vertex
+        // to their individual output locations
         let vertex_copy_body = {
             let mut body = Vec::new();
             // Current index to copy
@@ -440,8 +443,7 @@ impl Writer {
                     &[member_id as u32],
                 ));
                 let ptr_to_copy_to = self.id_gen.next();
-                // Get the variable that holds it and indexed pointer, which points to
-                // the value and not a wrapper struct
+                // Get a pointer to the struct member to copy
                 match member.binding {
                     crate::Binding::BuiltIn(bi) => {
                         body.push(Instruction::access_chain(
@@ -468,6 +470,7 @@ impl Writer {
                     }
                 }
                 body.push(Instruction::store(ptr_to_copy_to, val_to_copy, None));
+                // Flip the vertex position y coordinate in some cases
                 // Can't use epilogue flip because can't read from this storage class I believe
                 if needs_y_flip {
                     let prev_y = self.id_gen.next();
@@ -498,8 +501,8 @@ impl Writer {
         };
 
         // Primitive copies
+        // See comments in `vertex_copy_body`
         let primitive_copy_body = {
-            // See comments in `vertex_copy_body`
             let mut body = Vec::new();
             let val_i = self.id_gen.next();
             body.push(Instruction::load(u32_type_id, val_i, index_var, None));
@@ -574,12 +577,12 @@ impl Writer {
         };
 
         // This writes the actual loop
-        let mut get_loop_continue_id = |body: &mut Vec<Instruction>,
-                                        mut loop_body_block,
-                                        loop_header,
-                                        loop_merge,
-                                        count_id,
-                                        index_var| {
+        let mut write_loop = |body: &mut Vec<Instruction>,
+                              mut loop_body_block,
+                              loop_header,
+                              loop_merge,
+                              count_id,
+                              index_var| {
             let condition_check = self.id_gen.next();
             let loop_continue = self.id_gen.next();
             let loop_body = self.id_gen.next();
@@ -637,7 +640,7 @@ impl Writer {
             }
         };
         // Write vertex copy loop
-        get_loop_continue_id(
+        write_loop(
             body,
             vertex_copy_body,
             vertex_loop_header,
@@ -658,7 +661,7 @@ impl Writer {
             body.push(Instruction::branch(prim_loop_header));
         }
         // Write primitive copy loop
-        get_loop_continue_id(
+        write_loop(
             body,
             primitive_copy_body,
             prim_loop_header,
