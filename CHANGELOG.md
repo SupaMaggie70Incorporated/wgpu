@@ -149,7 +149,7 @@ By @SupaMaggie70Incorporated in [#8206](https://github.com/gfx-rs/wgpu/pull/8206
 #### Vulkan
 
 - Fixed a validation error regarding atomic memory semantics. By @atlv24 in [#8391](https://github.com/gfx-rs/wgpu/pull/8391).
-- Add mesh shader writer support, allowing WGSL shaders to be used on the vulkan backend. By @inner-daemons in [#8456](https://github.com/gfx-rs/wgpu/pull/8456f).
+- Add mesh shader writer support, allowing WGSL shaders to be used on the vulkan backend. By @inner-daemons in [#8456](https://github.com/gfx-rs/wgpu/pull/8456).
 
 #### WebGPU
 
