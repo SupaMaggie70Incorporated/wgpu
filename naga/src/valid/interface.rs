@@ -931,6 +931,9 @@ impl super::Validator {
                     }
                     info.insert_global_use(GlobalUse::READ, handle);
                 }
+                if let Some(ref mesh_info) = ep.mesh_info {
+                    info.insert_global_use(GlobalUse::READ, mesh_info.output_variable);
+                }
             }
 
             // Other stages must not have a payload.
