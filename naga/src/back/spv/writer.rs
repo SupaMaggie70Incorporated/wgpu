@@ -882,8 +882,8 @@ impl Writer {
 
         // Create the actual output variables and types.
         // According to SPIR-V,
-        // * All builtins must be in the same output `Block` (except vertex/primitive builtins)
-        // * Each member with `location` must be in its own `Block`
+        // * All builtins must be in the same output `Block` (except builtins for different output types like vertex/primitive)
+        // * Each member with `location` must be in its own `Block` decorated `struct`
         // * Some builtins like CullPrimitiveEXT don't care as much (older validation layers don't know this! Wonderful!)
         // * Some builtins like the indices ones need to be in their own output variable without a struct wrapper
 
