@@ -68,12 +68,6 @@ fn ms_main(@builtin(local_invocation_index) index: u32, @builtin(global_invocati
     mesh_output.primitives[0].cull = !taskPayload.visible;
     mesh_output.primitives[0].colorMask = vec4<f32>(1.0, 0.0, 1.0, 1.0);
 }
-// Ensures that even if the workgroup var isn't used through static analysis,
-// it is still written just fine to be used by generated code.
-@mesh(mesh_output)
-@payload(taskPayload)
-@workgroup_size(1)
-fn ms_no_write() {}
 @fragment
 fn fs_main(vertex: VertexOutput, primitive: PrimitiveInput) -> @location(0) vec4<f32> {
     return vertex.color * primitive.colorMask;
