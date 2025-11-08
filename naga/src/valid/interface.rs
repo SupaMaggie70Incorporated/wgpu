@@ -1151,7 +1151,6 @@ impl super::Validator {
                 mesh_info.primitive_output_type,
                 MeshOutputType::PrimitiveOutput,
             )?;
-            info.insert_global_use(GlobalUse::READ, mesh_info.output_variable);
         }
 
         Ok(info)
