@@ -312,6 +312,8 @@ impl Writer {
         return_info: &super::MeshReturnInfo,
         body: &mut Vec<Instruction>,
     ) -> Result<(), Error> {
+        // TODO: barrier here
+
         // This is the actual value (not pointer)
         // of the data to be outputted
         let out_var_id = return_info.out_variable_id;
