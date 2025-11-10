@@ -77,7 +77,7 @@ OpDecorate %183 Location 0
 %27 = OpConstant  %3  0
 %28 = OpConstantComposite  %4  %26 %26 %27 %26
 %29 = OpConstantTrue  %5
-%30 = OpConstantComposite  %9  %13 %15 %15
+%30 = OpConstantComposite  %9  %15 %15 %15
 %32 = OpConstantNull  %3
 %34 = OpTypePointer Input %9
 %33 = OpVariable  %34  Input
