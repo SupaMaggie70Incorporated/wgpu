@@ -310,25 +310,26 @@ impl Writer {
     fn write_mesh_shader_return(
         &mut self,
         return_info: &super::MeshReturnInfo,
-        body: &mut Vec<Instruction>,
+        block: &mut Block,
     ) -> Result<(), Error> {
-        // TODO: barrier here
+        self.write_control_barrier(crate::Barrier::WORK_GROUP, block);
 
         // This is the actual value (not pointer)
         // of the data to be outputted
         let out_var_id = return_info.out_variable_id;
         // Load the actual vertex and primitive counts
+        // TODO: take the min of this and the maximum output count
         let mut load_u32_by_member_index = |member_index: u32| {
             let ptr_id = self.id_gen.next();
             let u32_id = self.get_u32_type_id();
-            body.push(Instruction::access_chain(
+            block.body.push(Instruction::access_chain(
                 self.get_pointer_type_id(u32_id, spirv::StorageClass::Workgroup),
                 ptr_id,
                 out_var_id,
                 &[self.get_constant_scalar(crate::Literal::U32(member_index))],
             ));
             let id = self.id_gen.next();
-            body.push(Instruction::load(u32_id, id, ptr_id, None));
+            block.body.push(Instruction::load(u32_id, id, ptr_id, None));
             id
         };
         let vert_count_id = load_u32_by_member_index(
@@ -347,7 +348,7 @@ impl Writer {
         );
         // Get pointers to the arrays of data to extract
         let vert_array_ptr = self.id_gen.next();
-        body.push(Instruction::access_chain(
+        block.body.push(Instruction::access_chain(
             self.get_pointer_type_id(
                 return_info.vertex_array_type_id,
                 spirv::StorageClass::Workgroup,
@@ -363,7 +364,7 @@ impl Writer {
             ))],
         ));
         let prim_array_ptr = self.id_gen.next();
-        body.push(Instruction::access_chain(
+        block.body.push(Instruction::access_chain(
             self.get_pointer_type_id(
                 return_info.primitive_array_type_id,
                 spirv::StorageClass::Workgroup,
@@ -384,7 +385,7 @@ impl Writer {
             let mut ins = Instruction::new(spirv::Op::SetMeshOutputsEXT);
             ins.add_operand(vert_count_id);
             ins.add_operand(prim_count_id);
-            body.push(ins);
+            block.body.push(ins);
         }
 
         // All this for a `for i in 0..num_vertices` lol
@@ -397,12 +398,12 @@ impl Writer {
         let func_end = self.id_gen.next();
         let index_var = return_info.function_variable;
 
-        body.push(Instruction::store(
+        block.body.push(Instruction::store(
             index_var,
             return_info.local_invocation_index_id,
             None,
         ));
-        body.push(Instruction::branch(vertex_loop_header));
+        block.body.push(Instruction::branch(vertex_loop_header));
 
         // This generates the instructions used to copy all parts of a single output vertex
         // to their individual output locations
@@ -643,7 +644,7 @@ impl Writer {
         };
         // Write vertex copy loop
         write_loop(
-            body,
+            &mut block.body,
             vertex_copy_body,
             vertex_loop_header,
             in_between_loops,
@@ -652,19 +653,19 @@ impl Writer {
         );
         // In between loops, reset the initial index
         {
-            body.push(Instruction::label(in_between_loops));
+            block.body.push(Instruction::label(in_between_loops));
 
-            body.push(Instruction::store(
+            block.body.push(Instruction::store(
                 index_var,
                 return_info.local_invocation_index_id,
                 None,
             ));
 
-            body.push(Instruction::branch(prim_loop_header));
+            block.body.push(Instruction::branch(prim_loop_header));
         }
         // Write primitive copy loop
         write_loop(
-            body,
+            &mut block.body,
             primitive_copy_body,
             prim_loop_header,
             func_end,
@@ -672,7 +673,7 @@ impl Writer {
             index_var,
         );
 
-        body.push(Instruction::label(func_end));
+        block.body.push(Instruction::label(func_end));
         Ok(())
     }
 }
@@ -3666,7 +3667,7 @@ impl BlockContext<'_> {
                     }) = self.function.entry_point_context
                     {
                         self.writer
-                            .write_mesh_shader_return(mesh_state, &mut block.body)?;
+                            .write_mesh_shader_return(mesh_state, &mut block)?;
                     };
                     self.function.consume(block, Instruction::return_void());
                     return Ok(BlockExitDisposition::Discarded);

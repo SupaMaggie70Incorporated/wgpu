@@ -219,6 +219,7 @@ OpStore %123 %88
 OpStore %128 %127
 %129 = OpAccessChain  %104  %21 %15 %46 %42
 OpStore %129 %89
+OpControlBarrier %42 %42 %43
 %130 = OpAccessChain  %99  %21 %42
 %131 = OpLoad  %8  %130
 %132 = OpAccessChain  %99  %21 %13

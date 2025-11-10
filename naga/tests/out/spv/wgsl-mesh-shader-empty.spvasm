@@ -101,6 +101,7 @@ OpBranch %51
 OpControlBarrier %53 %53 %54
 OpBranch %55
 %55 = OpLabel
+OpControlBarrier %53 %53 %54
 %56 = OpAccessChain  %57  %17 %53
 %58 = OpLoad  %3  %56
 %59 = OpAccessChain  %57  %17 %11
