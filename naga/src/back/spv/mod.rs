@@ -155,9 +155,11 @@ struct MeshReturnInfo {
     /// All members of the output variable struct type
     out_members: Vec<MeshReturnMember>,
 
+    max_vertices_constant: Word,
     vertex_type_id: Word,
     vertex_array_type_id: Word,
     vertex_members: Vec<MeshReturnMember>,
+    max_primitives_constant: Word,
     primitive_type_id: Word,
     primitive_array_type_id: Word,
     primitive_members: Vec<MeshReturnMember>,

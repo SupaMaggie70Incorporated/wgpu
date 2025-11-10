@@ -862,9 +862,13 @@ impl Writer {
             vertex_type_id: self.get_handle_type_id(mesh_info.vertex_output_type),
             vertex_array_type_id,
             vertex_members,
+            max_vertices_constant: self
+                .get_constant_scalar(crate::Literal::U32(mesh_info.max_vertices)),
             primitive_type_id: self.get_handle_type_id(mesh_info.primitive_output_type),
             primitive_array_type_id,
             primitive_members,
+            max_primitives_constant: self
+                .get_constant_scalar(crate::Literal::U32(mesh_info.max_primitives)),
             vertex_bindings: Vec::new(),
             vertex_builtin_block: None,
             primitive_bindings: Vec::new(),

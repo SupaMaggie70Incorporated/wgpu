@@ -314,14 +314,16 @@ impl Writer {
     ) -> Result<(), Error> {
         self.write_control_barrier(crate::Barrier::WORK_GROUP, block);
 
+        let u32_id = self.get_u32_type_id();
+
         // This is the actual value (not pointer)
         // of the data to be outputted
         let out_var_id = return_info.out_variable_id;
+
         // Load the actual vertex and primitive counts
         // TODO: take the min of this and the maximum output count
         let mut load_u32_by_member_index = |member_index: u32| {
             let ptr_id = self.id_gen.next();
-            let u32_id = self.get_u32_type_id();
             block.body.push(Instruction::access_chain(
                 self.get_pointer_type_id(u32_id, spirv::StorageClass::Workgroup),
                 ptr_id,
@@ -332,20 +334,41 @@ impl Writer {
             block.body.push(Instruction::load(u32_id, id, ptr_id, None));
             id
         };
-        let vert_count_id = load_u32_by_member_index(
+        let vert_count_id_before_max = load_u32_by_member_index(
             return_info
                 .out_members
                 .iter()
                 .position(|a| a.binding == crate::Binding::BuiltIn(crate::BuiltIn::VertexCount))
                 .unwrap() as u32,
         );
-        let prim_count_id = load_u32_by_member_index(
+        let prim_count_id_before_max = load_u32_by_member_index(
             return_info
                 .out_members
                 .iter()
                 .position(|a| a.binding == crate::Binding::BuiltIn(crate::BuiltIn::PrimitiveCount))
                 .unwrap() as u32,
         );
+
+        // Clamp them to the allowed range
+        let vert_count_id = self.id_gen.next();
+        block.body.push(Instruction::ext_inst(
+            self.gl450_ext_inst_id,
+            spirv::GLOp::UMin,
+            u32_id,
+            vert_count_id,
+            &[vert_count_id_before_max, return_info.max_vertices_constant],
+        ));
+        let prim_count_id = self.id_gen.next();
+        block.body.push(Instruction::ext_inst(
+            self.gl450_ext_inst_id,
+            spirv::GLOp::UMin,
+            u32_id,
+            prim_count_id,
+            &[
+                prim_count_id_before_max,
+                return_info.max_primitives_constant,
+            ],
+        ));
         // Get pointers to the arrays of data to extract
         let vert_array_ptr = self.id_gen.next();
         block.body.push(Instruction::access_chain(
