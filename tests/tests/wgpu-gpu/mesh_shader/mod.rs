@@ -360,7 +360,6 @@ fn mesh_draw(ctx: &TestingContext, draw_type: DrawType) {
 fn default_gpu_test_config(draw_type: DrawType) -> GpuTestConfiguration {
     GpuTestConfiguration::new().parameters(
         TestParameters::default()
-            .test_features_limits()
             .features(
                 wgpu::Features::EXPERIMENTAL_MESH_SHADER
                     | wgpu::Features::EXPERIMENTAL_PASSTHROUGH_SHADERS
