@@ -38,6 +38,18 @@ fn compile_hlsl(device: &wgpu::Device, entry: &str, stage_str: &str) -> wgpu::Sh
     }
 }
 
+fn compile_msl(device: &wgpu::Device, entry: &str) -> wgpu::ShaderModule {
+    unsafe {
+        device.create_shader_module_passthrough(wgpu::ShaderModuleDescriptorPassthrough {
+            entry_point: entry.to_owned(),
+            label: None,
+            msl: Some(std::borrow::Cow::Borrowed(include_str!("shader.metal"))),
+            num_workgroups: (1, 1, 1),
+            ..Default::default()
+        })
+    }
+}
+
 pub struct Example {
     pipeline: wgpu::RenderPipeline,
 }
@@ -48,22 +60,33 @@ impl crate::framework::Example for Example {
         device: &wgpu::Device,
         _queue: &wgpu::Queue,
     ) -> Self {
-        let (ts, ms, fs, ts_name, ms_name, fs_name) =
-            if adapter.get_info().backend == wgpu::Backend::Vulkan {
-                let s = compile_wgsl(device);
-                (s.clone(), s.clone(), s, "ts_main", "ms_main", "fs_main")
-            } else if adapter.get_info().backend == wgpu::Backend::Dx12 {
-                (
-                    compile_hlsl(device, "Task", "as"),
-                    compile_hlsl(device, "Mesh", "ms"),
-                    compile_hlsl(device, "Frag", "ps"),
-                    "main",
-                    "main",
-                    "main",
-                )
-            } else {
-                panic!("Example can only run on vulkan or dx12");
-            };
+        let (ts, ms, fs, ts_name, ms_name, fs_name) = match adapter.get_info().backend {
+            wgpu::Backend::Vulkan => (
+                compile_wgsl(device),
+                compile_wgsl(device),
+                compile_wgsl(device),
+                "ts_main",
+                "ms_main",
+                "fs_main",
+            ),
+            wgpu::Backend::Dx12 => (
+                compile_hlsl(device, "Task", "as"),
+                compile_hlsl(device, "Mesh", "ms"),
+                compile_hlsl(device, "Frag", "ps"),
+                "main",
+                "main",
+                "main",
+            ),
+            wgpu::Backend::Metal => (
+                compile_msl(device, "taskShader"),
+                compile_msl(device, "meshShader"),
+                compile_msl(device, "fragShader"),
+                "main",
+                "main",
+                "main",
+            ),
+            _ => panic!("Example can currently only run on vulkan, dx12 or metal"),
+        };
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[],

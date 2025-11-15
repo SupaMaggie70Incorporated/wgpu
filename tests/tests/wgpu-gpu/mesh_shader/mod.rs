@@ -1,12 +1,9 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-use wgpu::{util::DeviceExt, Backends};
+use wgpu::util::DeviceExt;
 use wgpu_test::{
-    gpu_test, FailureCase, GpuTestConfiguration, GpuTestInitializer, TestParameters, TestingContext,
+    gpu_test, GpuTestConfiguration, GpuTestInitializer, TestParameters, TestingContext,
 };
-
-/// Backends that support mesh shaders
-const MESH_SHADER_BACKENDS: Backends = Backends::DX12.union(Backends::VULKAN);
 
 pub fn all_tests(tests: &mut Vec<GpuTestInitializer>) {
     tests.extend([
@@ -71,6 +68,18 @@ fn compile_hlsl(
     }
 }
 
+fn compile_msl(device: &wgpu::Device, entry: &str) -> wgpu::ShaderModule {
+    unsafe {
+        device.create_shader_module_passthrough(wgpu::ShaderModuleDescriptorPassthrough {
+            entry_point: entry.to_owned(),
+            label: None,
+            msl: Some(std::borrow::Cow::Borrowed(include_str!("shader.metal"))),
+            num_workgroups: (1, 1, 1),
+            ..Default::default()
+        })
+    }
+}
+
 fn get_shaders(
     device: &wgpu::Device,
     backend: wgpu::Backend,
@@ -86,19 +95,16 @@ fn get_shaders(
 ) {
     // In the case that the platform does support mesh shaders, the dummy
     // shader is used to avoid requiring EXPERIMENTAL_PASSTHROUGH_SHADERS.
-    let dummy_shader = device.create_shader_module(wgpu::include_wgsl!("non_mesh.wgsl"));
-    if backend == wgpu::Backend::Vulkan {
-        let s = compile_wgsl(device);
-        (
-            info.use_task.then(|| s.clone()),
-            s.clone(),
-            info.use_frag.then_some(s),
+    match backend {
+        wgpu::Backend::Vulkan => (
+            info.use_task.then(|| compile_wgsl(device)),
+            compile_wgsl(device),
+            info.use_frag.then(|| compile_wgsl(device)),
             "ts_main",
-            if info.use_task { "ms_main" } else { "ms_no_ts" },
+            "ms_main",
             "fs_main",
-        )
-    } else if backend == wgpu::Backend::Dx12 {
-        (
+        ),
+        wgpu::Backend::Dx12 => (
             info.use_task
                 .then(|| compile_hlsl(device, "Task", "as", test_name)),
             compile_hlsl(device, "Mesh", "ms", test_name),
@@ -107,11 +113,16 @@ fn get_shaders(
             "main",
             "main",
             "main",
-        )
-    } else {
-        assert!(!MESH_SHADER_BACKENDS.contains(Backends::from(backend)));
-        assert!(!info.use_task && !info.use_frag);
-        (None, dummy_shader, None, "main", "main", "main")
+        ),
+        wgpu::Backend::Metal => (
+            info.use_task.then(|| compile_msl(device, "taskShader")),
+            compile_msl(device, "meshShader"),
+            info.use_frag.then(|| compile_msl(device, "fragShader")),
+            "main",
+            "main",
+            "main",
+        ),
+        _ => unreachable!(),
     }
 }
 
@@ -349,7 +360,6 @@ fn mesh_draw(ctx: &TestingContext, draw_type: DrawType) {
 fn default_gpu_test_config(draw_type: DrawType) -> GpuTestConfiguration {
     GpuTestConfiguration::new().parameters(
         TestParameters::default()
-            .skip(FailureCase::backend(!MESH_SHADER_BACKENDS))
             .test_features_limits()
             .features(
                 wgpu::Features::EXPERIMENTAL_MESH_SHADER

@@ -203,7 +203,7 @@ impl Writer {
         ));
 
         let clamp_id = self.id_gen.next();
-        body.push(Instruction::ext_inst(
+        body.push(Instruction::ext_inst_gl_op(
             self.gl450_ext_inst_id,
             spirv::GLOp::FClamp,
             float_type_id,
@@ -353,7 +353,7 @@ impl Writer {
         let vert_count_id = self.id_gen.next();
         block.body.push(Instruction::ext_inst(
             self.gl450_ext_inst_id,
-            spirv::GLOp::UMin,
+            spirv::GLOp::UMin as Word,
             u32_id,
             vert_count_id,
             &[vert_count_id_before_max, return_info.max_vertices_constant],
@@ -361,7 +361,7 @@ impl Writer {
         let prim_count_id = self.id_gen.next();
         block.body.push(Instruction::ext_inst(
             self.gl450_ext_inst_id,
-            spirv::GLOp::UMin,
+            spirv::GLOp::UMin as Word,
             u32_id,
             prim_count_id,
             &[
@@ -1470,7 +1470,7 @@ impl BlockContext<'_> {
                             };
 
                             let max_id = self.gen_id();
-                            block.body.push(Instruction::ext_inst(
+                            block.body.push(Instruction::ext_inst_gl_op(
                                 self.writer.gl450_ext_inst_id,
                                 max_op,
                                 result_type_id,
@@ -1478,7 +1478,7 @@ impl BlockContext<'_> {
                                 &[arg0_id, arg1_id],
                             ));
 
-                            MathOp::Custom(Instruction::ext_inst(
+                            MathOp::Custom(Instruction::ext_inst_gl_op(
                                 self.writer.gl450_ext_inst_id,
                                 min_op,
                                 result_type_id,
@@ -1512,7 +1512,7 @@ impl BlockContext<'_> {
                             arg2_id = self.writer.get_constant_composite(ty, &self.temp_list);
                         }
 
-                        MathOp::Custom(Instruction::ext_inst(
+                        MathOp::Custom(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::FClamp,
                             result_type_id,
@@ -1726,7 +1726,7 @@ impl BlockContext<'_> {
                                     &self.temp_list,
                                 ));
 
-                                MathOp::Custom(Instruction::ext_inst(
+                                MathOp::Custom(Instruction::ext_inst_gl_op(
                                     self.writer.gl450_ext_inst_id,
                                     spirv::GLOp::FMix,
                                     result_type_id,
@@ -1783,7 +1783,7 @@ impl BlockContext<'_> {
                         };
 
                         let lsb_id = self.gen_id();
-                        block.body.push(Instruction::ext_inst(
+                        block.body.push(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::FindILsb,
                             result_type_id,
@@ -1791,7 +1791,7 @@ impl BlockContext<'_> {
                             &[arg0_id],
                         ));
 
-                        MathOp::Custom(Instruction::ext_inst(
+                        MathOp::Custom(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::UMin,
                             result_type_id,
@@ -1832,7 +1832,7 @@ impl BlockContext<'_> {
                         };
 
                         let msb_id = self.gen_id();
-                        block.body.push(Instruction::ext_inst(
+                        block.body.push(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             if width != 4 {
                                 spirv::GLOp::FindILsb
@@ -1889,7 +1889,7 @@ impl BlockContext<'_> {
 
                         // o = min(offset, w)
                         let offset_id = self.gen_id();
-                        block.body.push(Instruction::ext_inst(
+                        block.body.push(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::UMin,
                             u32_type,
@@ -1909,7 +1909,7 @@ impl BlockContext<'_> {
 
                         // c = min(count, tmp)
                         let count_id = self.gen_id();
-                        block.body.push(Instruction::ext_inst(
+                        block.body.push(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::UMin,
                             u32_type,
@@ -1939,7 +1939,7 @@ impl BlockContext<'_> {
 
                         // o = min(offset, w)
                         let offset_id = self.gen_id();
-                        block.body.push(Instruction::ext_inst(
+                        block.body.push(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::UMin,
                             u32_type,
@@ -1959,7 +1959,7 @@ impl BlockContext<'_> {
 
                         // c = min(count, tmp)
                         let count_id = self.gen_id();
-                        block.body.push(Instruction::ext_inst(
+                        block.body.push(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::UMin,
                             u32_type,
@@ -2054,7 +2054,7 @@ impl BlockContext<'_> {
                 };
 
                 block.body.push(match math_op {
-                    MathOp::Ext(op) => Instruction::ext_inst(
+                    MathOp::Ext(op) => Instruction::ext_inst_gl_op(
                         self.writer.gl450_ext_inst_id,
                         op,
                         result_type_id,
@@ -2065,7 +2065,27 @@ impl BlockContext<'_> {
                 });
                 id
             }
-            crate::Expression::LocalVariable(variable) => self.function.variables[&variable].id,
+            crate::Expression::LocalVariable(variable) => {
+                if let Some(rq_tracker) = self
+                    .function
+                    .ray_query_initialization_tracker_variables
+                    .get(&variable)
+                {
+                    self.ray_query_tracker_expr.insert(
+                        expr_handle,
+                        super::RayQueryTrackers {
+                            initialized_tracker: rq_tracker.id,
+                            t_max_tracker: self
+                                .function
+                                .ray_query_t_max_tracker_variables
+                                .get(&variable)
+                                .expect("Both trackers are set at the same time.")
+                                .id,
+                        },
+                    );
+                }
+                self.function.variables[&variable].id
+            }
             crate::Expression::Load { pointer } => {
                 self.write_checked_load(pointer, block, AccessTypeAdjustment::None, result_type_id)?
             }
@@ -2216,6 +2236,10 @@ impl BlockContext<'_> {
             crate::Expression::ArrayLength(expr) => self.write_runtime_array_length(expr, block)?,
             crate::Expression::RayQueryGetIntersection { query, committed } => {
                 let query_id = self.cached[query];
+                let init_tracker_id = *self
+                    .ray_query_tracker_expr
+                    .get(&query)
+                    .expect("not a cached ray query");
                 let func_id = self
                     .writer
                     .write_ray_query_get_intersection_function(committed, self.ir_module);
@@ -2226,7 +2250,7 @@ impl BlockContext<'_> {
                     intersection_type_id,
                     id,
                     func_id,
-                    &[query_id],
+                    &[query_id, init_tracker_id.initialized_tracker],
                 ));
                 id
             }
@@ -2452,7 +2476,7 @@ impl BlockContext<'_> {
                 let max_const_id = maybe_splat_const(self.writer, max_const_id);
 
                 let clamp_id = self.gen_id();
-                block.body.push(Instruction::ext_inst(
+                block.body.push(Instruction::ext_inst_gl_op(
                     self.writer.gl450_ext_inst_id,
                     spirv::GLOp::FClamp,
                     expr_type_id,
@@ -3115,7 +3139,7 @@ impl BlockContext<'_> {
             });
 
             let clamp_id = self.gen_id();
-            block.body.push(Instruction::ext_inst(
+            block.body.push(Instruction::ext_inst_gl_op(
                 self.writer.gl450_ext_inst_id,
                 clamp_op,
                 wide_vector_type_id,
@@ -3209,7 +3233,7 @@ impl BlockContext<'_> {
                 let [min, max] = [min, max].map(|lit| self.writer.get_constant_scalar(lit));
 
                 let clamp_id = self.gen_id();
-                block.body.push(Instruction::ext_inst(
+                block.body.push(Instruction::ext_inst_gl_op(
                     self.writer.gl450_ext_inst_id,
                     clamp_op,
                     result_type_id,
