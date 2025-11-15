@@ -734,11 +734,11 @@ impl super::Validator {
             ),
             crate::AddressSpace::WorkGroup => (TypeFlags::DATA | TypeFlags::SIZED, false),
             crate::AddressSpace::TaskPayload => {
-                if !self.capabilities.contains(Capabilities::MESH_SHADER) {
+                /*if !self.capabilities.contains(Capabilities::MESH_SHADER) {
                     return Err(GlobalVariableError::UnsupportedCapability(
                         Capabilities::MESH_SHADER,
                     ));
-                }
+                }*/
                 (TypeFlags::DATA | TypeFlags::SIZED, false)
             }
             crate::AddressSpace::PushConstant => {
