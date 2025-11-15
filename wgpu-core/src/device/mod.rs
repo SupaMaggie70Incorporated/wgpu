@@ -518,7 +518,6 @@ pub fn create_validator(
         Caps::MESH_SHADER,
         features.intersects(wgt::Features::EXPERIMENTAL_MESH_SHADER),
     );
-    caps.set(Caps::MESH_SHADER, true);
     caps.set(
         Caps::MESH_SHADER_POINT_TOPOLOGY,
         features.intersects(wgt::Features::EXPERIMENTAL_MESH_SHADER_POINTS),
