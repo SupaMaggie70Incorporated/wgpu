@@ -19,6 +19,7 @@ OpExecutionMode %186 OriginUpperLeft
 OpMemberDecorate %61 0 BuiltIn Position
 OpDecorate %61 Block
 OpMemberDecorate %65 0 BuiltIn CullPrimitiveEXT
+OpMemberDecorate %65 0 PerPrimitiveNV
 OpDecorate %65 Block
 OpDecorate %68 PerPrimitiveNV
 OpDecorate %69 Block
