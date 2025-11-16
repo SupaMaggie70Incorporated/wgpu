@@ -321,7 +321,6 @@ impl Writer {
         let out_var_id = return_info.out_variable_id;
 
         // Load the actual vertex and primitive counts
-        // TODO: take the min of this and the maximum output count
         let mut load_u32_by_member_index = |member_index: u32| {
             let ptr_id = self.id_gen.next();
             block.body.push(Instruction::access_chain(
