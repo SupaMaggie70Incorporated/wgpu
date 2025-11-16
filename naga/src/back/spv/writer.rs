@@ -2749,6 +2749,9 @@ impl Writer {
                             "`primitive_index` built-in",
                             &[spirv::Capability::Geometry],
                         )?;
+                        if stage == crate::ShaderStage::Mesh {
+                            others.push(Decoration::PerPrimitiveEXT);
+                        }
                         BuiltIn::PrimitiveId
                     }
                     Bi::Barycentric => {
@@ -2810,10 +2813,23 @@ impl Writer {
                         )?;
                         BuiltIn::SubgroupLocalInvocationId
                     }
-                    Bi::CullPrimitive => BuiltIn::CullPrimitiveEXT,
-                    Bi::PointIndex => BuiltIn::PrimitivePointIndicesEXT,
-                    Bi::LineIndices => BuiltIn::PrimitiveLineIndicesEXT,
-                    Bi::TriangleIndices => BuiltIn::PrimitiveTriangleIndicesEXT,
+                    Bi::CullPrimitive => {
+                        self.require_mesh_shaders()?;
+                        others.push(Decoration::PerPrimitiveEXT);
+                        BuiltIn::CullPrimitiveEXT
+                    }
+                    Bi::PointIndex => {
+                        self.require_mesh_shaders()?;
+                        BuiltIn::PrimitivePointIndicesEXT
+                    }
+                    Bi::LineIndices => {
+                        self.require_mesh_shaders()?;
+                        BuiltIn::PrimitiveLineIndicesEXT
+                    }
+                    Bi::TriangleIndices => {
+                        self.require_mesh_shaders()?;
+                        BuiltIn::PrimitiveTriangleIndicesEXT
+                    }
                     // No decoration, this EmitMeshTasksEXT is called at function return
                     Bi::MeshTaskSize => return Ok(BindingDecorations::None),
                     // These aren't normal builtins and don't occur in function output
