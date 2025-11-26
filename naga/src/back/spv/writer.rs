@@ -1719,7 +1719,6 @@ impl Writer {
             }
             crate::ShaderStage::Compute => {
                 let execution_mode = spirv::ExecutionMode::LocalSize;
-                //self.check(execution_mode.required_capabilities())?;
                 Instruction::execution_mode(
                     function_id,
                     execution_mode,
@@ -1730,7 +1729,6 @@ impl Writer {
             }
             crate::ShaderStage::Task => {
                 let execution_mode = spirv::ExecutionMode::LocalSize;
-                //self.check(execution_mode.required_capabilities())?;
                 Instruction::execution_mode(
                     function_id,
                     execution_mode,
@@ -1741,7 +1739,6 @@ impl Writer {
             }
             crate::ShaderStage::Mesh => {
                 let execution_mode = spirv::ExecutionMode::LocalSize;
-                //self.check(execution_mode.required_capabilities())?;
                 Instruction::execution_mode(
                     function_id,
                     execution_mode,
