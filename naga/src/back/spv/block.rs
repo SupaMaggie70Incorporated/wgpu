@@ -350,17 +350,18 @@ impl Writer {
 
         // Clamp them to the allowed range
         let vert_count_id = self.id_gen.next();
-        block.body.push(Instruction::ext_inst(
+        block.body.push(Instruction::ext_inst_gl_op(
             self.gl450_ext_inst_id,
-            spirv::GLOp::UMin as Word,
+            spirv::GLOp::UMin,
             u32_id,
             vert_count_id,
             &[vert_count_id_before_max, return_info.max_vertices_constant],
         ));
         let prim_count_id = self.id_gen.next();
-        block.body.push(Instruction::ext_inst(
+
+        block.body.push(Instruction::ext_inst_gl_op(
             self.gl450_ext_inst_id,
-            spirv::GLOp::UMin as Word,
+            spirv::GLOp::UMin,
             u32_id,
             prim_count_id,
             &[
