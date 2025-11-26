@@ -5,6 +5,7 @@ use alloc::{
     sync::Arc,
     vec::Vec,
 };
+use arrayvec::ArrayVec;
 use core::{ffi, num::NonZeroU32, ptr, time::Duration};
 use std::time::Instant;
 
@@ -983,7 +984,7 @@ impl crate::Device for super::Device {
         let mut ranges = Vec::with_capacity(total_non_dynamic_entries);
 
         let mut bind_group_infos =
-            arrayvec::ArrayVec::<super::BindGroupInfo, { crate::MAX_BIND_GROUPS }>::default();
+            ArrayVec::<super::BindGroupInfo, { crate::MAX_BIND_GROUPS }>::default();
         for (index, bgl) in desc.bind_group_layouts.iter().enumerate() {
             let mut info = super::BindGroupInfo {
                 tables: super::TableTypes::empty(),
@@ -1952,6 +1953,24 @@ impl crate::Device for super::Device {
         };
         let flags = Direct3D12::D3D12_PIPELINE_STATE_FLAG_NONE;
 
+        let mut view_instancing = ArrayVec::<Direct3D12::D3D12_VIEW_INSTANCE_LOCATION, 32>::new();
+        if let Some(mask) = desc.multiview_mask {
+            let mask = mask.get();
+            // This array is just what _could_ be rendered to. We actually apply the mask at
+            // renderpass creation time. The `view_index` passed to the shader depends on the
+            // view's index in this array, so if we include every view in this array, `view_index`
+            // actually the texture array layer, like in vulkan.
+            for i in 0..32 - mask.leading_zeros() {
+                view_instancing.push(Direct3D12::D3D12_VIEW_INSTANCE_LOCATION {
+                    ViewportArrayIndex: 0,
+                    RenderTargetArrayIndex: i,
+                });
+            }
+        }
+
+        // Borrow view instancing slice, so we can be sure that it won't be moved while we have pointers into this buffer.
+        let view_instancing_slice = view_instancing.as_slice();
+
         let mut stream_desc = RenderPipelineStateStreamDesc {
             // Shared by vertex and mesh pipelines
             root_signature: desc.layout.shared.signature.as_ref(),
@@ -1970,6 +1989,16 @@ impl crate::Device for super::Device {
             node_mask: 0,
             cached_pso,
             flags,
+            view_instancing: if !view_instancing_slice.is_empty() {
+                Some(Direct3D12::D3D12_VIEW_INSTANCING_DESC {
+                    ViewInstanceCount: view_instancing_slice.len() as u32,
+                    pViewInstanceLocations: view_instancing_slice.as_ptr(),
+                    // This lets us hide/mask certain values later, at renderpass creation time.
+                    Flags: Direct3D12::D3D12_VIEW_INSTANCING_FLAG_ENABLE_VIEW_INSTANCE_MASKING,
+                })
+            } else {
+                None
+            },
 
             // Optional data that depends on the pipeline type (vertex vs mesh).
             vertex_shader: Default::default(),

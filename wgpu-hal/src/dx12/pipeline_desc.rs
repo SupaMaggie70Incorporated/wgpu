@@ -91,6 +91,7 @@ implement_stream_object! { unsafe D3D12_PIPELINE_STATE_FLAGS => D3D12_PIPELINE_S
 implement_stream_object! { unsafe D3D12_INPUT_LAYOUT_DESC => D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_INPUT_LAYOUT }
 implement_stream_object! { unsafe D3D12_INDEX_BUFFER_STRIP_CUT_VALUE => D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_IB_STRIP_CUT_VALUE }
 implement_stream_object! { unsafe D3D12_STREAM_OUTPUT_DESC => D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_STREAM_OUTPUT }
+implement_stream_object! { unsafe D3D12_VIEW_INSTANCING_DESC => D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_VIEW_INSTANCING }
 
 /// Implementaation of a pipeline state stream, which is a sequence of subobjects put into
 /// a byte array according to some basic alignment rules.
@@ -183,6 +184,7 @@ pub struct RenderPipelineStateStreamDesc<'a> {
     pub node_mask: u32,
     pub cached_pso: D3D12_CACHED_PIPELINE_STATE,
     pub flags: D3D12_PIPELINE_STATE_FLAGS,
+    pub view_instancing: Option<D3D12_VIEW_INSTANCING_DESC>,
 
     // Vertex pipeline specific
     pub vertex_shader: D3D12_SHADER_BYTECODE,
@@ -230,6 +232,9 @@ impl RenderPipelineStateStreamDesc<'_> {
             stream.add_object(self.cached_pso);
         }
         stream.add_object(self.flags);
+        if let Some(view_instancing) = self.view_instancing {
+            stream.add_object(view_instancing);
+        }
         if !self.pixel_shader.pShaderBytecode.is_null() {
             stream.add_object(PixelShader(self.pixel_shader));
         }
