@@ -11,12 +11,14 @@ mod image;
 mod index;
 mod instructions;
 mod layout;
+mod mesh_shader;
 mod ray;
 mod recyclable;
 mod selection;
 mod subgroup;
 mod writer;
 
+pub use mesh_shader::{MeshReturnInfo, MeshReturnMember};
 pub use spirv::{Capability, SourceLanguage};
 
 use alloc::{string::String, vec::Vec};
@@ -142,41 +144,6 @@ struct ResultMember {
     id: Word,
     type_id: Word,
     built_in: Option<crate::BuiltIn>,
-}
-
-#[derive(Clone)]
-struct MeshReturnMember {
-    pub ty_id: u32,
-    pub binding: crate::Binding,
-}
-struct MeshReturnInfo {
-    /// Id of the workgroup variable containing the data to be output
-    out_variable_id: Word,
-    /// All members of the output variable struct type
-    out_members: Vec<MeshReturnMember>,
-
-    max_vertices_constant: Word,
-    vertex_type_id: Word,
-    vertex_array_type_id: Word,
-    vertex_members: Vec<MeshReturnMember>,
-    max_primitives_constant: Word,
-    primitive_type_id: Word,
-    primitive_array_type_id: Word,
-    primitive_members: Vec<MeshReturnMember>,
-    // * In vulkan, all builtins must be in the same block.
-    // * All bindings must be in their own unique block.
-    // * Also, the primitive indices builtin family needs its own block.
-    // * Also also, cull primitive doesn't care about having its own block, but
-    //   some older validation layers didn't respect this.
-    vertex_builtin_block: Option<Word>,
-    vertex_bindings: Vec<Word>,
-    primitive_builtin_block: Option<Word>,
-    primitive_bindings: Vec<Word>,
-    primitive_indices: Option<Word>,
-    local_invocation_index_id: Word,
-    workgroup_size: u32,
-    /// The id of a function variable in the entry point for a u32
-    function_variable: Word,
 }
 
 struct EntryPointContext {
