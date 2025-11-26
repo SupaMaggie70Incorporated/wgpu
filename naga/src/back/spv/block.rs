@@ -410,8 +410,8 @@ impl Writer {
             block.body.push(ins);
         }
 
-        // All this for a `for i in 0..num_vertices` lol
-        // This is basically just unzipping an array and copying to many arrays
+        // This is iterating over every returned vertex and splitting
+        // it out into the multiple per-output arrays.
         let u32_type_id = self.get_u32_type_id();
         let zero_u32 = self.get_constant_scalar(crate::Literal::U32(0));
         let vertex_loop_header = self.id_gen.next();
