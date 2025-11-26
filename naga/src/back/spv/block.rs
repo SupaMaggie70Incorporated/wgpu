@@ -496,7 +496,7 @@ impl Writer {
                 }
                 body.push(Instruction::store(ptr_to_copy_to, val_to_copy, None));
                 // Flip the vertex position y coordinate in some cases
-                // Can't use epilogue flip because can't read from this storage class I believe
+                // Can't use epilogue flip because can't read from this storage class
                 if needs_y_flip {
                     let prev_y = self.id_gen.next();
                     body.push(Instruction::composite_extract(
