@@ -223,13 +223,13 @@ OpStore %129 %89
 OpControlBarrier %42 %42 %43
 %130 = OpAccessChain  %99  %21 %42
 %131 = OpLoad  %8  %130
-%132 = OpAccessChain  %99  %21 %13
-%133 = OpLoad  %8  %132
-%134 = OpExtInst  %8  %1 UMin %131 %13
-%135 = OpExtInst  %8  %1 UMin %133 %15
+%132 = OpExtInst  %8  %1 UMin %131 %13
+%133 = OpAccessChain  %99  %21 %13
+%134 = OpLoad  %8  %133
+%135 = OpExtInst  %8  %1 UMin %134 %15
 %136 = OpAccessChain  %102  %21 %46
 %137 = OpAccessChain  %120  %21 %15
-OpSetMeshOutputsEXT %134 %135
+OpSetMeshOutputsEXT %132 %135
 OpStore %59 %56
 OpBranch %138
 %138 = OpLabel
@@ -237,7 +237,7 @@ OpLoopMerge %140 %162 None
 OpBranch %161
 %161 = OpLabel
 %164 = OpLoad  %8  %59
-%165 = OpULessThan  %5  %164 %134
+%165 = OpULessThan  %5  %164 %132
 OpBranchConditional %165 %163 %140
 %163 = OpLabel
 %142 = OpLoad  %8  %59

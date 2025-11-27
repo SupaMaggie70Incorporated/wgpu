@@ -67,7 +67,7 @@ OpDecorate %44 BuiltIn LocalInvocationId
 %48 = OpTypeVector %49 3
 %54 = OpConstant  %3  264
 %57 = OpTypePointer Workgroup %3
-%60 = OpConstant  %3  3
+%61 = OpConstant  %3  3
 %65 = OpTypePointer Workgroup %11
 %66 = OpConstant  %3  0
 %68 = OpTypePointer Workgroup %13
@@ -105,13 +105,13 @@ OpBranch %55
 OpControlBarrier %12 %12 %54
 %56 = OpAccessChain  %57  %18 %12
 %58 = OpLoad  %3  %56
-%59 = OpAccessChain  %57  %18 %60
-%61 = OpLoad  %3  %59
-%62 = OpExtInst  %3  %1 UMin %58 %12
-%63 = OpExtInst  %3  %1 UMin %61 %14
+%59 = OpExtInst  %3  %1 UMin %58 %12
+%60 = OpAccessChain  %57  %18 %61
+%62 = OpLoad  %3  %60
+%63 = OpExtInst  %3  %1 UMin %62 %14
 %64 = OpAccessChain  %65  %18 %66
 %67 = OpAccessChain  %68  %18 %14
-OpSetMeshOutputsEXT %62 %63
+OpSetMeshOutputsEXT %59 %63
 OpStore %32 %31
 OpBranch %69
 %69 = OpLabel
@@ -119,7 +119,7 @@ OpLoopMerge %71 %88 None
 OpBranch %87
 %87 = OpLabel
 %90 = OpLoad  %3  %32
-%91 = OpULessThan  %49  %90 %62
+%91 = OpULessThan  %49  %90 %59
 OpBranchConditional %91 %89 %71
 %89 = OpLabel
 %73 = OpLoad  %3  %32
