@@ -513,7 +513,7 @@ impl super::Writer {
         Ok(Instruction::return_void())
     }
 
-    // This writes the actual loop
+    /// This writes the actual loop
     #[allow(clippy::too_many_arguments)]
     fn write_mesh_copy_loop(
         &mut self,
@@ -712,8 +712,8 @@ impl super::Writer {
         return_info: &MeshReturnInfo,
         block: &mut Block,
     ) -> Result<(), Error> {
+        // Start with a control barrier so that everything that follows is guaranteed to see the same variables
         self.write_control_barrier(crate::Barrier::WORK_GROUP, block);
-
         let u32_id = self.get_u32_type_id();
 
         // This is the actual value (not pointer)
@@ -721,90 +721,71 @@ impl super::Writer {
         let out_var_id = return_info.out_variable_id;
 
         // Load the actual vertex and primitive counts
-        let mut load_u32_by_member_index = |member_index: u32| {
-            let ptr_id = self.id_gen.next();
-            block.body.push(Instruction::access_chain(
-                self.get_pointer_type_id(u32_id, spirv::StorageClass::Workgroup),
-                ptr_id,
-                out_var_id,
-                &[self.get_constant_scalar(crate::Literal::U32(member_index))],
-            ));
+        let mut load_u32_by_member_index =
+            |members: &[MeshReturnMember], bi: crate::BuiltIn, max: u32| {
+                let member_index = members
+                    .iter()
+                    .position(|a| a.binding == crate::Binding::BuiltIn(bi))
+                    .unwrap() as u32;
+                let ptr_id = self.id_gen.next();
+                block.body.push(Instruction::access_chain(
+                    self.get_pointer_type_id(u32_id, spirv::StorageClass::Workgroup),
+                    ptr_id,
+                    out_var_id,
+                    &[self.get_constant_scalar(crate::Literal::U32(member_index))],
+                ));
+                let before_min_id = self.id_gen.next();
+                block
+                    .body
+                    .push(Instruction::load(u32_id, before_min_id, ptr_id, None));
+
+                // Clamp the values
+                let id = self.id_gen.next();
+                block.body.push(Instruction::ext_inst_gl_op(
+                    self.gl450_ext_inst_id,
+                    spirv::GLOp::UMin,
+                    u32_id,
+                    id,
+                    &[before_min_id, max],
+                ));
+                id
+            };
+        let vert_count_id = load_u32_by_member_index(
+            &return_info.out_members,
+            crate::BuiltIn::VertexCount,
+            return_info.vertex_info.max_length_constant,
+        );
+        let prim_count_id = load_u32_by_member_index(
+            &return_info.out_members,
+            crate::BuiltIn::PrimitiveCount,
+            return_info.primitive_info.max_length_constant,
+        );
+
+        // Get pointers to the arrays of data to extract
+        let mut get_array_ptr = |bi: crate::BuiltIn, array_type_id: u32| {
             let id = self.id_gen.next();
-            block.body.push(Instruction::load(u32_id, id, ptr_id, None));
+            block.body.push(Instruction::access_chain(
+                self.get_pointer_type_id(array_type_id, spirv::StorageClass::Workgroup),
+                id,
+                return_info.out_variable_id,
+                &[self.get_constant_scalar(crate::Literal::U32(
+                    return_info
+                        .out_members
+                        .iter()
+                        .position(|a| a.binding == crate::Binding::BuiltIn(bi))
+                        .unwrap() as u32,
+                ))],
+            ));
             id
         };
-        let vert_count_id_before_max = load_u32_by_member_index(
-            return_info
-                .out_members
-                .iter()
-                .position(|a| a.binding == crate::Binding::BuiltIn(crate::BuiltIn::VertexCount))
-                .unwrap() as u32,
+        let vert_array_ptr = get_array_ptr(
+            crate::BuiltIn::Vertices,
+            return_info.vertex_info.array_type_id,
         );
-        let prim_count_id_before_max = load_u32_by_member_index(
-            return_info
-                .out_members
-                .iter()
-                .position(|a| a.binding == crate::Binding::BuiltIn(crate::BuiltIn::PrimitiveCount))
-                .unwrap() as u32,
+        let prim_array_ptr = get_array_ptr(
+            crate::BuiltIn::Primitives,
+            return_info.primitive_info.array_type_id,
         );
-
-        // Clamp them to the allowed range
-        let vert_count_id = self.id_gen.next();
-        block.body.push(Instruction::ext_inst_gl_op(
-            self.gl450_ext_inst_id,
-            spirv::GLOp::UMin,
-            u32_id,
-            vert_count_id,
-            &[
-                vert_count_id_before_max,
-                return_info.vertex_info.max_length_constant,
-            ],
-        ));
-        let prim_count_id = self.id_gen.next();
-
-        block.body.push(Instruction::ext_inst_gl_op(
-            self.gl450_ext_inst_id,
-            spirv::GLOp::UMin,
-            u32_id,
-            prim_count_id,
-            &[
-                prim_count_id_before_max,
-                return_info.primitive_info.max_length_constant,
-            ],
-        ));
-        // Get pointers to the arrays of data to extract
-        let vert_array_ptr = self.id_gen.next();
-        block.body.push(Instruction::access_chain(
-            self.get_pointer_type_id(
-                return_info.vertex_info.array_type_id,
-                spirv::StorageClass::Workgroup,
-            ),
-            vert_array_ptr,
-            return_info.out_variable_id,
-            &[self.get_constant_scalar(crate::Literal::U32(
-                return_info
-                    .out_members
-                    .iter()
-                    .position(|a| a.binding == crate::Binding::BuiltIn(crate::BuiltIn::Vertices))
-                    .unwrap() as u32,
-            ))],
-        ));
-        let prim_array_ptr = self.id_gen.next();
-        block.body.push(Instruction::access_chain(
-            self.get_pointer_type_id(
-                return_info.primitive_info.array_type_id,
-                spirv::StorageClass::Workgroup,
-            ),
-            prim_array_ptr,
-            return_info.out_variable_id,
-            &[self.get_constant_scalar(crate::Literal::U32(
-                return_info
-                    .out_members
-                    .iter()
-                    .position(|a| a.binding == crate::Binding::BuiltIn(crate::BuiltIn::Primitives))
-                    .unwrap() as u32,
-            ))],
-        ));
 
         // This must be called exactly once before any other mesh outputs are written
         {
