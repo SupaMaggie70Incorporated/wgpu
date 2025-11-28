@@ -8,24 +8,6 @@ struct TaskPayload {
   bool visible;
 };
 
-struct VertexOutput {
-  vec4 position;
-  vec4 color;
-};
-
-struct PrimitiveOutput {
-  uvec3 indices;
-  bool cull;
-  vec4 colorMask;
-};
-
-struct MeshOutput {
-  VertexOutput vertices[3];
-  PrimitiveOutput primitives[1];
-  uint vertex_count;
-  uint primitive_count;
-};
-
 out _40 { layout(location = 0) vec4 _m0; }
 _43[3];
 
@@ -33,15 +15,15 @@ perprimitiveEXT out _47 { layout(location = 1) vec4 _m0; }
 _50[1];
 
 taskPayloadSharedEXT TaskPayload taskPayload;
-shared MeshOutput mesh_output;
+
+shared bool array[3];
 
 void main() {
-  mesh_output.primitives[0u].cull = !taskPayload.visible;
+  array[0] = !taskPayload.visible;
+  bool cull = array[gl_LocalInvocationIndex];
+  gl_MeshPrimitivesEXT[0].gl_CullPrimitiveEXT = cull;
 
   SetMeshOutputsEXT(3, 1);
-
-  bool cull = mesh_output.primitives[gl_LocalInvocationIndex].cull;
-  gl_MeshPrimitivesEXT[0].gl_CullPrimitiveEXT = cull;
 
   gl_MeshVerticesEXT[0].gl_Position = vec4(0.0, 1.0, 0.0, 1.0);
   gl_MeshVerticesEXT[1].gl_Position = vec4(-1.0, -1.0, 0.0, 1.0);
@@ -53,5 +35,4 @@ void main() {
 
   gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0u, 1u, 2u);
   _50[0]._m0 = vec4(1.0, 0.0, 1.0, 1.0);
-  gl_MeshPrimitivesEXT[0].gl_CullPrimitiveEXT = false;
 }
