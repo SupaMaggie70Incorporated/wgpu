@@ -78,8 +78,9 @@ void main()
     _30 = gl_LocalInvocationIndex;
     for (; _30 < _117; _30++)
     {
-        gl_PrimitiveTriangleIndicesEXT[0u] = mesh_output.primitives[0u].indices;
-        gl_MeshPrimitivesEXT[0u].gl_CullPrimitiveEXT = mesh_output.primitives[0u].cull;
-        _50[0u]._m0 = mesh_output.primitives[0u].colorMask;
+        gl_PrimitiveTriangleIndicesEXT[_30] = mesh_output.primitives[_30].indices;
+        gl_MeshPrimitivesEXT[_30].gl_CullPrimitiveEXT = mesh_output.primitives[_30].cull;
+        _50[_30]._m0 = mesh_output.primitives[_30].colorMask;
     }
 }
+
