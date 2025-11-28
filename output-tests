@@ -18,3 +18,9 @@ spirv-cross output/frag.spv --output output/frag.glsl -V
 glslc -fshader-stage=task --target-env=vulkan1.2 -c output/task.glsl -o output/task-glsl.spv
 glslc -fshader-stage=mesh --target-env=vulkan1.2 -c output/mesh.glsl -o output/mesh-glsl.spv
 glslc -fshader-stage=frag --target-env=vulkan1.2 -c output/frag.glsl -o output/frag-glsl.spv
+
+glslc -fshader-stage=task --target-env=vulkan1.2 -c output/task-correct.glsl -o output/task-correct.spv
+glslc -fshader-stage=mesh --target-env=vulkan1.2 -c output/mesh-correct.glsl -o output/mesh-correct.spv
+glslc -fshader-stage=frag --target-env=vulkan1.2 -c output/frag-correct.glsl -o output/frag-correct.spv
+
+glslc -fshader-stage=mesh --target-env=vulkan1.2 -c output/mesh-custom.glsl -o output/mesh-custom.spv

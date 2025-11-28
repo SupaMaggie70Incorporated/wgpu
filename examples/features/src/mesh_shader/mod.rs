@@ -73,8 +73,8 @@ impl crate::framework::Example for Example {
         device: &wgpu::Device,
         _queue: &wgpu::Queue,
     ) -> Self {
-        const PATHS: [&str; 3] = ["task-opt.spv", "mesh-opt.spv", "frag-opt.spv"];
-        const ENTRY_POINTS: [&str; 3] = ["ts_main", "ms_main", "fs_main"];
+        const PATHS: [&str; 3] = ["task.spv", "mesh-custom.spv", "frag.spv"];
+        const ENTRY_POINTS: [&str; 3] = ["ts_main", "main", "fs_main"];
         let ts = compile_spv_passthrough(device, PATHS[0], ENTRY_POINTS[0]);
         let ms = compile_spv_passthrough(device, PATHS[1], ENTRY_POINTS[1]);
         let fs = compile_spv_passthrough(device, PATHS[2], ENTRY_POINTS[2]);
