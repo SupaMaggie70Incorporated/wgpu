@@ -50,6 +50,19 @@ fn compile_msl(device: &wgpu::Device, entry: &str) -> wgpu::ShaderModule {
     }
 }
 
+fn compile_spv_passthrough(device: &wgpu::Device, path: &str, ep: &str) -> wgpu::ShaderModule {
+    let path = format!("/home/supa/code/workspaces/graphics-rs/wgpu/output/{path}");
+    unsafe {
+        device.create_shader_module_passthrough(wgpu::ShaderModuleDescriptorPassthrough {
+            entry_point: ep.into(),
+            label: None,
+            num_workgroups: (0, 0, 0),
+            spirv: Some(wgpu::util::make_spirv_raw(&std::fs::read(path).unwrap())),
+            ..Default::default()
+        })
+    }
+}
+
 pub struct Example {
     pipeline: wgpu::RenderPipeline,
 }
@@ -60,7 +73,13 @@ impl crate::framework::Example for Example {
         device: &wgpu::Device,
         _queue: &wgpu::Queue,
     ) -> Self {
-        let (ts, ms, fs, ts_name, ms_name, fs_name) = match adapter.get_info().backend {
+        const PATHS: [&str; 3] = ["task-opt.spv", "mesh-opt.spv", "frag-opt.spv"];
+        const ENTRY_POINTS: [&str; 3] = ["ts_main", "ms_main", "fs_main"];
+        let ts = compile_spv_passthrough(device, PATHS[0], ENTRY_POINTS[0]);
+        let ms = compile_spv_passthrough(device, PATHS[1], ENTRY_POINTS[1]);
+        let fs = compile_spv_passthrough(device, PATHS[2], ENTRY_POINTS[2]);
+        let [ts_name, ms_name, fs_name] = ENTRY_POINTS;
+        /*let (ts, ms, fs, ts_name, ms_name, fs_name) = match adapter.get_info().backend {
             wgpu::Backend::Vulkan => (
                 compile_wgsl(device),
                 compile_wgsl(device),
@@ -86,7 +105,7 @@ impl crate::framework::Example for Example {
                 "main",
             ),
             _ => panic!("Example can currently only run on vulkan, dx12 or metal"),
-        };
+        };*/
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[],

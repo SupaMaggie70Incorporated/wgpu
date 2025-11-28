@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Set it up to use mesa drivers
+export VK_DRIVER_FILES=/home/supa/mesa-lib/icd.json
+export LD_LIBRARY_PATH="/home/supa/mesa-lib/:$LD_LIBRARY_PATH"
+export LIBGL_DRIVERS_PATH=/home/supa/mesa-lib/dri
+
+# This prints all the "Register never used" nonsense
+export TGSI_PRINT_SANITY=true
+# Writes out a 20k line xml file that nobody will ever read
+export GALLIUM_TRACE=trace.xml
+# Has no effect on output
+export GALLIUM_PRINT_OPTIONS=true
+# Has no effect on output
+export LP_DEBUG=pipe,tgsi,fs,mesh
+# Has no effect on output
+export MESA_DEBUG=1
+cargo xtask test export mesh_pipeline_basic_task_mesh_frag
