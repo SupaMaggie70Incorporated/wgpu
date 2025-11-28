@@ -597,8 +597,13 @@ impl super::Writer {
         let zero_u32 = self.get_constant_scalar(crate::Literal::U32(0));
         let mut body = Vec::new();
         // Current index to copy
-        let val_i = self.id_gen.next();
-        body.push(Instruction::load(u32_type_id, val_i, index_var, None));
+        let val_i = if is_primitive {
+            self.get_constant_scalar(crate::Literal::U32(0))
+        } else {
+            let val_i = self.id_gen.next();
+            body.push(Instruction::load(u32_type_id, val_i, index_var, None));
+            val_i
+        };
 
         let info = if is_primitive {
             &return_info.primitive_info
