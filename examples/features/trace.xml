@@ -2,150 +2,150 @@
 <?xml-stylesheet type='text/xsl' href='trace.xsl'?>
 <trace version='0.1'>
 	<call no='1' class='' method='pipe_screen_create'>
-		<ret><ptr>0x7a6d2808d520</ptr></ret>
+		<ret><ptr>0x75da9c08d520</ptr></ret>
 		<time><int>2</int></time>
 	</call>
 	<call no='2' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='shader'><enum>MESA_SHADER_VERTEX</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
 		<time><int>3</int></time>
 	</call>
 	<call no='3' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='shader'><enum>MESA_SHADER_TESS_CTRL</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
 		<time><int>3</int></time>
 	</call>
 	<call no='4' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='shader'><enum>MESA_SHADER_TESS_EVAL</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
 		<time><int>3</int></time>
 	</call>
 	<call no='5' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='shader'><enum>MESA_SHADER_GEOMETRY</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
 		<time><int>3</int></time>
 	</call>
 	<call no='6' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='shader'><enum>MESA_SHADER_FRAGMENT</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
-		<time><int>3</int></time>
-	</call>
-	<call no='7' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='shader'><enum>MESA_SHADER_COMPUTE</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
 		<time><int>2</int></time>
 	</call>
+	<call no='7' class='pipe_screen' method='get_compiler_options'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='shader'><enum>MESA_SHADER_COMPUTE</enum></arg>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
+		<time><int>3</int></time>
+	</call>
 	<call no='8' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='shader'><enum>MESA_SHADER_TASK</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
 		<time><int>2</int></time>
 	</call>
 	<call no='9' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='shader'><enum>MESA_SHADER_MESH</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
 		<time><int>3</int></time>
 	</call>
 	<call no='10' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='shader'><enum>MESA_SHADER_RAYGEN</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
 		<time><int>2</int></time>
 	</call>
 	<call no='11' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='shader'><enum>MESA_SHADER_ANY_HIT</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
 		<time><int>2</int></time>
 	</call>
 	<call no='12' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='shader'><enum>MESA_SHADER_CLOSEST_HIT</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
-		<time><int>3</int></time>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
+		<time><int>2</int></time>
 	</call>
 	<call no='13' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='shader'><enum>MESA_SHADER_MISS</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
 		<time><int>3</int></time>
 	</call>
 	<call no='14' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='shader'><enum>MESA_SHADER_INTERSECTION</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
-		<time><int>2</int></time>
-	</call>
-	<call no='15' class='pipe_screen' method='get_compiler_options'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='shader'><enum>MESA_SHADER_CALLABLE</enum></arg>
-		<ret><ptr>0x7a6d2cd9f200</ptr></ret>
-		<time><int>2</int></time>
-	</call>
-	<call no='16' class='pipe_screen' method='get_name'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<ret><string>llvmpipe (LLVM 18.1.3, 256 bits)</string></ret>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
 		<time><int>3</int></time>
 	</call>
+	<call no='15' class='pipe_screen' method='get_compiler_options'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='shader'><enum>MESA_SHADER_CALLABLE</enum></arg>
+		<ret><ptr>0x75da97d9f200</ptr></ret>
+		<time><int>3</int></time>
+	</call>
+	<call no='16' class='pipe_screen' method='get_name'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<ret><string>llvmpipe (LLVM 18.1.3, 256 bits)</string></ret>
+		<time><int>2</int></time>
+	</call>
 	<call no='17' class='pipe_screen' method='get_device_uuid'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<ret><string>mesa25.2.7</string></ret>
 		<time><int>1</int></time>
 	</call>
 	<call no='18' class='pipe_screen' method='get_driver_uuid'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<ret><string>llvmpipeUUID</string></ret>
 		<time><int>1</int></time>
 	</call>
 	<call no='19' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>1</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>11</int></time>
+		<time><int>10</int></time>
 	</call>
 	<call no='20' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>16</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>5</int></time>
 	</call>
 	<call no='21' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>64</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>5</int></time>
 	</call>
 	<call no='22' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='23' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -155,57 +155,57 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='24' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>2</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='25' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>5</int></time>
 	</call>
 	<call no='26' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>1</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='27' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>16</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>5</int></time>
 	</call>
 	<call no='28' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>64</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>5</int></time>
 	</call>
 	<call no='29' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -215,47 +215,47 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='30' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>8</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='31' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>2</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='32' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='33' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>1</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>7</int></time>
+		<time><int>5</int></time>
 	</call>
 	<call no='34' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -265,37 +265,37 @@
 		<time><int>6</int></time>
 	</call>
 	<call no='35' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>64</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>11</int></time>
 	</call>
 	<call no='36' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='37' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>8</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='38' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -305,7 +305,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='39' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -315,7 +315,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='40' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -325,7 +325,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='41' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -335,7 +335,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='42' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -345,17 +345,17 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='43' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='44' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -365,7 +365,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='45' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -375,27 +375,27 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='46' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='47' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>1</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>8</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='48' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -405,17 +405,17 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='49' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>64</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>8</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='50' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -425,17 +425,17 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='51' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>8</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>8</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='52' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -445,37 +445,37 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='53' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>8</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='54' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>1</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>8</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='55' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>16</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>8</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='56' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -485,7 +485,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='57' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -495,7 +495,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='58' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -505,7 +505,7 @@
 		<time><int>8</int></time>
 	</call>
 	<call no='59' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -515,7 +515,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='60' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R16G16B16A16_SNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -525,7 +525,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='61' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_S8_UINT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -535,7 +535,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='62' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_Z32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -545,7 +545,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='63' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_Z24_UNORM_S8_UINT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -555,17 +555,17 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='64' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_Z32_FLOAT_S8X24_UINT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>1</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>8</int></time>
 	</call>
 	<call no='65' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R11G11B10_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -575,17 +575,17 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='66' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R11G11B10_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>16</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='67' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R11G11B10_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -595,7 +595,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='68' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R11G11B10_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -605,27 +605,27 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='69' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R11G11B10_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>8</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='70' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R11G11B10_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>2</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='71' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R11G11B10_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -635,27 +635,27 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='72' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_B8G8R8A8_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>1</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>8</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='73' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_B8G8R8A8_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>16</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='74' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_B8G8R8A8_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -665,7 +665,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='75' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_B8G8R8A8_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -675,17 +675,17 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='76' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_B8G8R8A8_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>8</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>8</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='77' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_B8G8R8A8_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -695,7 +695,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='78' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_B8G8R8A8_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -705,27 +705,27 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='79' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>1</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>8</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='80' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>16</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='81' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -735,57 +735,57 @@
 		<time><int>6</int></time>
 	</call>
 	<call no='82' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>305</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='83' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>8</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='84' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>2</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='85' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='86' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>1</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='87' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -795,17 +795,17 @@
 		<time><int>5</int></time>
 	</call>
 	<call no='88' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>64</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>5</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='89' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -815,7 +815,7 @@
 		<time><int>6</int></time>
 	</call>
 	<call no='90' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -825,7 +825,7 @@
 		<time><int>6</int></time>
 	</call>
 	<call no='91' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -835,17 +835,17 @@
 		<time><int>6</int></time>
 	</call>
 	<call no='92' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='93' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32B32A32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -855,7 +855,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='94' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32B32A32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -865,7 +865,7 @@
 		<time><int>6</int></time>
 	</call>
 	<call no='95' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32B32A32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -875,7 +875,7 @@
 		<time><int>6</int></time>
 	</call>
 	<call no='96' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32B32A32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -885,7 +885,7 @@
 		<time><int>6</int></time>
 	</call>
 	<call no='97' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32B32A32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -895,17 +895,17 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='98' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32B32A32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>2</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='99' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R32G32B32A32_FLOAT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -915,17 +915,17 @@
 		<time><int>6</int></time>
 	</call>
 	<call no='100' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_G8_B8R8_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>1</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='101' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_G8_B8R8_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -935,7 +935,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='102' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_G8_B8R8_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -945,37 +945,37 @@
 		<time><int>6</int></time>
 	</call>
 	<call no='103' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_G8_B8R8_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='104' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_G8_B8R8_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>8</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='105' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_G8_B8R8_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>2</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='106' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_G8_B8R8_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -985,7 +985,7 @@
 		<time><int>6</int></time>
 	</call>
 	<call no='107' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_X6G10_X6B10X6R10_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -995,7 +995,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='108' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_X6G10_X6B10X6R10_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1005,7 +1005,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='109' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_X6G10_X6B10X6R10_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1015,7 +1015,7 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='110' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_X6G10_X6B10X6R10_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1025,17 +1025,17 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='111' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_X6G10_X6B10X6R10_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>8</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>8</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='112' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_X6G10_X6B10X6R10_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1045,17 +1045,17 @@
 		<time><int>7</int></time>
 	</call>
 	<call no='113' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_X6G10_X6B10X6R10_420_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
+		<time><int>8</int></time>
 	</call>
 	<call no='114' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_Z24X8_UNORM</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1065,18 +1065,8 @@
 		<time><int>6</int></time>
 	</call>
 	<call no='115' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_Z24_UNORM_S8_UINT</enum></arg>
-		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
-		<arg name='sample_count'><uint>0</uint></arg>
-		<arg name='storage_sample_count'><uint>0</uint></arg>
-		<arg name='tex_usage'><uint>1</uint></arg>
-		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
-	</call>
-	<call no='116' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='format'><enum>PIPE_FORMAT_S8_UINT</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
@@ -1084,15 +1074,25 @@
 		<ret><bool>1</bool></ret>
 		<time><int>7</int></time>
 	</call>
+	<call no='116' class='pipe_screen' method='is_format_supported'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='format'><enum>PIPE_FORMAT_S8_UINT</enum></arg>
+		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
+		<arg name='sample_count'><uint>0</uint></arg>
+		<arg name='storage_sample_count'><uint>0</uint></arg>
+		<arg name='tex_usage'><uint>1</uint></arg>
+		<ret><bool>1</bool></ret>
+		<time><int>12</int></time>
+	</call>
 	<call no='117' class='pipe_screen' method='context_create'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='priv'><null/></arg>
 		<arg name='flags'><uint>4</uint></arg>
-		<ret><ptr>0x7a6d2cedf010</ptr></ret>
+		<ret><ptr>0x75daa4022010</ptr></ret>
 		<time><int>3</int></time>
 	</call>
 	<call no='118' class='pipe_context' method='create_fs_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='state'><struct name='pipe_shader_state'><member name='type'><uint>1</uint></member><member name='tokens'><null/></member><member name='ir'><string><![CDATA[shader: MESA_SHADER_FRAGMENT
 name: dummy_frag
 internal: true
@@ -1105,60 +1105,60 @@ impl main {
 }
 
 ]]></string></member><member name='stream_output'><struct name='pipe_stream_output_info'><member name='num_outputs'><uint>0</uint></member><member name='stride'><array><elem><uint>0</uint></elem><elem><uint>0</uint></elem><elem><uint>0</uint></elem><elem><uint>0</uint></elem></array></member><member name='output'><array></array></member></struct></member></struct></arg>
-		<ret><ptr>0x7a6d29c27ad0</ptr></ret>
-		<time><int>42</int></time>
+		<ret><ptr>0x75da9dc27ad0</ptr></ret>
+		<time><int>48</int></time>
 	</call>
 	<call no='119' class='pipe_screen' method='resource_create'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='templat'><struct name='pipe_resource'><member name='target'><enum>PIPE_BUFFER</enum></member><member name='format'><enum>PIPE_FORMAT_R8_UNORM</enum></member><member name='width'><uint>4</uint></member><member name='height'><uint>1</uint></member><member name='depth'><uint>1</uint></member><member name='array_size'><uint>1</uint></member><member name='last_level'><uint>0</uint></member><member name='nr_samples'><uint>0</uint></member><member name='nr_storage_samples'><uint>0</uint></member><member name='usage'><uint>1</uint></member><member name='bind'><uint>0</uint></member><member name='flags'><uint>0</uint></member></struct></arg>
-		<ret><ptr>0x7a6d29c2cff0</ptr></ret>
+		<ret><ptr>0x75da9dc2cff0</ptr></ret>
 		<time><int>11</int></time>
 	</call>
 	<call no='120' class='pipe_context' method='buffer_subdata'>
-		<arg name='context'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='resource'><ptr>0x7a6d29c2cff0</ptr></arg>
+		<arg name='context'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='resource'><ptr>0x75da9dc2cff0</ptr></arg>
 		<arg name='usage'><enum>PIPE_MAP_FLAGS_UNKNOWN</enum></arg>
 		<arg name='offset'><uint>0</uint></arg>
 		<arg name='size'><uint>4</uint></arg>
 		<arg name='data'><bytes>00000000</bytes></arg>
-		<time><int>5</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='121' class='pipe_context' method='create_texture_handle'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='view'><ptr>0x7a6d2dff4630</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='view'><ptr>0x75daa45ef630</ptr></arg>
 		<arg name='state'><null/></arg>
-		<ret><ptr>0x7a6d29673f20</ptr></ret>
+		<ret><ptr>0x75da9d673f20</ptr></ret>
 		<time><int>3</int></time>
 	</call>
 	<call no='122' class='pipe_context' method='create_image_handle'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='image'><null/></arg>
-		<ret><ptr>0x7a6d294e8730</ptr></ret>
-		<time><int>1</int></time>
+		<ret><ptr>0x75da9d4e8730</ptr></ret>
+		<time><int>2</int></time>
 	</call>
 	<call no='123' class='pipe_screen' method='resource_create_unbacked'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='templat'><struct name='pipe_resource'><member name='target'><enum>PIPE_BUFFER</enum></member><member name='format'><enum>PIPE_FORMAT_R8_UNORM</enum></member><member name='width'><uint>524288</uint></member><member name='height'><uint>1</uint></member><member name='depth'><uint>1</uint></member><member name='array_size'><uint>1</uint></member><member name='last_level'><uint>0</uint></member><member name='nr_samples'><uint>0</uint></member><member name='nr_storage_samples'><uint>0</uint></member><member name='usage'><uint>0</uint></member><member name='bind'><uint>0</uint></member><member name='flags'><uint>64</uint></member></struct></arg>
 		<ret><uint>524288</uint></ret>
-		<ret><ptr>0x7a6d28124150</ptr></ret>
-		<time><int>7</int></time>
+		<ret><ptr>0x75da9c124150</ptr></ret>
+		<time><int>8</int></time>
 	</call>
 	<call no='124' class='pipe_screen' method='allocate_memory'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='size'><uint>8388608</uint></arg>
-		<ret><ptr>0x7a6d281236d0</ptr></ret>
+		<ret><ptr>0x75da9c1236d0</ptr></ret>
 		<time><int>6</int></time>
 	</call>
 	<call no='125' class='pipe_screen' method='map_memory'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='pmem'><ptr>0x7a6d281236d0</ptr></arg>
-		<ret><ptr>0x7a6d08000000</ptr></ret>
-		<time><int>8</int></time>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='pmem'><ptr>0x75da9c1236d0</ptr></arg>
+		<ret><ptr>0x75da3c7fa000</ptr></ret>
+		<time><int>9</int></time>
 	</call>
 	<call no='126' class='pipe_screen' method='resource_bind_backing'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='resource'><ptr>0x7a6d28124150</ptr></arg>
-		<arg name='pmem'><ptr>0x7a6d281236d0</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='resource'><ptr>0x75da9c124150</ptr></arg>
+		<arg name='pmem'><ptr>0x75da9c1236d0</ptr></arg>
 		<arg name='fd_offset'><uint>0</uint></arg>
 		<arg name='size'><uint>0</uint></arg>
 		<arg name='offset'><uint>0</uint></arg>
@@ -1166,16 +1166,16 @@ impl main {
 		<time><int>4</int></time>
 	</call>
 	<call no='127' class='pipe_screen' method='resource_create_unbacked'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='templat'><struct name='pipe_resource'><member name='target'><enum>PIPE_BUFFER</enum></member><member name='format'><enum>PIPE_FORMAT_R8_UNORM</enum></member><member name='width'><uint>208</uint></member><member name='height'><uint>1</uint></member><member name='depth'><uint>1</uint></member><member name='array_size'><uint>1</uint></member><member name='last_level'><uint>0</uint></member><member name='nr_samples'><uint>0</uint></member><member name='nr_storage_samples'><uint>0</uint></member><member name='usage'><uint>0</uint></member><member name='bind'><uint>64</uint></member><member name='flags'><uint>64</uint></member></struct></arg>
 		<ret><uint>208</uint></ret>
-		<ret><ptr>0x7a6d2812e230</ptr></ret>
+		<ret><ptr>0x75da9c12e230</ptr></ret>
 		<time><int>7</int></time>
 	</call>
 	<call no='128' class='pipe_screen' method='resource_bind_backing'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='resource'><ptr>0x7a6d2812e230</ptr></arg>
-		<arg name='pmem'><ptr>0x7a6d281236d0</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='resource'><ptr>0x75da9c12e230</ptr></arg>
+		<arg name='pmem'><ptr>0x75da9c1236d0</ptr></arg>
 		<arg name='fd_offset'><uint>0</uint></arg>
 		<arg name='size'><uint>0</uint></arg>
 		<arg name='offset'><uint>524288</uint></arg>
@@ -1183,51 +1183,51 @@ impl main {
 		<time><int>5</int></time>
 	</call>
 	<call no='129' class='pipe_context' method='create_compute_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='state'><struct name='pipe_compute_state'><member name='ir_type'><uint>1</uint></member><member name='prog'><null/></member><member name='static_shared_mem'><uint>0</uint></member></struct></arg>
-		<ret><ptr>0x7a6d29c73650</ptr></ret>
+		<ret><ptr>0x75da9dc71d50</ptr></ret>
 		<time><int>4</int></time>
 	</call>
 	<call no='130' class='pipe_screen' method='resource_create_unbacked'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='templat'><struct name='pipe_resource'><member name='target'><enum>PIPE_BUFFER</enum></member><member name='format'><enum>PIPE_FORMAT_R8_UNORM</enum></member><member name='width'><uint>24</uint></member><member name='height'><uint>1</uint></member><member name='depth'><uint>1</uint></member><member name='array_size'><uint>1</uint></member><member name='last_level'><uint>0</uint></member><member name='nr_samples'><uint>0</uint></member><member name='nr_storage_samples'><uint>0</uint></member><member name='usage'><uint>0</uint></member><member name='bind'><uint>16384</uint></member><member name='flags'><uint>64</uint></member></struct></arg>
 		<ret><uint>24</uint></ret>
-		<ret><ptr>0x7a6d29c72d80</ptr></ret>
+		<ret><ptr>0x75da9dc72e50</ptr></ret>
 		<time><int>7</int></time>
 	</call>
 	<call no='131' class='pipe_screen' method='resource_bind_backing'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='resource'><ptr>0x7a6d29c72d80</ptr></arg>
-		<arg name='pmem'><ptr>0x7a6d281236d0</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='resource'><ptr>0x75da9dc72e50</ptr></arg>
+		<arg name='pmem'><ptr>0x75da9c1236d0</ptr></arg>
 		<arg name='fd_offset'><uint>0</uint></arg>
 		<arg name='size'><uint>0</uint></arg>
 		<arg name='offset'><uint>524544</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>4</int></time>
+		<time><int>5</int></time>
 	</call>
 	<call no='132' class='pipe_screen' method='resource_create_unbacked'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='templat'><struct name='pipe_resource'><member name='target'><enum>PIPE_BUFFER</enum></member><member name='format'><enum>PIPE_FORMAT_R8_UNORM</enum></member><member name='width'><uint>64</uint></member><member name='height'><uint>1</uint></member><member name='depth'><uint>1</uint></member><member name='array_size'><uint>1</uint></member><member name='last_level'><uint>0</uint></member><member name='nr_samples'><uint>0</uint></member><member name='nr_storage_samples'><uint>0</uint></member><member name='usage'><uint>0</uint></member><member name='bind'><uint>64</uint></member><member name='flags'><uint>64</uint></member></struct></arg>
 		<ret><uint>64</uint></ret>
-		<ret><ptr>0x7a6d29c719a0</ptr></ret>
-		<time><int>6</int></time>
-	</call>
-	<call no='133' class='pipe_screen' method='allocate_memory'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='size'><uint>64</uint></arg>
-		<ret><ptr>0x7a6d29c45360</ptr></ret>
-		<time><int>4</int></time>
-	</call>
-	<call no='134' class='pipe_screen' method='map_memory'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='pmem'><ptr>0x7a6d29c45360</ptr></arg>
-		<ret><ptr>0x7a6d2e6d7000</ptr></ret>
+		<ret><ptr>0x75da9dc719a0</ptr></ret>
 		<time><int>7</int></time>
 	</call>
+	<call no='133' class='pipe_screen' method='allocate_memory'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='size'><uint>64</uint></arg>
+		<ret><ptr>0x75da9dc440c0</ptr></ret>
+		<time><int>5</int></time>
+	</call>
+	<call no='134' class='pipe_screen' method='map_memory'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='pmem'><ptr>0x75da9dc440c0</ptr></arg>
+		<ret><ptr>0x75daa5312000</ptr></ret>
+		<time><int>9</int></time>
+	</call>
 	<call no='135' class='pipe_screen' method='resource_bind_backing'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='resource'><ptr>0x7a6d29c719a0</ptr></arg>
-		<arg name='pmem'><ptr>0x7a6d29c45360</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='resource'><ptr>0x75da9dc719a0</ptr></arg>
+		<arg name='pmem'><ptr>0x75da9dc440c0</ptr></arg>
 		<arg name='fd_offset'><uint>0</uint></arg>
 		<arg name='size'><uint>0</uint></arg>
 		<arg name='offset'><uint>0</uint></arg>
@@ -1235,34 +1235,34 @@ impl main {
 		<time><int>4</int></time>
 	</call>
 	<call no='136' class='pipe_context' method='create_compute_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='state'><struct name='pipe_compute_state'><member name='ir_type'><uint>1</uint></member><member name='prog'><null/></member><member name='static_shared_mem'><uint>0</uint></member></struct></arg>
-		<ret><ptr>0x7a6d29cef600</ptr></ret>
+		<ret><ptr>0x75da9dcf1310</ptr></ret>
 		<time><int>4</int></time>
 	</call>
 	<call no='137' class='pipe_screen' method='resource_create_unbacked'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='templat'><struct name='pipe_resource'><member name='target'><enum>PIPE_BUFFER</enum></member><member name='format'><enum>PIPE_FORMAT_R8_UNORM</enum></member><member name='width'><uint>208</uint></member><member name='height'><uint>1</uint></member><member name='depth'><uint>1</uint></member><member name='array_size'><uint>1</uint></member><member name='last_level'><uint>0</uint></member><member name='nr_samples'><uint>0</uint></member><member name='nr_storage_samples'><uint>0</uint></member><member name='usage'><uint>0</uint></member><member name='bind'><uint>0</uint></member><member name='flags'><uint>64</uint></member></struct></arg>
 		<ret><uint>208</uint></ret>
-		<ret><ptr>0x7a6d29c95b50</ptr></ret>
+		<ret><ptr>0x75da9dc96ba0</ptr></ret>
 		<time><int>8</int></time>
 	</call>
 	<call no='138' class='pipe_screen' method='allocate_memory'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='size'><uint>8388608</uint></arg>
-		<ret><ptr>0x7a6d29c95e90</ptr></ret>
-		<time><int>7</int></time>
+		<ret><ptr>0x75da9dcba800</ptr></ret>
+		<time><int>6</int></time>
 	</call>
 	<call no='139' class='pipe_screen' method='map_memory'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='pmem'><ptr>0x7a6d29c95e90</ptr></arg>
-		<ret><ptr>0x7a6cee7e6000</ptr></ret>
-		<time><int>11</int></time>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='pmem'><ptr>0x75da9dcba800</ptr></arg>
+		<ret><ptr>0x75da1b800000</ptr></ret>
+		<time><int>8</int></time>
 	</call>
 	<call no='140' class='pipe_screen' method='resource_bind_backing'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='resource'><ptr>0x7a6d29c95b50</ptr></arg>
-		<arg name='pmem'><ptr>0x7a6d29c95e90</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='resource'><ptr>0x75da9dc96ba0</ptr></arg>
+		<arg name='pmem'><ptr>0x75da9dcba800</ptr></arg>
 		<arg name='fd_offset'><uint>0</uint></arg>
 		<arg name='size'><uint>0</uint></arg>
 		<arg name='offset'><uint>8388352</uint></arg>
@@ -1270,7 +1270,134 @@ impl main {
 		<time><int>5</int></time>
 	</call>
 	<call no='141' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
+		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
+		<arg name='sample_count'><uint>0</uint></arg>
+		<arg name='storage_sample_count'><uint>0</uint></arg>
+		<arg name='tex_usage'><uint>1</uint></arg>
+		<ret><bool>0</bool></ret>
+		<time><int>9</int></time>
+	</call>
+	<call no='142' class='pipe_screen' method='is_format_supported'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
+		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
+		<arg name='sample_count'><uint>0</uint></arg>
+		<arg name='storage_sample_count'><uint>0</uint></arg>
+		<arg name='tex_usage'><uint>64</uint></arg>
+		<ret><bool>1</bool></ret>
+		<time><int>7</int></time>
+	</call>
+	<call no='143' class='pipe_screen' method='is_format_supported'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
+		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
+		<arg name='sample_count'><uint>0</uint></arg>
+		<arg name='storage_sample_count'><uint>0</uint></arg>
+		<arg name='tex_usage'><uint>32768</uint></arg>
+		<ret><bool>0</bool></ret>
+		<time><int>14</int></time>
+	</call>
+	<call no='144' class='pipe_screen' method='is_format_supported'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
+		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
+		<arg name='sample_count'><uint>0</uint></arg>
+		<arg name='storage_sample_count'><uint>0</uint></arg>
+		<arg name='tex_usage'><uint>8</uint></arg>
+		<ret><bool>1</bool></ret>
+		<time><int>8</int></time>
+	</call>
+	<call no='145' class='pipe_screen' method='is_format_supported'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
+		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
+		<arg name='sample_count'><uint>0</uint></arg>
+		<arg name='storage_sample_count'><uint>0</uint></arg>
+		<arg name='tex_usage'><uint>2</uint></arg>
+		<ret><bool>1</bool></ret>
+		<time><int>7</int></time>
+	</call>
+	<call no='146' class='pipe_screen' method='is_format_supported'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
+		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
+		<arg name='sample_count'><uint>0</uint></arg>
+		<arg name='storage_sample_count'><uint>0</uint></arg>
+		<arg name='tex_usage'><uint>32768</uint></arg>
+		<ret><bool>0</bool></ret>
+		<time><int>7</int></time>
+	</call>
+	<call no='147' class='pipe_screen' method='is_format_supported'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
+		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
+		<arg name='sample_count'><uint>0</uint></arg>
+		<arg name='storage_sample_count'><uint>0</uint></arg>
+		<arg name='tex_usage'><uint>1</uint></arg>
+		<ret><bool>0</bool></ret>
+		<time><int>8</int></time>
+	</call>
+	<call no='148' class='pipe_screen' method='is_format_supported'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
+		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
+		<arg name='sample_count'><uint>0</uint></arg>
+		<arg name='storage_sample_count'><uint>0</uint></arg>
+		<arg name='tex_usage'><uint>64</uint></arg>
+		<ret><bool>1</bool></ret>
+		<time><int>7</int></time>
+	</call>
+	<call no='149' class='pipe_screen' method='is_format_supported'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
+		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
+		<arg name='sample_count'><uint>0</uint></arg>
+		<arg name='storage_sample_count'><uint>0</uint></arg>
+		<arg name='tex_usage'><uint>32768</uint></arg>
+		<ret><bool>0</bool></ret>
+		<time><int>7</int></time>
+	</call>
+	<call no='150' class='pipe_screen' method='is_format_supported'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
+		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
+		<arg name='sample_count'><uint>0</uint></arg>
+		<arg name='storage_sample_count'><uint>0</uint></arg>
+		<arg name='tex_usage'><uint>8</uint></arg>
+		<ret><bool>1</bool></ret>
+		<time><int>7</int></time>
+	</call>
+	<call no='151' class='pipe_screen' method='is_format_supported'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
+		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
+		<arg name='sample_count'><uint>0</uint></arg>
+		<arg name='storage_sample_count'><uint>0</uint></arg>
+		<arg name='tex_usage'><uint>2</uint></arg>
+		<ret><bool>1</bool></ret>
+		<time><int>7</int></time>
+	</call>
+	<call no='152' class='pipe_screen' method='is_format_supported'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
+		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
+		<arg name='sample_count'><uint>0</uint></arg>
+		<arg name='storage_sample_count'><uint>0</uint></arg>
+		<arg name='tex_usage'><uint>32768</uint></arg>
+		<ret><bool>0</bool></ret>
+		<time><int>7</int></time>
+	</call>
+	<call no='153' class='pipe_screen' method='resource_create_unbacked'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='templat'><struct name='pipe_resource'><member name='target'><enum>PIPE_TEXTURE_2D</enum></member><member name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></member><member name='width'><uint>1024</uint></member><member name='height'><uint>768</uint></member><member name='depth'><uint>1</uint></member><member name='array_size'><uint>1</uint></member><member name='last_level'><uint>0</uint></member><member name='nr_samples'><uint>1</uint></member><member name='nr_storage_samples'><uint>1</uint></member><member name='usage'><uint>0</uint></member><member name='bind'><uint>10</uint></member><member name='flags'><uint>0</uint></member></struct></arg>
+		<ret><uint>3145728</uint></ret>
+		<ret><ptr>0x75da9dd428d0</ptr></ret>
+		<time><int>7</int></time>
+	</call>
+	<call no='154' class='pipe_screen' method='is_format_supported'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1279,165 +1406,38 @@ impl main {
 		<ret><bool>0</bool></ret>
 		<time><int>7</int></time>
 	</call>
-	<call no='142' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
-		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
-		<arg name='sample_count'><uint>0</uint></arg>
-		<arg name='storage_sample_count'><uint>0</uint></arg>
-		<arg name='tex_usage'><uint>64</uint></arg>
-		<ret><bool>1</bool></ret>
-		<time><int>5</int></time>
-	</call>
-	<call no='143' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
-		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
-		<arg name='sample_count'><uint>0</uint></arg>
-		<arg name='storage_sample_count'><uint>0</uint></arg>
-		<arg name='tex_usage'><uint>32768</uint></arg>
-		<ret><bool>0</bool></ret>
-		<time><int>5</int></time>
-	</call>
-	<call no='144' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
-		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
-		<arg name='sample_count'><uint>0</uint></arg>
-		<arg name='storage_sample_count'><uint>0</uint></arg>
-		<arg name='tex_usage'><uint>8</uint></arg>
-		<ret><bool>1</bool></ret>
-		<time><int>5</int></time>
-	</call>
-	<call no='145' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
-		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
-		<arg name='sample_count'><uint>0</uint></arg>
-		<arg name='storage_sample_count'><uint>0</uint></arg>
-		<arg name='tex_usage'><uint>2</uint></arg>
-		<ret><bool>1</bool></ret>
-		<time><int>5</int></time>
-	</call>
-	<call no='146' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
-		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
-		<arg name='sample_count'><uint>0</uint></arg>
-		<arg name='storage_sample_count'><uint>0</uint></arg>
-		<arg name='tex_usage'><uint>32768</uint></arg>
-		<ret><bool>0</bool></ret>
-		<time><int>5</int></time>
-	</call>
-	<call no='147' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
-		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
-		<arg name='sample_count'><uint>0</uint></arg>
-		<arg name='storage_sample_count'><uint>0</uint></arg>
-		<arg name='tex_usage'><uint>1</uint></arg>
-		<ret><bool>0</bool></ret>
-		<time><int>5</int></time>
-	</call>
-	<call no='148' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
-		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
-		<arg name='sample_count'><uint>0</uint></arg>
-		<arg name='storage_sample_count'><uint>0</uint></arg>
-		<arg name='tex_usage'><uint>64</uint></arg>
-		<ret><bool>1</bool></ret>
-		<time><int>5</int></time>
-	</call>
-	<call no='149' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
-		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
-		<arg name='sample_count'><uint>0</uint></arg>
-		<arg name='storage_sample_count'><uint>0</uint></arg>
-		<arg name='tex_usage'><uint>32768</uint></arg>
-		<ret><bool>0</bool></ret>
-		<time><int>5</int></time>
-	</call>
-	<call no='150' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
-		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
-		<arg name='sample_count'><uint>0</uint></arg>
-		<arg name='storage_sample_count'><uint>0</uint></arg>
-		<arg name='tex_usage'><uint>8</uint></arg>
-		<ret><bool>1</bool></ret>
-		<time><int>5</int></time>
-	</call>
-	<call no='151' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
-		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
-		<arg name='sample_count'><uint>0</uint></arg>
-		<arg name='storage_sample_count'><uint>0</uint></arg>
-		<arg name='tex_usage'><uint>2</uint></arg>
-		<ret><bool>1</bool></ret>
-		<time><int>5</int></time>
-	</call>
-	<call no='152' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
-		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
-		<arg name='sample_count'><uint>0</uint></arg>
-		<arg name='storage_sample_count'><uint>0</uint></arg>
-		<arg name='tex_usage'><uint>32768</uint></arg>
-		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
-	</call>
-	<call no='153' class='pipe_screen' method='resource_create_unbacked'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='templat'><struct name='pipe_resource'><member name='target'><enum>PIPE_TEXTURE_2D</enum></member><member name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></member><member name='width'><uint>1024</uint></member><member name='height'><uint>768</uint></member><member name='depth'><uint>1</uint></member><member name='array_size'><uint>1</uint></member><member name='last_level'><uint>0</uint></member><member name='nr_samples'><uint>1</uint></member><member name='nr_storage_samples'><uint>1</uint></member><member name='usage'><uint>0</uint></member><member name='bind'><uint>10</uint></member><member name='flags'><uint>0</uint></member></struct></arg>
-		<ret><uint>3145728</uint></ret>
-		<ret><ptr>0x7a6d29cbbe50</ptr></ret>
-		<time><int>8</int></time>
-	</call>
-	<call no='154' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
-		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
-		<arg name='sample_count'><uint>0</uint></arg>
-		<arg name='storage_sample_count'><uint>0</uint></arg>
-		<arg name='tex_usage'><uint>1</uint></arg>
-		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
-	</call>
 	<call no='155' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>64</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='156' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='157' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>8</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='158' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1447,7 +1447,7 @@ impl main {
 		<time><int>6</int></time>
 	</call>
 	<call no='159' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1457,17 +1457,17 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='160' class='pipe_screen' method='resource_bind_backing'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='resource'><ptr>0x7a6d29cbbe50</ptr></arg>
-		<arg name='pmem'><ptr>0x7a6d281236d0</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='resource'><ptr>0x75da9dd428d0</ptr></arg>
+		<arg name='pmem'><ptr>0x75da9c1236d0</ptr></arg>
 		<arg name='fd_offset'><uint>0</uint></arg>
 		<arg name='size'><uint>0</uint></arg>
 		<arg name='offset'><uint>4194304</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>4</int></time>
+		<time><int>5</int></time>
 	</call>
 	<call no='161' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1477,27 +1477,27 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='162' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>64</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='163' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='164' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1507,7 +1507,7 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='165' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1517,7 +1517,7 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='166' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1527,21 +1527,21 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='167' class='pipe_context' method='create_sampler_view'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='resource'><ptr>0x7a6d29cbbe50</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='resource'><ptr>0x75da9dd428d0</ptr></arg>
 		<arg name='templ'><struct name='pipe_sampler_view'><member name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></member><member name='target'><enum>PIPE_TEXTURE_2D</enum></member><member name='texture'><null/></member><member name='u'><struct name=''><member name='tex'><struct name=''><member name='first_layer'><uint>0</uint></member><member name='last_layer'><uint>0</uint></member><member name='first_level'><uint>0</uint></member><member name='last_level'><uint>0</uint></member></struct></member></struct></member><member name='swizzle_r'><uint>0</uint></member><member name='swizzle_g'><uint>1</uint></member><member name='swizzle_b'><uint>2</uint></member><member name='swizzle_a'><uint>3</uint></member></struct></arg>
-		<ret><ptr>0x7a6d29cf09d0</ptr></ret>
+		<ret><ptr>0x75da9dca10a0</ptr></ret>
 		<time><int>7</int></time>
 	</call>
 	<call no='168' class='pipe_context' method='create_texture_handle'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='view'><ptr>0x7a6d29ca1880</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='view'><ptr>0x75da9dd42f10</ptr></arg>
 		<arg name='state'><null/></arg>
-		<ret><ptr>0x7a6d29cf1e70</ptr></ret>
+		<ret><ptr>0x75da9dcf2360</ptr></ret>
 		<time><int>4</int></time>
 	</call>
 	<call no='169' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1551,17 +1551,17 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='170' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>64</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='171' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1571,7 +1571,7 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='172' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1581,17 +1581,17 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='173' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>2</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>8</int></time>
 	</call>
 	<call no='174' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1601,7 +1601,7 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='175' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1611,7 +1611,7 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='176' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1621,17 +1621,17 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='177' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='178' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1641,51 +1641,51 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='179' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>2</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='180' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>7</int></time>
-	</call>
-	<call no='181' class='pipe_context' method='create_sampler_view'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='resource'><ptr>0x7a6d29cbbe50</ptr></arg>
-		<arg name='templ'><struct name='pipe_sampler_view'><member name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></member><member name='target'><enum>PIPE_TEXTURE_2D</enum></member><member name='texture'><null/></member><member name='u'><struct name=''><member name='tex'><struct name=''><member name='first_layer'><uint>0</uint></member><member name='last_layer'><uint>0</uint></member><member name='first_level'><uint>0</uint></member><member name='last_level'><uint>0</uint></member></struct></member></struct></member><member name='swizzle_r'><uint>0</uint></member><member name='swizzle_g'><uint>1</uint></member><member name='swizzle_b'><uint>2</uint></member><member name='swizzle_a'><uint>3</uint></member></struct></arg>
-		<ret><ptr>0x7a6d29c95ed0</ptr></ret>
 		<time><int>6</int></time>
 	</call>
+	<call no='181' class='pipe_context' method='create_sampler_view'>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='resource'><ptr>0x75da9dd428d0</ptr></arg>
+		<arg name='templ'><struct name='pipe_sampler_view'><member name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></member><member name='target'><enum>PIPE_TEXTURE_2D</enum></member><member name='texture'><null/></member><member name='u'><struct name=''><member name='tex'><struct name=''><member name='first_layer'><uint>0</uint></member><member name='last_layer'><uint>0</uint></member><member name='first_level'><uint>0</uint></member><member name='last_level'><uint>0</uint></member></struct></member></struct></member><member name='swizzle_r'><uint>0</uint></member><member name='swizzle_g'><uint>1</uint></member><member name='swizzle_b'><uint>2</uint></member><member name='swizzle_a'><uint>3</uint></member></struct></arg>
+		<ret><ptr>0x75da9dd437d0</ptr></ret>
+		<time><int>7</int></time>
+	</call>
 	<call no='182' class='pipe_context' method='create_texture_handle'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='view'><ptr>0x7a6d29cefd90</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='view'><ptr>0x75da9dd43800</ptr></arg>
 		<arg name='state'><null/></arg>
-		<ret><ptr>0x7a6d29cefdd0</ptr></ret>
-		<time><int>3</int></time>
+		<ret><ptr>0x75da9dcb8a20</ptr></ret>
+		<time><int>2</int></time>
 	</call>
 	<call no='183' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>1</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>7</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='184' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1695,7 +1695,7 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='185' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1705,17 +1705,17 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='186' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>8</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>8</int></time>
+		<time><int>6</int></time>
 	</call>
 	<call no='187' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1725,38 +1725,38 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='188' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
-	</call>
-	<call no='189' class='pipe_screen' method='resource_create_unbacked'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='templat'><struct name='pipe_resource'><member name='target'><enum>PIPE_BUFFER</enum></member><member name='format'><enum>PIPE_FORMAT_R8_UNORM</enum></member><member name='width'><uint>3145728</uint></member><member name='height'><uint>1</uint></member><member name='depth'><uint>1</uint></member><member name='array_size'><uint>1</uint></member><member name='last_level'><uint>0</uint></member><member name='nr_samples'><uint>0</uint></member><member name='nr_storage_samples'><uint>0</uint></member><member name='usage'><uint>0</uint></member><member name='bind'><uint>0</uint></member><member name='flags'><uint>64</uint></member></struct></arg>
-		<ret><uint>3145728</uint></ret>
-		<ret><ptr>0x7a6d29ceff90</ptr></ret>
 		<time><int>7</int></time>
 	</call>
+	<call no='189' class='pipe_screen' method='resource_create_unbacked'>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='templat'><struct name='pipe_resource'><member name='target'><enum>PIPE_BUFFER</enum></member><member name='format'><enum>PIPE_FORMAT_R8_UNORM</enum></member><member name='width'><uint>3145728</uint></member><member name='height'><uint>1</uint></member><member name='depth'><uint>1</uint></member><member name='array_size'><uint>1</uint></member><member name='last_level'><uint>0</uint></member><member name='nr_samples'><uint>0</uint></member><member name='nr_storage_samples'><uint>0</uint></member><member name='usage'><uint>0</uint></member><member name='bind'><uint>0</uint></member><member name='flags'><uint>64</uint></member></struct></arg>
+		<ret><uint>3145728</uint></ret>
+		<ret><ptr>0x75da9dd439a0</ptr></ret>
+		<time><int>6</int></time>
+	</call>
 	<call no='190' class='pipe_screen' method='allocate_memory'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='size'><uint>8388608</uint></arg>
-		<ret><ptr>0x7a6d29cf0430</ptr></ret>
-		<time><int>4</int></time>
+		<ret><ptr>0x75da9c12e550</ptr></ret>
+		<time><int>5</int></time>
 	</call>
 	<call no='191' class='pipe_screen' method='map_memory'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='pmem'><ptr>0x7a6d29cf0430</ptr></arg>
-		<ret><ptr>0x7a6cedfe6000</ptr></ret>
-		<time><int>13</int></time>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='pmem'><ptr>0x75da9c12e550</ptr></arg>
+		<ret><ptr>0x75da1b000000</ptr></ret>
+		<time><int>14</int></time>
 	</call>
 	<call no='192' class='pipe_screen' method='resource_bind_backing'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='resource'><ptr>0x7a6d29ceff90</ptr></arg>
-		<arg name='pmem'><ptr>0x7a6d29cf0430</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='resource'><ptr>0x75da9dd439a0</ptr></arg>
+		<arg name='pmem'><ptr>0x75da9c12e550</ptr></arg>
 		<arg name='fd_offset'><uint>0</uint></arg>
 		<arg name='size'><uint>0</uint></arg>
 		<arg name='offset'><uint>0</uint></arg>
@@ -1764,27 +1764,27 @@ impl main {
 		<time><int>5</int></time>
 	</call>
 	<call no='193' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>1</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>7</int></time>
+		<time><int>8</int></time>
 	</call>
 	<call no='194' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>64</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='195' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1794,67 +1794,67 @@ impl main {
 		<time><int>6</int></time>
 	</call>
 	<call no='196' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>8</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='197' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>2</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='198' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='199' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>1</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
+		<time><int>8</int></time>
 	</call>
 	<call no='200' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>64</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='201' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>5</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='202' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1864,7 +1864,7 @@ impl main {
 		<time><int>6</int></time>
 	</call>
 	<call no='203' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -1874,17 +1874,17 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='204' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='205' class='pipe_context' method='create_fs_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='state'><struct name='pipe_shader_state'><member name='type'><uint>1</uint></member><member name='tokens'><null/></member><member name='ir'><string><![CDATA[shader: MESA_SHADER_FRAGMENT
 source_blake3: {0xf959e524, 0x52822767, 0x0c96ed30, 0x1050fd73, 0xc14af842, 0xc2c8f465, 0x673bf665, 0x13fbf079}
 inputs_read: 32-33
@@ -1919,11 +1919,11 @@ impl fs_main {
 }
 
 ]]></string></member><member name='stream_output'><struct name='pipe_stream_output_info'><member name='num_outputs'><uint>0</uint></member><member name='stride'><array><elem><uint>0</uint></elem><elem><uint>0</uint></elem><elem><uint>0</uint></elem><elem><uint>0</uint></elem></array></member><member name='output'><array></array></member></struct></member></struct></arg>
-		<ret><ptr>0x7a6d29d898e0</ptr></ret>
-		<time><int>100</int></time>
+		<ret><ptr>0x75da9dd88990</ptr></ret>
+		<time><int>98</int></time>
 	</call>
 	<call no='206' class='pipe_context' method='create_ts_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='state'><struct name='pipe_shader_state'><member name='type'><uint>1</uint></member><member name='tokens'><null/></member><member name='ir'><string><![CDATA[shader: MESA_SHADER_TASK
 source_blake3: {0x89be7c41, 0xc4ccfb35, 0xb4f4ed68, 0xd2fc2632, 0xc7a94e77, 0x93b42597, 0xb5ee74d2, 0x1dd41369}
 workgroup_size: 1, 1, 1
@@ -1954,18 +1954,18 @@ impl ts_main {
 }
 
 ]]></string></member><member name='stream_output'><struct name='pipe_stream_output_info'><member name='num_outputs'><uint>0</uint></member><member name='stride'><array><elem><uint>0</uint></elem><elem><uint>0</uint></elem><elem><uint>0</uint></elem><elem><uint>0</uint></elem></array></member><member name='output'><array></array></member></struct></member></struct></arg>
-		<ret><ptr>0x7a6d29d71df0</ptr></ret>
-		<time><int>48</int></time>
+		<ret><ptr>0x75da9dd71680</ptr></ret>
+		<time><int>53</int></time>
 	</call>
 	<call no='207' class='pipe_context' method='create_ms_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='state'><struct name='pipe_shader_state'><member name='type'><uint>1</uint></member><member name='tokens'><null/></member><member name='ir'><string><![CDATA[shader: MESA_SHADER_MESH
-source_blake3: {0x024aa3e7, 0xb61c3b3d, 0x669d99fd, 0xcdeb8b9b, 0xf745b865, 0xcd7b5ea3, 0x34db66fc, 0xcb1d902f}
+source_blake3: {0xd2feb8bf, 0xaae7380b, 0x409a0056, 0x09ac4c6a, 0xc678f1d0, 0xa335ddee, 0x4a4b7c2c, 0xc64c6a15}
 workgroup_size: 1, 1, 1
 outputs_written: 0,27-28,32-33
 system_values_read: 0x00000000'00000000'00000800'00000000
 per_primitive_outputs: 27-28,33
-shared_size: 140
+shared_size: 136
 task_payload_size: 20
 subgroup_size: 2
 bit_sizes_int: 0x21
@@ -1981,7 +1981,6 @@ decl_var shader_out INTERP_MODE_NONE none vec4[3] _43[*]._m0 (VARYING_SLOT_VAR0.
 decl_var per_primitive shader_out INTERP_MODE_NONE none vec4[1] _50[*]._m0 (VARYING_SLOT_VAR1.xyzw, 4, 0)
 decl_var task_payload INTERP_MODE_NONE none TaskPayload taskPayload
 decl_var shared INTERP_MODE_NONE none MeshOutput mesh_output
-decl_var shared INTERP_MODE_NONE none float workgroupData
 decl_function main () (entrypoint)
 
 impl main {
@@ -2043,11 +2042,11 @@ impl main {
 }
 
 ]]></string></member><member name='stream_output'><struct name='pipe_stream_output_info'><member name='num_outputs'><uint>0</uint></member><member name='stride'><array><elem><uint>0</uint></elem><elem><uint>0</uint></elem><elem><uint>0</uint></elem><elem><uint>0</uint></elem></array></member><member name='output'><array></array></member></struct></member></struct></arg>
-		<ret><ptr>0x7a6d29e6f550</ptr></ret>
-		<time><int>119</int></time>
+		<ret><ptr>0x75da9dd72ba0</ptr></ret>
+		<time><int>130</int></time>
 	</call>
 	<call no='208' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -2057,7 +2056,7 @@ impl main {
 		<time><int>7</int></time>
 	</call>
 	<call no='209' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -2067,7 +2066,7 @@ impl main {
 		<time><int>6</int></time>
 	</call>
 	<call no='210' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_BUFFER</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
@@ -2077,309 +2076,309 @@ impl main {
 		<time><int>6</int></time>
 	</call>
 	<call no='211' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>8</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='212' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>2</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>6</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='213' class='pipe_screen' method='is_format_supported'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></arg>
 		<arg name='target'><enum>PIPE_TEXTURE_2D</enum></arg>
 		<arg name='sample_count'><uint>0</uint></arg>
 		<arg name='storage_sample_count'><uint>0</uint></arg>
 		<arg name='tex_usage'><uint>32768</uint></arg>
 		<ret><bool>0</bool></ret>
-		<time><int>6</int></time>
+		<time><int>8</int></time>
 	</call>
 	<call no='214' class='pipe_context' method='flush'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='flags'><uint>0</uint></arg>
-		<ret><ptr>0x7a6d04000ba0</ptr></ret>
-		<time><int>6</int></time>
+		<ret><ptr>0x75da68000ba0</ptr></ret>
+		<time><int>4</int></time>
 	</call>
 	<call no='215' class='pipe_screen' method='fence_finish'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='ctx'><null/></arg>
-		<arg name='fence'><ptr>0x7a6d04000ba0</ptr></arg>
+		<arg name='fence'><ptr>0x75da68000ba0</ptr></arg>
 		<arg name='timeout'><uint>18446744073709551615</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>3</int></time>
+		<time><int>2</int></time>
 	</call>
 	<call no='216' class='pipe_screen' method='fence_reference'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='dst'><ptr>0x7a6d04000ba0</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='dst'><ptr>0x75da68000ba0</ptr></arg>
 		<arg name='src'><null/></arg>
-		<time><int>3</int></time>
+		<time><int>5</int></time>
 	</call>
 	<call no='217' class='pipe_context' method='clear_buffer'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='res'><ptr>0x7a6d28124150</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='res'><ptr>0x75da9c124150</ptr></arg>
 		<arg name='offset'><uint>0</uint></arg>
 		<arg name='size'><uint>524288</uint></arg>
-		<arg name='clear_value'><ptr>0x7a6d29ca33c0</ptr></arg>
+		<arg name='clear_value'><ptr>0x75da9dc968c0</ptr></arg>
 		<arg name='clear_value_size'><int>4</int></arg>
-		<time><int>440</int></time>
+		<time><int>679</int></time>
 	</call>
 	<call no='218' class='pipe_context' method='flush'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='flags'><uint>0</uint></arg>
-		<ret><ptr>0x7a6d04000d00</ptr></ret>
+		<ret><ptr>0x75da68000d00</ptr></ret>
 		<time><int>3</int></time>
 	</call>
 	<call no='219' class='pipe_screen' method='fence_finish'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='ctx'><null/></arg>
-		<arg name='fence'><ptr>0x7a6d04000d00</ptr></arg>
+		<arg name='fence'><ptr>0x75da68000d00</ptr></arg>
 		<arg name='timeout'><uint>18446744073709551615</uint></arg>
 		<ret><bool>1</bool></ret>
 		<time><int>2</int></time>
 	</call>
 	<call no='220' class='pipe_screen' method='fence_reference'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='dst'><ptr>0x7a6d04000d00</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='dst'><ptr>0x75da68000d00</ptr></arg>
 		<arg name='src'><null/></arg>
 		<time><int>2</int></time>
 	</call>
 	<call no='221' class='pipe_context' method='resource_copy_region'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='dst'><ptr>0x7a6d2812e230</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='dst'><ptr>0x75da9c12e230</ptr></arg>
 		<arg name='dst_level'><uint>0</uint></arg>
 		<arg name='dstx'><uint>0</uint></arg>
 		<arg name='dsty'><uint>0</uint></arg>
 		<arg name='dstz'><uint>0</uint></arg>
-		<arg name='src'><ptr>0x7a6d29c95b50</ptr></arg>
+		<arg name='src'><ptr>0x75da9dc96ba0</ptr></arg>
 		<arg name='src_level'><uint>0</uint></arg>
 		<arg name='src_box'><struct name='pipe_box'><member name='x'><int>0</int></member><member name='y'><int>0</int></member><member name='z'><int>0</int></member><member name='width'><int>208</int></member><member name='height'><int>1</int></member><member name='depth'><int>1</int></member></struct></arg>
-		<time><int>14</int></time>
+		<time><int>12</int></time>
 	</call>
 	<call no='222' class='pipe_context' method='flush'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='flags'><uint>0</uint></arg>
-		<ret><ptr>0x7a6d04000e40</ptr></ret>
+		<ret><ptr>0x75da68000e40</ptr></ret>
 		<time><int>2</int></time>
 	</call>
 	<call no='223' class='pipe_screen' method='fence_finish'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='ctx'><null/></arg>
-		<arg name='fence'><ptr>0x7a6d04000e40</ptr></arg>
+		<arg name='fence'><ptr>0x75da68000e40</ptr></arg>
 		<arg name='timeout'><uint>18446744073709551615</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>2</int></time>
+		<time><int>3</int></time>
 	</call>
 	<call no='224' class='pipe_screen' method='fence_reference'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='dst'><ptr>0x7a6d04000e40</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='dst'><ptr>0x75da68000e40</ptr></arg>
 		<arg name='src'><null/></arg>
 		<time><int>2</int></time>
 	</call>
 	<call no='225' class='pipe_context' method='flush'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='flags'><uint>0</uint></arg>
-		<ret><ptr>0x7a6d04000ec0</ptr></ret>
-		<time><int>1</int></time>
+		<ret><ptr>0x75da68000ec0</ptr></ret>
+		<time><int>2</int></time>
 	</call>
 	<call no='226' class='pipe_screen' method='fence_finish'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='ctx'><null/></arg>
-		<arg name='fence'><ptr>0x7a6d04000ec0</ptr></arg>
+		<arg name='fence'><ptr>0x75da68000ec0</ptr></arg>
 		<arg name='timeout'><uint>18446744073709551615</uint></arg>
 		<ret><bool>1</bool></ret>
 		<time><int>3</int></time>
 	</call>
 	<call no='227' class='pipe_screen' method='fence_reference'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='dst'><ptr>0x7a6d04000ec0</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='dst'><ptr>0x75da68000ec0</ptr></arg>
 		<arg name='src'><null/></arg>
 		<time><int>2</int></time>
 	</call>
 	<call no='228' class='pipe_context' method='flush'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='flags'><uint>0</uint></arg>
-		<ret><ptr>0x7a6d04000f40</ptr></ret>
-		<time><int>2</int></time>
+		<ret><ptr>0x75da68000f40</ptr></ret>
+		<time><int>1</int></time>
 	</call>
 	<call no='229' class='pipe_screen' method='fence_finish'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='ctx'><null/></arg>
-		<arg name='fence'><ptr>0x7a6d04000f40</ptr></arg>
+		<arg name='fence'><ptr>0x75da68000f40</ptr></arg>
 		<arg name='timeout'><uint>18446744073709551615</uint></arg>
 		<ret><bool>1</bool></ret>
 		<time><int>2</int></time>
 	</call>
 	<call no='230' class='pipe_screen' method='fence_reference'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='dst'><ptr>0x7a6d04000f40</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='dst'><ptr>0x75da68000f40</ptr></arg>
 		<arg name='src'><null/></arg>
 		<time><int>2</int></time>
 	</call>
 	<call no='231' class='pipe_context' method='flush'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='flags'><uint>0</uint></arg>
-		<ret><ptr>0x7a6d04000fc0</ptr></ret>
-		<time><int>7</int></time>
+		<ret><ptr>0x75da68000fc0</ptr></ret>
+		<time><int>6</int></time>
 	</call>
 	<call no='232' class='pipe_screen' method='fence_finish'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='ctx'><null/></arg>
-		<arg name='fence'><ptr>0x7a6d04000fc0</ptr></arg>
+		<arg name='fence'><ptr>0x75da68000fc0</ptr></arg>
 		<arg name='timeout'><uint>18446744073709551615</uint></arg>
 		<ret><bool>1</bool></ret>
 		<time><int>3</int></time>
 	</call>
 	<call no='233' class='pipe_screen' method='fence_reference'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='dst'><ptr>0x7a6d04000fc0</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='dst'><ptr>0x75da68000fc0</ptr></arg>
 		<arg name='src'><null/></arg>
-		<time><int>2</int></time>
-	</call>
-	<call no='234' class='pipe_context' method='flush'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='flags'><uint>0</uint></arg>
-		<ret><ptr>0x7a6d04001040</ptr></ret>
 		<time><int>1</int></time>
 	</call>
+	<call no='234' class='pipe_context' method='flush'>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='flags'><uint>0</uint></arg>
+		<ret><ptr>0x75da68001040</ptr></ret>
+		<time><int>2</int></time>
+	</call>
 	<call no='235' class='pipe_screen' method='fence_finish'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='ctx'><null/></arg>
-		<arg name='fence'><ptr>0x7a6d04001040</ptr></arg>
+		<arg name='fence'><ptr>0x75da68001040</ptr></arg>
 		<arg name='timeout'><uint>18446744073709551615</uint></arg>
 		<ret><bool>1</bool></ret>
 		<time><int>2</int></time>
 	</call>
 	<call no='236' class='pipe_screen' method='fence_reference'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='dst'><ptr>0x7a6d04001040</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='dst'><ptr>0x75da68001040</ptr></arg>
 		<arg name='src'><null/></arg>
-		<time><int>2</int></time>
+		<time><int>8</int></time>
 	</call>
 	<call no='237' class='pipe_context' method='flush'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='flags'><uint>0</uint></arg>
-		<ret><ptr>0x7a6d040010c0</ptr></ret>
+		<ret><ptr>0x75da680010c0</ptr></ret>
 		<time><int>2</int></time>
 	</call>
 	<call no='238' class='pipe_screen' method='fence_finish'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
 		<arg name='ctx'><null/></arg>
-		<arg name='fence'><ptr>0x7a6d040010c0</ptr></arg>
+		<arg name='fence'><ptr>0x75da680010c0</ptr></arg>
 		<arg name='timeout'><uint>18446744073709551615</uint></arg>
 		<ret><bool>1</bool></ret>
-		<time><int>3</int></time>
+		<time><int>2</int></time>
 	</call>
 	<call no='239' class='pipe_screen' method='fence_reference'>
-		<arg name='screen'><ptr>0x7a6d2808d520</ptr></arg>
-		<arg name='dst'><ptr>0x7a6d040010c0</ptr></arg>
+		<arg name='screen'><ptr>0x75da9c08d520</ptr></arg>
+		<arg name='dst'><ptr>0x75da680010c0</ptr></arg>
 		<arg name='src'><null/></arg>
 		<time><int>2</int></time>
 	</call>
 	<call no='240' class='pipe_context' method='set_framebuffer_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='state'><struct name='pipe_framebuffer_state'><member name='width'><uint>1024</uint></member><member name='height'><uint>768</uint></member><member name='samples'><uint>0</uint></member><member name='layers'><uint>1</uint></member><member name='nr_cbufs'><uint>1</uint></member><member name='cbufs'><array><elem><struct name='pipe_surface'><member name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></member><member name='texture'><ptr>0x7a6d29cbbe50</ptr></member><member name='target'><enum>PIPE_TEXTURE_2D</enum></member><member name='level'><uint>0</uint></member><member name='first_layer'><uint>0</uint></member><member name='last_layer'><uint>0</uint></member></struct></elem></array></member><member name='zsbuf'><struct name='pipe_surface'><member name='format'><enum>PIPE_FORMAT_NONE</enum></member><member name='texture'><null/></member><member name='target'><enum>PIPE_BUFFER</enum></member><member name='level'><uint>0</uint></member><member name='first_layer'><uint>0</uint></member><member name='last_layer'><uint>0</uint></member></struct></member></struct></arg>
-		<time><int>8</int></time>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='state'><struct name='pipe_framebuffer_state'><member name='width'><uint>1024</uint></member><member name='height'><uint>768</uint></member><member name='samples'><uint>0</uint></member><member name='layers'><uint>1</uint></member><member name='nr_cbufs'><uint>1</uint></member><member name='cbufs'><array><elem><struct name='pipe_surface'><member name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></member><member name='texture'><ptr>0x75da9dd428d0</ptr></member><member name='target'><enum>PIPE_TEXTURE_2D</enum></member><member name='level'><uint>0</uint></member><member name='first_layer'><uint>0</uint></member><member name='last_layer'><uint>0</uint></member></struct></elem></array></member><member name='zsbuf'><struct name='pipe_surface'><member name='format'><enum>PIPE_FORMAT_NONE</enum></member><member name='texture'><null/></member><member name='target'><enum>PIPE_BUFFER</enum></member><member name='level'><uint>0</uint></member><member name='first_layer'><uint>0</uint></member><member name='last_layer'><uint>0</uint></member></struct></member></struct></arg>
+		<time><int>9</int></time>
 	</call>
 	<call no='241' class='pipe_context' method='clear'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='buffers'><uint>4</uint></arg>
 		<arg name='scissor_state'><null/></arg>
 		<arg name='color-&gt;ui'><array><elem><uint>1036831949</uint></elem><elem><uint>1045220557</uint></elem><elem><uint>1050253722</uint></elem><elem><uint>1065353216</uint></elem></array></arg>
 		<arg name='depth'><float>0</float></arg>
 		<arg name='stencil'><uint>0</uint></arg>
-		<time><int>23</int></time>
+		<time><int>22</int></time>
 	</call>
 	<call no='242' class='pipe_context' method='bind_fs_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='state'><ptr>0x7a6d29d898e0</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='state'><ptr>0x75da9dd88990</ptr></arg>
 		<time><int>2</int></time>
 	</call>
 	<call no='243' class='pipe_context' method='bind_ts_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='state'><ptr>0x7a6d29d71df0</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='state'><ptr>0x75da9dd71680</ptr></arg>
 		<time><int>1</int></time>
 	</call>
 	<call no='244' class='pipe_context' method='bind_ms_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='state'><ptr>0x7a6d29e6f550</ptr></arg>
-		<time><int>1</int></time>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='state'><ptr>0x75da9dd72ba0</ptr></arg>
+		<time><int>3</int></time>
 	</call>
 	<call no='245' class='pipe_context' method='create_blend_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='state'><struct name='pipe_blend_state'><member name='independent_blend_enable'><bool>1</bool></member><member name='logicop_enable'><bool>0</bool></member><member name='logicop_func'><enum>PIPE_LOGICOP_CLEAR</enum></member><member name='dither'><bool>0</bool></member><member name='alpha_to_coverage'><bool>0</bool></member><member name='alpha_to_coverage_dither'><bool>0</bool></member><member name='alpha_to_one'><bool>0</bool></member><member name='max_rt'><uint>0</uint></member><member name='advanced_blend_func'><uint>0</uint></member><member name='rt'><array><elem><struct name='pipe_rt_blend_state'><member name='blend_enable'><uint>0</uint></member><member name='rgb_func'><enum>PIPE_BLEND_ADD</enum></member><member name='rgb_src_factor'><enum>PIPE_BLENDFACTOR_UNKNOWN</enum></member><member name='rgb_dst_factor'><enum>PIPE_BLENDFACTOR_UNKNOWN</enum></member><member name='alpha_func'><enum>PIPE_BLEND_ADD</enum></member><member name='alpha_src_factor'><enum>PIPE_BLENDFACTOR_UNKNOWN</enum></member><member name='alpha_dst_factor'><enum>PIPE_BLENDFACTOR_UNKNOWN</enum></member><member name='colormask'><uint>15</uint></member></struct></elem></array></member></struct></arg>
-		<ret><ptr>0x7a6d04000b70</ptr></ret>
-		<time><int>12</int></time>
+		<ret><ptr>0x75da68000b70</ptr></ret>
+		<time><int>13</int></time>
 	</call>
 	<call no='246' class='pipe_context' method='bind_blend_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='state'><ptr>0x7a6d04000b70</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='state'><ptr>0x75da68000b70</ptr></arg>
 		<time><int>1</int></time>
 	</call>
 	<call no='247' class='pipe_context' method='create_rasterizer_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='state'><struct name='pipe_rasterizer_state'><member name='flatshade'><bool>0</bool></member><member name='light_twoside'><bool>0</bool></member><member name='clamp_vertex_color'><bool>0</bool></member><member name='clamp_fragment_color'><bool>0</bool></member><member name='front_ccw'><uint>1</uint></member><member name='cull_face'><uint>2</uint></member><member name='fill_front'><uint>0</uint></member><member name='fill_back'><uint>0</uint></member><member name='offset_point'><bool>0</bool></member><member name='offset_line'><bool>0</bool></member><member name='offset_tri'><bool>0</bool></member><member name='scissor'><bool>1</bool></member><member name='poly_smooth'><bool>0</bool></member><member name='poly_stipple_enable'><bool>0</bool></member><member name='point_smooth'><bool>0</bool></member><member name='sprite_coord_mode'><bool>0</bool></member><member name='point_quad_rasterization'><bool>1</bool></member><member name='point_size_per_vertex'><bool>1</bool></member><member name='multisample'><bool>0</bool></member><member name='no_ms_sample_mask_out'><bool>1</bool></member><member name='force_persample_interp'><bool>0</bool></member><member name='line_smooth'><bool>0</bool></member><member name='line_rectangular'><bool>1</bool></member><member name='line_stipple_enable'><bool>0</bool></member><member name='line_last_pixel'><bool>0</bool></member><member name='flatshade_first'><bool>1</bool></member><member name='half_pixel_center'><bool>1</bool></member><member name='bottom_edge_rule'><bool>0</bool></member><member name='rasterizer_discard'><bool>0</bool></member><member name='depth_clamp'><bool>0</bool></member><member name='depth_clip_near'><bool>1</bool></member><member name='depth_clip_far'><bool>1</bool></member><member name='clip_halfz'><bool>1</bool></member><member name='clip_plane_enable'><uint>0</uint></member><member name='line_stipple_factor'><uint>255</uint></member><member name='line_stipple_pattern'><uint>0</uint></member><member name='sprite_coord_enable'><uint>0</uint></member><member name='line_width'><float>1</float></member><member name='point_size'><float>0</float></member><member name='offset_units'><float>0</float></member><member name='offset_scale'><float>0</float></member><member name='offset_clamp'><float>0</float></member></struct></arg>
-		<ret><ptr>0x7a6d04000d80</ptr></ret>
-		<time><int>10</int></time>
+		<ret><ptr>0x75da68000d80</ptr></ret>
+		<time><int>9</int></time>
 	</call>
 	<call no='248' class='pipe_context' method='bind_rasterizer_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='state'><ptr>0x7a6d04000d80</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='state'><ptr>0x75da68000d80</ptr></arg>
 		<time><int>1</int></time>
 	</call>
 	<call no='249' class='pipe_context' method='create_depth_stencil_alpha_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='state'><struct name='pipe_depth_stencil_alpha_state'><member name='depth_enabled'><bool>0</bool></member><member name='depth_writemask'><bool>0</bool></member><member name='depth_func'><uint>0</uint></member><member name='stencil'><array><elem><struct name='pipe_stencil_state'><member name='enabled'><bool>0</bool></member><member name='func'><uint>0</uint></member><member name='fail_op'><uint>0</uint></member><member name='zpass_op'><uint>0</uint></member><member name='zfail_op'><uint>0</uint></member><member name='valuemask'><uint>0</uint></member><member name='writemask'><uint>0</uint></member></struct></elem><elem><struct name='pipe_stencil_state'><member name='enabled'><bool>0</bool></member><member name='func'><uint>0</uint></member><member name='fail_op'><uint>0</uint></member><member name='zpass_op'><uint>0</uint></member><member name='zfail_op'><uint>0</uint></member><member name='valuemask'><uint>0</uint></member><member name='writemask'><uint>0</uint></member></struct></elem></array></member><member name='alpha_enabled'><bool>0</bool></member><member name='alpha_func'><uint>0</uint></member><member name='alpha_ref_value'><float>0</float></member></struct></arg>
-		<ret><ptr>0x7a6d04002520</ptr></ret>
-		<time><int>5</int></time>
+		<ret><ptr>0x75da68002520</ptr></ret>
+		<time><int>6</int></time>
 	</call>
 	<call no='250' class='pipe_context' method='bind_depth_stencil_alpha_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='state'><ptr>0x7a6d04002520</ptr></arg>
-		<time><int>2</int></time>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='state'><ptr>0x75da68002520</ptr></arg>
+		<time><int>1</int></time>
 	</call>
 	<call no='251' class='pipe_context' method='set_sample_mask'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='sample_mask'><uint>65535</uint></arg>
 		<time><int>2</int></time>
 	</call>
 	<call no='252' class='pipe_context' method='set_framebuffer_state'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
-		<arg name='state'><struct name='pipe_framebuffer_state'><member name='width'><uint>1024</uint></member><member name='height'><uint>768</uint></member><member name='samples'><uint>1</uint></member><member name='layers'><uint>1</uint></member><member name='nr_cbufs'><uint>1</uint></member><member name='cbufs'><array><elem><struct name='pipe_surface'><member name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></member><member name='texture'><ptr>0x7a6d29cbbe50</ptr></member><member name='target'><enum>PIPE_TEXTURE_2D</enum></member><member name='level'><uint>0</uint></member><member name='first_layer'><uint>0</uint></member><member name='last_layer'><uint>0</uint></member></struct></elem></array></member><member name='zsbuf'><struct name='pipe_surface'><member name='format'><enum>PIPE_FORMAT_NONE</enum></member><member name='texture'><null/></member><member name='target'><enum>PIPE_BUFFER</enum></member><member name='level'><uint>0</uint></member><member name='first_layer'><uint>0</uint></member><member name='last_layer'><uint>0</uint></member></struct></member></struct></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
+		<arg name='state'><struct name='pipe_framebuffer_state'><member name='width'><uint>1024</uint></member><member name='height'><uint>768</uint></member><member name='samples'><uint>1</uint></member><member name='layers'><uint>1</uint></member><member name='nr_cbufs'><uint>1</uint></member><member name='cbufs'><array><elem><struct name='pipe_surface'><member name='format'><enum>PIPE_FORMAT_R8G8B8A8_SRGB</enum></member><member name='texture'><ptr>0x75da9dd428d0</ptr></member><member name='target'><enum>PIPE_TEXTURE_2D</enum></member><member name='level'><uint>0</uint></member><member name='first_layer'><uint>0</uint></member><member name='last_layer'><uint>0</uint></member></struct></elem></array></member><member name='zsbuf'><struct name='pipe_surface'><member name='format'><enum>PIPE_FORMAT_NONE</enum></member><member name='texture'><null/></member><member name='target'><enum>PIPE_BUFFER</enum></member><member name='level'><uint>0</uint></member><member name='first_layer'><uint>0</uint></member><member name='last_layer'><uint>0</uint></member></struct></member></struct></arg>
 		<time><int>8</int></time>
 	</call>
 	<call no='253' class='pipe_context' method='set_min_samples'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='min_samples'><uint>1</uint></arg>
-		<time><int>2</int></time>
+		<time><int>1</int></time>
 	</call>
 	<call no='254' class='pipe_context' method='set_viewport_states'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='start_slot'><uint>0</uint></arg>
 		<arg name='num_viewports'><uint>1</uint></arg>
 		<arg name='states'><struct name='pipe_viewport_state'><member name='scale'><array><elem><float>512</float></elem><elem><float>-384</float></elem><elem><float>1</float></elem></array></member><member name='translate'><array><elem><float>512</float></elem><elem><float>384</float></elem><elem><float>0</float></elem></array></member></struct></arg>
-		<time><int>9</int></time>
+		<time><int>7</int></time>
 	</call>
 	<call no='255' class='pipe_context' method='set_scissor_states'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='start_slot'><uint>0</uint></arg>
 		<arg name='num_scissors'><uint>1</uint></arg>
 		<arg name='states'><struct name='pipe_scissor_state'><member name='minx'><uint>0</uint></member><member name='miny'><uint>0</uint></member><member name='maxx'><uint>1024</uint></member><member name='maxy'><uint>768</uint></member></struct></arg>
 		<time><int>4</int></time>
 	</call>
 	<call no='256' class='pipe_context' method='draw_mesh_tasks'>
-		<arg name='pipe'><ptr>0x7a6d2cedf010</ptr></arg>
+		<arg name='pipe'><ptr>0x75daa4022010</ptr></arg>
 		<arg name='info'><struct name='pipe_grid_info'><member name='variable_shared_mem'><uint>0</uint></member><member name='block'><array><elem><uint>1</uint></elem><elem><uint>1</uint></elem><elem><uint>1</uint></elem></array></member><member name='grid'><array><elem><uint>1</uint></elem><elem><uint>1</uint></elem><elem><uint>1</uint></elem></array></member><member name='indirect'><null/></member><member name='indirect_offset'><uint>0</uint></member><member name='globals'><null/></member></struct></arg>
-		<time><int>13</int></time>
+		<time><int>5</int></time>
 	</call>

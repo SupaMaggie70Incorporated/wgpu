@@ -33,7 +33,6 @@ perprimitiveEXT out _47 { layout(location = 1) vec4 _m0; }
 _50[1];
 
 taskPayloadSharedEXT TaskPayload taskPayload;
-shared float workgroupData;
 shared MeshOutput mesh_output;
 
 void main() {
