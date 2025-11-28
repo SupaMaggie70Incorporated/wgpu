@@ -30,14 +30,14 @@ struct MeshOutput
     uint primitive_count;
 };
 
-out _40
+layout(location = 0) out _40
 {
-    layout(location = 0) vec4 _m0;
+    vec4 _m0;
 } _43[3];
 
-perprimitiveEXT out _47
+layout(location = 1) perprimitiveEXT out _47
 {
-    layout(location = 1) vec4 _m0;
+    vec4 _m0;
 } _50[1];
 
 taskPayloadSharedEXT TaskPayload taskPayload;
