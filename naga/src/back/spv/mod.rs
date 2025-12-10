@@ -993,15 +993,5 @@ pub fn write_vec(
         &options.debug_info,
         &mut words,
     )?;
-    if module.entry_points.len() == 1 && module.entry_points[0].stage == crate::ShaderStage::Mesh {
-        let id = Vec::<u8>::with_capacity(12).as_ptr().addr();
-        std::println!("Writing SPIR-V to file: {id}.spv");
-        let u8_words: Vec<u8> = words
-            .as_slice()
-            .iter()
-            .flat_map(|word| word.to_ne_bytes().into_iter())
-            .collect();
-        std::fs::write(std::format!("{id}.spv"), u8_words).unwrap();
-    }
     Ok(words)
 }

@@ -73,11 +73,11 @@ impl crate::framework::Example for Example {
         device: &wgpu::Device,
         _queue: &wgpu::Queue,
     ) -> Self {
-        const PATHS: [&str; 3] = ["task.spv", "actually-run.spv", "frag.spv"];
+        let path = "actually-run.spv";
         const ENTRY_POINTS: [&str; 3] = ["ts_main", "ms_main", "fs_main"];
-        let ts = compile_spv_passthrough(device, PATHS[0], ENTRY_POINTS[0]);
-        let ms = compile_spv_passthrough(device, PATHS[1], ENTRY_POINTS[1]);
-        let fs = compile_spv_passthrough(device, PATHS[2], ENTRY_POINTS[2]);
+        let ts = compile_wgsl(device);
+        let ms = compile_spv_passthrough(device, path, ENTRY_POINTS[1]);
+        let fs = compile_wgsl(device);
         let [ts_name, ms_name, fs_name] = ENTRY_POINTS;
         /*let (ts, ms, fs, ts_name, ms_name, fs_name) = match adapter.get_info().backend {
             wgpu::Backend::Vulkan => (
