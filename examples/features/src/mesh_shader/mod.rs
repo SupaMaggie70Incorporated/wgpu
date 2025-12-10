@@ -51,7 +51,7 @@ fn compile_msl(device: &wgpu::Device, entry: &str) -> wgpu::ShaderModule {
 }
 
 fn compile_spv_passthrough(device: &wgpu::Device, path: &str, ep: &str) -> wgpu::ShaderModule {
-    let path = format!("output/{path}");
+    let path = format!("to_test/{path}");
     unsafe {
         device.create_shader_module_passthrough(wgpu::ShaderModuleDescriptorPassthrough {
             entry_point: ep.into(),
@@ -73,12 +73,15 @@ impl crate::framework::Example for Example {
         device: &wgpu::Device,
         _queue: &wgpu::Queue,
     ) -> Self {
-        let path = "actually-run.spv";
-        const ENTRY_POINTS: [&str; 3] = ["ts_main", "ms_main", "fs_main"];
+        println!("Set MESH_SPIRV to the name of a file living in /to_test.");
+        println!("Set MESH_ENTRY to the name of the entry point, which should be either ms_main or just main depending on the SPIR-V file");
+        let path = std::env::var("MESH_SPIRV").unwrap();
+        let ep = std::env::var("MESH_ENTRY").unwrap();
+        let entry_points: [&str; 3] = ["ts_main", &ep, "fs_main"];
         let ts = compile_wgsl(device);
-        let ms = compile_spv_passthrough(device, path, ENTRY_POINTS[1]);
+        let ms = compile_spv_passthrough(device, &path, entry_points[1]);
         let fs = compile_wgsl(device);
-        let [ts_name, ms_name, fs_name] = ENTRY_POINTS;
+        let [ts_name, ms_name, fs_name] = entry_points;
         /*let (ts, ms, fs, ts_name, ms_name, fs_name) = match adapter.get_info().backend {
             wgpu::Backend::Vulkan => (
                 compile_wgsl(device),
