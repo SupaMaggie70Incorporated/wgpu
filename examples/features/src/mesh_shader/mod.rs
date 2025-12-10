@@ -51,7 +51,7 @@ fn compile_msl(device: &wgpu::Device, entry: &str) -> wgpu::ShaderModule {
 }
 
 fn compile_spv_passthrough(device: &wgpu::Device, path: &str, ep: &str) -> wgpu::ShaderModule {
-    let path = format!("/home/supa/code/workspaces/graphics-rs/wgpu/output/{path}");
+    let path = format!("output/{path}");
     unsafe {
         device.create_shader_module_passthrough(wgpu::ShaderModuleDescriptorPassthrough {
             entry_point: ep.into(),
@@ -73,8 +73,8 @@ impl crate::framework::Example for Example {
         device: &wgpu::Device,
         _queue: &wgpu::Queue,
     ) -> Self {
-        const PATHS: [&str; 3] = ["task.spv", "mesh-custom.spv", "frag.spv"];
-        const ENTRY_POINTS: [&str; 3] = ["ts_main", "main", "fs_main"];
+        const PATHS: [&str; 3] = ["task.spv", "actually-run.spv", "frag.spv"];
+        const ENTRY_POINTS: [&str; 3] = ["ts_main", "ms_main", "fs_main"];
         let ts = compile_spv_passthrough(device, PATHS[0], ENTRY_POINTS[0]);
         let ms = compile_spv_passthrough(device, PATHS[1], ENTRY_POINTS[1]);
         let fs = compile_spv_passthrough(device, PATHS[2], ENTRY_POINTS[2]);

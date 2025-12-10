@@ -1,10 +1,8 @@
-#!/bin/bash
-
 mkdir output -p
-cargo run --bin naga -- naga/tests/in/wgsl/mesh-shader.wgsl output/all.spv --spirv-version 1.4 --generate-debug-symbols --compact
-cargo run --bin naga -- naga/tests/in/wgsl/mesh-shader.wgsl output/task.spv --spirv-version 1.4 --generate-debug-symbols --compact --entry-point ts_main
-cargo run --bin naga -- naga/tests/in/wgsl/mesh-shader.wgsl output/mesh.spv --spirv-version 1.4 --generate-debug-symbols --compact --entry-point ms_main
-cargo run --bin naga -- naga/tests/in/wgsl/mesh-shader.wgsl output/frag.spv --spirv-version 1.4 --generate-debug-symbols --compact --entry-point fs_main
+cargo run --bin naga -- naga/tests/in/wgsl/mesh-shader.wgsl output/all.spv --spirv-version 1.4 --generate-debug-symbols --compact --keep-coordinate-space
+cargo run --bin naga -- naga/tests/in/wgsl/mesh-shader.wgsl output/task.spv --spirv-version 1.4 --generate-debug-symbols --compact --entry-point ts_main --keep-coordinate-space
+cargo run --bin naga -- naga/tests/in/wgsl/mesh-shader.wgsl output/mesh.spv --spirv-version 1.4 --generate-debug-symbols --compact --entry-point ms_main --keep-coordinate-space
+cargo run --bin naga -- naga/tests/in/wgsl/mesh-shader.wgsl output/frag.spv --spirv-version 1.4 --generate-debug-symbols --compact --entry-point fs_main --keep-coordinate-space
 
 spirv-opt output/all.spv -o output/all-opt.spv
 spirv-opt output/task.spv -o output/task-opt.spv
@@ -24,3 +22,6 @@ glslc -fshader-stage=mesh --target-env=vulkan1.2 -c output/mesh-correct.glsl -o 
 glslc -fshader-stage=frag --target-env=vulkan1.2 -c output/frag-correct.glsl -o output/frag-correct.spv
 
 glslc -fshader-stage=mesh --target-env=vulkan1.2 -c output/mesh-custom.glsl -o output/mesh-custom.spv
+
+spirv-dis output/actually-run.spv -o output/actually-run.spv-asm
+spirv-cross output/actually-run.spv --output output/actually-run.glsl -V

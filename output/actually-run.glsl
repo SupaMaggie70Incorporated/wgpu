@@ -1,5 +1,6 @@
 #version 450
 #extension GL_EXT_mesh_shader : require
+#extension GL_EXT_null_initializer : require
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 layout(max_vertices = 3, max_primitives = 1, triangles) out;
 
@@ -30,28 +31,22 @@ struct MeshOutput
     uint primitive_count;
 };
 
-out _40
+out _42
 {
     layout(location = 0) vec4 _m0;
-} _43[3];
+} _45[3];
 
-perprimitiveEXT out _47
+perprimitiveEXT out _49
 {
     layout(location = 1) vec4 _m0;
-} _50[1];
+} _52[1];
 
 taskPayloadSharedEXT TaskPayload taskPayload;
-shared float workgroupData;
-shared MeshOutput mesh_output;
+shared float workgroupData = { };
+shared MeshOutput mesh_output = { };
 
 void main()
 {
-    if (all(equal(gl_LocalInvocationID, uvec3(0u))))
-    {
-        workgroupData = 0.0;
-        mesh_output = MeshOutput(VertexOutput[](VertexOutput(vec4(0.0), vec4(0.0)), VertexOutput(vec4(0.0), vec4(0.0)), VertexOutput(vec4(0.0), vec4(0.0))), PrimitiveOutput[](PrimitiveOutput(uvec3(0u), false, vec4(0.0))), 0u, 0u);
-    }
-    barrier();
     mesh_output.vertex_count = 3u;
     mesh_output.primitive_count = 1u;
     workgroupData = 2.0;
@@ -65,21 +60,21 @@ void main()
     mesh_output.primitives[0u].cull = !taskPayload.visible;
     mesh_output.primitives[0u].colorMask = vec4(1.0, 0.0, 1.0, 1.0);
     barrier();
-    uint _114 = min(mesh_output.vertex_count, 3u);
-    uint _117 = min(mesh_output.primitive_count, 1u);
-    SetMeshOutputsEXT(_114, _117);
-    uint _30 = gl_LocalInvocationIndex;
-    for (; _30 < _114; _30++)
+    uint _105 = min(mesh_output.vertex_count, 3u);
+    uint _108 = min(mesh_output.primitive_count, 1u);
+    SetMeshOutputsEXT(_105, _108);
+    uint _32 = gl_LocalInvocationIndex;
+    for (; _32 < _105; _32++)
     {
-        gl_MeshVerticesEXT[_30].gl_Position = mesh_output.vertices[_30].position;
-        _43[_30]._m0 = mesh_output.vertices[_30].color;
+        gl_MeshVerticesEXT[_32].gl_Position = mesh_output.vertices[_32].position;
+        _45[_32]._m0 = mesh_output.vertices[_32].color;
     }
-    _30 = gl_LocalInvocationIndex;
-    for (; _30 < _117; _30++)
+    _32 = gl_LocalInvocationIndex;
+    for (; _32 < _108; _32++)
     {
-        gl_PrimitiveTriangleIndicesEXT[_30] = mesh_output.primitives[_30].indices;
-        gl_MeshPrimitivesEXT[_30].gl_CullPrimitiveEXT = mesh_output.primitives[_30].cull;
-        _50[_30]._m0 = mesh_output.primitives[_30].colorMask;
+        gl_PrimitiveTriangleIndicesEXT[_32] = mesh_output.primitives[_32].indices;
+        gl_MeshPrimitivesEXT[_32].gl_CullPrimitiveEXT = mesh_output.primitives[_32].cull;
+        _52[_32]._m0 = mesh_output.primitives[_32].colorMask;
     }
 }
 
