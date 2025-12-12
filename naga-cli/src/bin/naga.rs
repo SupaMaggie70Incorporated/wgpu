@@ -487,6 +487,7 @@ fn run() -> anyhow::Result<()> {
     if let Some(ref version) = args.metal_version {
         params.msl.lang_version = version.0;
     }
+    params.spv_out.flags -= naga::back::spv::WriterFlags::DEBUG;
     if let Some(ref version) = args.spirv_version {
         params.spv_out.lang_version = (version.0, version.1);
     }

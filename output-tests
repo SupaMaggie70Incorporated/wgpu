@@ -1,17 +1,21 @@
 mkdir output -p
 cargo run --bin naga -- naga/tests/in/wgsl/mesh-shader.wgsl output/all.spv --spirv-version 1.4 --generate-debug-symbols --compact --keep-coordinate-space
 cargo run --bin naga -- naga/tests/in/wgsl/mesh-shader.wgsl output/mesh.spv --spirv-version 1.4 --generate-debug-symbols --compact --entry-point ms_main --keep-coordinate-space
+cargo run --bin naga -- naga/tests/in/wgsl/mesh-shader.wgsl output/mesh-no-debug.spv --spirv-version 1.4 --compact --entry-point ms_main --keep-coordinate-space
 
 spirv-opt output/all.spv -o output/all-opt.spv
 spirv-opt output/mesh.spv -o output/mesh-opt.spv
 
 spirv-cross output/mesh.spv --output output/mesh.glsl -V
+spirv-cross output/mesh-no-debug.spv --output output/mesh-no-debug.glsl -V
+
 
 glslc -fshader-stage=mesh --target-env=vulkan1.2 -c output/mesh.glsl -o output/mesh-glsl.spv
 
 glslc -fshader-stage=mesh --target-env=vulkan1.2 -c output/mesh-correct.glsl -o output/mesh-correct.spv
 
 glslc -fshader-stage=mesh --target-env=vulkan1.2 -c output/mesh-custom.glsl -o output/mesh-custom.spv
+glslc -fshader-stage=mesh --target-env=vulkan1.2 -c output/mesh-custom-2.glsl -o output/mesh-custom-2.spv
 
 spirv-dis output/actually-run.spv -o output/actually-run.spv-asm
 spirv-cross output/actually-run.spv --output output/actually-run.glsl -V
