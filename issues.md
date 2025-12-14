@@ -1,0 +1,2 @@
+* Why is naga_primitive_indices_outputs decorated with PerPrimitiveEXT when glslang doesn't do this to mesh-correct?
+* Does this actually correctly put all per-primitive outputs together in the same struct as CullPrimitiveEXT? Like gl_Layer
