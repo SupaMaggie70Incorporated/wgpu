@@ -1,2 +1,5 @@
 capabilities = "MESH_SHADER | MESH_SHADER_POINT_TOPOLOGY"
-targets = "IR | ANALYSIS"
+targets = "METAL"
+
+[msl]
+lang_version = [3, 0]
