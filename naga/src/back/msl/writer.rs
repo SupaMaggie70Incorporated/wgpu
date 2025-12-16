@@ -411,17 +411,18 @@ impl TypedGlobalVariable<'_> {
             first_time: false,
         };
 
-        let (space, access, reference) = match var.space.to_msl_name() {
-            Some(space) if self.reference => {
-                let access = if var.space.needs_access_qualifier()
-                    && !self.usage.intersects(valid::GlobalUse::WRITE)
-                {
-                    "const"
-                } else {
-                    ""
-                };
-                (space, access, "&")
+        let access = if var.space.needs_access_qualifier()
+            && !self.usage.intersects(valid::GlobalUse::WRITE)
+        {
+            "const"
+        } else {
+            ""
+        };
+        let (space, access, reference) = match (var.space.to_msl_name(), var.space) {
+            (Some(space), crate::AddressSpace::WorkGroup) => {
+                (space, access, if self.reference { "&" } else { "" })
             }
+            (Some(space), _) if self.reference => (space, access, "&"),
             _ => ("", "", ""),
         };
 
@@ -622,9 +623,9 @@ impl crate::AddressSpace {
     const fn to_msl_name(self) -> Option<&'static str> {
         match self {
             Self::Handle => None,
+            Self::Function | Self::Private => Some("thread"),
             Self::Uniform | Self::Immediate => Some("constant"),
             Self::Storage { .. } => Some("device"),
-            Self::Private | Self::Function => Some("thread"),
             Self::WorkGroup => Some("threadgroup"),
             Self::TaskPayload => Some("object_data"),
         }
@@ -3858,7 +3859,7 @@ impl<W: Write> Writer<W> {
                             for (member_idx, new_name) in ctx.vertex_member_names.iter().enumerate()
                             {
                                 let in_value = format!(
-                                    "{in_array}[{vert_index}].{}",
+                                    "{in_array}.{WRAPPED_ARRAY_FIELD}[{vert_index}].{}",
                                     self.names
                                         [&NameKey::StructMember(ctx.vert_type, member_idx as u32)]
                                 );
@@ -3896,7 +3897,7 @@ impl<W: Write> Writer<W> {
                                 ctx.primitive_member_names.iter().enumerate()
                             {
                                 let in_value = format!(
-                                    "{in_array}[{prim_index}].{}",
+                                    "{in_array}.{WRAPPED_ARRAY_FIELD}[{prim_index}].{}",
                                     self.names
                                         [&NameKey::StructMember(ctx.prim_type, member_idx as u32)]
                                 );
@@ -6932,12 +6933,10 @@ template <typename A>
                                 break;
                             }
                         }
-                        crate::AddressSpace::TaskPayload => {
-                            // MESH TODO: do we need to error here in some cases?
-                        }
                         crate::AddressSpace::Function
                         | crate::AddressSpace::Private
-                        | crate::AddressSpace::WorkGroup => {}
+                        | crate::AddressSpace::WorkGroup
+                        | crate::AddressSpace::TaskPayload => {}
                     }
                 }
                 if needs_buffer_sizes {
@@ -7139,10 +7138,9 @@ template <typename A>
             let mut vertex_member_names = Vec::new();
             let mut primitive_member_names = Vec::new();
             if let Some(ref mesh_info) = ep.mesh_info {
-                // MESH TODO: names of struct members must be unique across vertex and primitive output.
-                // Therefore, when writing the primitive output struct, we might need to rename some fields.
                 let vertex_out_name = self.namer.call(&format!("{fun_name}VertexOutput"));
                 let primitive_out_name = self.namer.call(&format!("{fun_name}PrimitiveOutput"));
+                let mut existing_names = Vec::new();
                 for (out_name, struct_ty, is_primitive, member_names) in [
                     (
                         &vertex_out_name,
@@ -7166,8 +7164,6 @@ template <typename A>
                     let mut has_point_size = false;
                     for (index, member) in members.iter().enumerate() {
                         member_names.push(None);
-                        let name =
-                            self.names[&NameKey::StructMember(struct_ty, index as u32)].clone();
                         let ty_name = TypeContext {
                             handle: member.ty,
                             gctx: module.to_ctx(),
@@ -7194,6 +7190,17 @@ template <typename A>
                             continue;
                         }
 
+                        // Names of struct members must be unique across vertex and primitive output.
+                        // Therefore, when writing the primitive output struct, we might need to rename some fields.
+                        let mut name =
+                            self.names[&NameKey::StructMember(struct_ty, index as u32)].clone();
+                        if existing_names.contains(&name) {
+                            name = self.namer.call(&name);
+                        } else {
+                            // Let the namer know this is illegal to use again
+                            let _ = self.namer.call(&name);
+                        }
+
                         let array_len = match module.types[member.ty].inner {
                             crate::TypeInner::Array {
                                 size: crate::ArraySize::Constant(size),
@@ -7208,7 +7215,8 @@ template <typename A>
                         }
                         resolved.try_fmt(&mut self.out)?;
                         writeln!(self.out, ";")?;
-                        *member_names.last_mut().unwrap() = Some(name);
+                        *member_names.last_mut().unwrap() = Some(name.clone());
+                        existing_names.push(name);
                     }
                     if pipeline_options.allow_and_force_point_size
                         && matches!(
@@ -7519,6 +7527,11 @@ template <typename A>
                         }
                     }
                     _ => {
+                        if var.space == crate::AddressSpace::WorkGroup
+                            && ep.stage == crate::ShaderStage::Mesh
+                        {
+                            continue;
+                        }
                         let tyvar = TypedGlobalVariable {
                             module,
                             names: &self.names,
@@ -7767,15 +7780,6 @@ template <typename A>
                 }
             }
 
-            if need_workgroup_variables_initialization {
-                self.write_workgroup_variables_initialization(
-                    module,
-                    mod_info,
-                    fun_info,
-                    local_invocation_id,
-                )?;
-            }
-
             // Metal doesn't support private mutable variables outside of functions,
             // so we put them here, just like the locals.
             for (handle, var) in module.global_variables.iter() {
@@ -7851,7 +7855,36 @@ template <typename A>
                         writeln!(self.out, "{l2}.params = {params_name},")?;
                         writeln!(self.out, "{l1}}};")?;
                     }
+                } else if var.space == crate::AddressSpace::WorkGroup
+                    && ep.stage == crate::ShaderStage::Mesh
+                {
+                    /*writeln!(
+                        self.out,
+                        "{}threadgroup {} {};",
+                        back::INDENT,
+                        self.names[&NameKey::Type(var.ty)],
+                        self.names[&NameKey::GlobalVariable(handle)],
+                    )?;*/
+                    let tyvar = TypedGlobalVariable {
+                        module,
+                        names: &self.names,
+                        handle,
+                        usage,
+                        reference: false,
+                    };
+                    write!(self.out, "{}", back::INDENT)?;
+                    tyvar.try_fmt(&mut self.out)?;
+                    writeln!(self.out, ";")?;
                 }
+            }
+
+            if need_workgroup_variables_initialization {
+                self.write_workgroup_variables_initialization(
+                    module,
+                    mod_info,
+                    fun_info,
+                    local_invocation_id,
+                )?;
             }
 
             // Now take the arguments that we gathered into structs, and the

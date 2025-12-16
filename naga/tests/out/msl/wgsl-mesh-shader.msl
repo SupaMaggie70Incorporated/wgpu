@@ -67,10 +67,10 @@ struct ms_mainPrimitiveOutput {
 [[mesh]] void ms_main(
   metal::uint3 __local_invocation_id [[thread_position_in_threadgroup]]
 , object_data TaskPayload const& taskPayload [[payload]]
-, threadgroup float& workgroupData
-, threadgroup MeshOutput& mesh_output
 , metal::mesh<ms_mainVertexOutput, ms_mainPrimitiveOutput, 3, 1, metal::topology::triangle> meshOutput
 ) {
+    threadgroup float workgroupData;
+    threadgroup MeshOutput mesh_output;
     if (metal::all(__local_invocation_id == metal::uint3(0u))) {
         workgroupData = {};
         mesh_output = {};
@@ -96,17 +96,17 @@ struct ms_mainPrimitiveOutput {
     uint localInvocationIndex = __local_invocation_id.x + 1 * (__local_invocation_id.y + 1 * __local_invocation_id.z);
     for(uint vertexIndex = localInvocationIndex; vertexIndex < mesh_output.vertex_count; vertexIndex += 1) {
         ms_mainVertexOutput vertex_1;
-        vertex_1.position = mesh_output.vertices[vertexIndex].position;
-        vertex_1.color = mesh_output.vertices[vertexIndex].color;
+        vertex_1.position = mesh_output.vertices.inner[vertexIndex].position;
+        vertex_1.color = mesh_output.vertices.inner[vertexIndex].color;
         meshOutput.set_vertex(vertexIndex, vertex_1);
     }
     for(uint primitiveIndex = localInvocationIndex; primitiveIndex < mesh_output.primitive_count; primitiveIndex += 1) {
         ms_mainPrimitiveOutput primitive_1;
-        meshOutput.set_index(primitiveIndex * 3 + 0, mesh_output.primitives[primitiveIndex].indices.x);
-        meshOutput.set_index(primitiveIndex * 3 + 1, mesh_output.primitives[primitiveIndex].indices.y);
-        meshOutput.set_index(primitiveIndex * 3 + 2, mesh_output.primitives[primitiveIndex].indices.z);
-        primitive_1.cull = mesh_output.primitives[primitiveIndex].cull;
-        primitive_1.colorMask = mesh_output.primitives[primitiveIndex].colorMask;
+        meshOutput.set_index(primitiveIndex * 3 + 0, mesh_output.primitives.inner[primitiveIndex].indices.x);
+        meshOutput.set_index(primitiveIndex * 3 + 1, mesh_output.primitives.inner[primitiveIndex].indices.y);
+        meshOutput.set_index(primitiveIndex * 3 + 2, mesh_output.primitives.inner[primitiveIndex].indices.z);
+        primitive_1.cull = mesh_output.primitives.inner[primitiveIndex].cull;
+        primitive_1.colorMask = mesh_output.primitives.inner[primitiveIndex].colorMask;
         meshOutput.set_primitive(primitiveIndex, primitive_1);
     }
     if (metal::all(__local_invocation_id == metal::uint3(0u))) {
