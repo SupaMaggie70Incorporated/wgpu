@@ -1,0 +1,105 @@
+// language: metal3.0
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using metal::uint;
+
+struct TaskPayload {
+    metal::float4 colorMask;
+    bool visible;
+    char _pad2[15];
+};
+struct VertexOutput {
+    metal::float4 position;
+    metal::float4 color;
+};
+struct PrimitiveOutput {
+    metal::packed_uint3 indices;
+    bool cull;
+    char _pad2[3];
+    metal::float4 colorMask;
+};
+struct PrimitiveInput {
+    metal::float4 colorMask;
+};
+struct type_5 {
+    VertexOutput inner[3];
+};
+struct type_6 {
+    PrimitiveOutput inner[1];
+};
+struct MeshOutput {
+    type_5 vertices;
+    type_6 primitives;
+    uint vertex_count;
+    uint primitive_count;
+    char _pad4[8];
+};
+
+struct ts_mainOutput {
+    metal::uint3 member [[MESH TODO]];
+};
+[[object]] ts_mainOutput ts_main(
+  metal::uint3 __local_invocation_id [[thread_position_in_threadgroup]]
+, object_data TaskPayload& taskPayload [[payload]]
+, threadgroup float& workgroupData
+, metal::mesh_grid_properties nagaMeshGrid
+) {
+    if (metal::all(__local_invocation_id == metal::uint3(0u))) {
+        workgroupData = {};
+    }
+    metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    workgroupData = 1.0;
+    taskPayload.colorMask = metal::float4(1.0, 1.0, 0.0, 1.0);
+    taskPayload.visible = true;
+    return ts_mainOutput { metal::uint3(1u, 1u, 1u) };
+}
+
+
+[[mesh]] void ms_main(
+  metal::uint3 __local_invocation_id [[thread_position_in_threadgroup]]
+, object_data TaskPayload const& taskPayload [[payload]]
+, threadgroup float& workgroupData
+, threadgroup MeshOutput& mesh_output
+, metal::mesh<MESH TODO, MESH TODO, 3, 1, metal::topology::triangle> nagaMeshOutput
+) {
+    if (metal::all(__local_invocation_id == metal::uint3(0u))) {
+        workgroupData = {};
+        mesh_output = {};
+    }
+    metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    mesh_output.vertex_count = 3u;
+    mesh_output.primitive_count = 1u;
+    workgroupData = 2.0;
+    mesh_output.vertices.inner[0].position = metal::float4(0.0, 1.0, 0.0, 1.0);
+    metal::float4 _e23 = taskPayload.colorMask;
+    mesh_output.vertices.inner[0].color = metal::float4(0.0, 1.0, 0.0, 1.0) * _e23;
+    mesh_output.vertices.inner[1].position = metal::float4(-1.0, -1.0, 0.0, 1.0);
+    metal::float4 _e45 = taskPayload.colorMask;
+    mesh_output.vertices.inner[1].color = metal::float4(0.0, 0.0, 1.0, 1.0) * _e45;
+    mesh_output.vertices.inner[2].position = metal::float4(1.0, -1.0, 0.0, 1.0);
+    metal::float4 _e67 = taskPayload.colorMask;
+    mesh_output.vertices.inner[2].color = metal::float4(1.0, 0.0, 0.0, 1.0) * _e67;
+    mesh_output.primitives.inner[0].indices = metal::uint3(0u, 1u, 2u);
+    bool _e88 = taskPayload.visible;
+    mesh_output.primitives.inner[0].cull = !(_e88);
+    mesh_output.primitives.inner[0].colorMask = metal::float4(1.0, 0.0, 1.0, 1.0);
+    return;
+}
+
+
+struct fs_mainInput {
+    metal::float4 color [[user(loc0), center_perspective]];
+    metal::float4 colorMask [[user(loc1), center_perspective]];
+};
+struct fs_mainOutput {
+    metal::float4 member_2 [[color(0)]];
+};
+fragment fs_mainOutput fs_main(
+  fs_mainInput varyings_2 [[stage_in]]
+, metal::float4 position [[position]]
+) {
+    const VertexOutput vertex_ = { position, varyings_2.color };
+    const PrimitiveInput primitive = { varyings_2.colorMask };
+    return fs_mainOutput { vertex_.color * primitive.colorMask };
+}

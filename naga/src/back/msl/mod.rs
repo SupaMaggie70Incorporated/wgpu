@@ -178,6 +178,7 @@ enum ResolvedBinding {
         interpolation: Option<ResolvedInterpolation>,
     },
     Resource(BindTarget),
+    Payload,
 }
 
 #[derive(Copy, Clone)]
@@ -237,6 +238,8 @@ pub enum Error {
     ResolveArraySizeError(#[from] crate::proc::ResolveArraySizeError),
     #[error("entry point with stage {0:?} and name '{1}' not found")]
     EntryPointNotFound(ir::ShaderStage, String),
+    #[error("Cannot use mesh shader syntax prior to MSL 3.0")]
+    UnsupportedMeshShader,
 }
 
 #[derive(Clone, Debug, PartialEq, thiserror::Error)]
@@ -718,7 +721,7 @@ impl ResolvedBinding {
                     | Bi::VertexCount
                     | Bi::PrimitiveCount
                     | Bi::Vertices
-                    | Bi::Primitives => unreachable!(),
+                    | Bi::Primitives => "MESH TODO",
                 };
                 write!(out, "{name}")?;
             }
@@ -755,6 +758,7 @@ impl ResolvedBinding {
                     return Err(Error::UnimplementedBindTarget(target.clone()));
                 }
             }
+            Self::Payload => write!(out, "payload")?,
         }
         write!(out, "]]")?;
         Ok(())

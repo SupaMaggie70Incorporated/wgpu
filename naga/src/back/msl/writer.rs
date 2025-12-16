@@ -609,7 +609,7 @@ impl crate::AddressSpace {
             // may end up with "const" even if the binding is read-write,
             // and that should be OK.
             Self::Storage { .. } => true,
-            Self::TaskPayload => unimplemented!(),
+            Self::TaskPayload => true,
             // These should always be read-write.
             Self::Private | Self::WorkGroup => false,
             // These translate to `constant` address space, no need for qualifiers.
@@ -6671,7 +6671,18 @@ template <typename A>
                     LocationMode::Uniform,
                     false,
                 ),
-                crate::ShaderStage::Task | crate::ShaderStage::Mesh => unimplemented!(),
+                crate::ShaderStage::Task => (
+                    "[[object]]",
+                    LocationMode::Uniform,
+                    LocationMode::Uniform,
+                    false,
+                ),
+                crate::ShaderStage::Mesh => (
+                    "[[mesh]]",
+                    LocationMode::Uniform,
+                    LocationMode::Uniform,
+                    false,
+                ),
             };
 
             // Should this entry point be modified to do vertex pulling?
@@ -6739,7 +6750,7 @@ template <typename A>
                             }
                         }
                         crate::AddressSpace::TaskPayload => {
-                            unimplemented!()
+                            // MESH TODO: do we need to error here in some cases?
                         }
                         crate::AddressSpace::Function
                         | crate::AddressSpace::Private
@@ -7037,6 +7048,7 @@ template <typename A>
             // don't outlive this invocation, so we declare them below as locals
             // within the entry point.
             for (handle, var) in module.global_variables.iter() {
+                // Mesh TODO: this should be written with [[payload]]
                 let usage = fun_info[handle];
                 if usage.is_empty() || var.space == crate::AddressSpace::Private {
                     continue;
@@ -7094,6 +7106,9 @@ template <typename A>
                         }
                         _ => {}
                     }
+                }
+                if options.lang_version < (3, 0) && var.space == crate::AddressSpace::TaskPayload {
+                    return Err(Error::UnsupportedMeshShader);
                 }
 
                 // Check min MSL version for binding arrays
@@ -7166,6 +7181,7 @@ template <typename A>
                 let resolved = match var.space {
                     crate::AddressSpace::Immediate => options.resolve_immediates(ep).ok(),
                     crate::AddressSpace::WorkGroup => None,
+                    crate::AddressSpace::TaskPayload => Some(back::msl::ResolvedBinding::Payload),
                     _ => options
                         .resolve_resource_binding(ep, var.binding.as_ref().unwrap())
                         .ok(),
@@ -7245,6 +7261,27 @@ template <typename A>
                     }
                 }
                 writeln!(self.out)?;
+            }
+
+            if let Some(ref info) = ep.mesh_info {
+                let mesh_name = self.namer.call("nagaMeshOutput");
+                let topology_name = match info.topology {
+                    crate::MeshOutputTopology::Triangles => "triangle",
+                    crate::MeshOutputTopology::Lines => "line",
+                    crate::MeshOutputTopology::Points => "point",
+                };
+                let vert_type = "MESH TODO";
+                let prim_type = "MESH TODO";
+                let num_verts = info.max_vertices;
+                let num_prims = info.max_primitives;
+                writeln!(self.out, "{} {NAMESPACE}::mesh<{vert_type}, {prim_type}, {num_verts}, {num_prims}, metal::topology::{topology_name}> {mesh_name}", separator())?;
+            } else if ep.stage == crate::ShaderStage::Task {
+                let grid_name = self.namer.call("nagaMeshGrid");
+                writeln!(
+                    self.out,
+                    "{} {NAMESPACE}::mesh_grid_properties {grid_name}",
+                    separator()
+                )?;
             }
 
             if do_vertex_pulling {

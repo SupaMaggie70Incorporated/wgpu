@@ -1,0 +1,52 @@
+// language: metal3.0
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using metal::uint;
+
+struct TaskPayload {
+    uint dummy;
+};
+struct VertexOutput {
+    metal::float4 position;
+};
+struct PrimitiveOutput {
+    metal::uint3 indices;
+};
+struct type_3 {
+    VertexOutput inner[3];
+};
+struct type_4 {
+    PrimitiveOutput inner[1];
+};
+struct MeshOutput {
+    type_3 vertices;
+    type_4 primitives;
+    uint vertex_count;
+    uint primitive_count;
+    char _pad4[8];
+};
+
+struct ts_mainOutput {
+    metal::uint3 member [[MESH TODO]];
+};
+[[object]] ts_mainOutput ts_main(
+  object_data TaskPayload& taskPayload [[payload]]
+, metal::mesh_grid_properties nagaMeshGrid
+) {
+    return ts_mainOutput { metal::uint3(1u, 1u, 1u) };
+}
+
+
+[[mesh]] void ms_main(
+  metal::uint3 __local_invocation_id [[thread_position_in_threadgroup]]
+, object_data TaskPayload const& taskPayload [[payload]]
+, threadgroup MeshOutput& mesh_output
+, metal::mesh<MESH TODO, MESH TODO, 3, 1, metal::topology::triangle> nagaMeshOutput
+) {
+    if (metal::all(__local_invocation_id == metal::uint3(0u))) {
+        mesh_output = {};
+    }
+    metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    return;
+}
