@@ -808,11 +808,25 @@ impl<'a> ExpressionContext<'a> {
     }
 }
 
+struct MeshShaderContext<'a> {
+    mesh_variable_name: &'a str,
+    mesh_out_name: &'a str,
+    vertex_type_name: &'a str,
+    primitive_type_name: &'a str,
+    vertex_member_names: &'a [Option<String>],
+    primitive_member_names: &'a [Option<String>],
+    workgroup_size: [u32; 3],
+    vert_type: Handle<crate::Type>,
+    prim_type: Handle<crate::Type>,
+    out_type: Handle<crate::Type>,
+    topology: crate::MeshOutputTopology,
+}
+
 struct StatementContext<'a> {
     expression: ExpressionContext<'a>,
     result_struct: Option<&'a str>,
-    mesh_out_name: Option<&'a str>,
     task_grid_name: Option<&'a str>,
+    mesh: Option<MeshShaderContext<'a>>,
     local_invocation_id_name: Option<&'a NameKey>,
 }
 
@@ -3776,8 +3790,6 @@ impl<W: Write> Writer<W> {
                             writeln!(self.out, ");")?;
                         }
                         writeln!(self.out, "{level}}}")?;
-
-                        // MESH TODO
                         writeln!(self.out, "{level}return;")?;
                     } else {
                         self.put_return_value(
@@ -3789,8 +3801,146 @@ impl<W: Write> Writer<W> {
                     }
                 }
                 crate::Statement::Return { value: None } => {
-                    if let Some(_mesh_name) = context.mesh_out_name {
-                        // MESH TODO
+                    if let Some(ref ctx) = context.mesh {
+                        self.write_barrier(crate::Barrier::WORK_GROUP, level)?;
+                        let local_invocation_id = context
+                            .local_invocation_id_name
+                            .map(|name_key| self.names[name_key].as_str())
+                            .unwrap_or("__local_invocation_id");
+                        let local_invocation_index = self.namer.call("localInvocationIndex");
+                        {
+                            let tid = local_invocation_id;
+                            let [tgx, tgy, _] = ctx.workgroup_size;
+                            writeln!(
+                                self.out,
+                                "{level}uint {local_invocation_index} = {tid}.x + {tgx} * ({tid}.y + {tgy} * {tid}.z);"
+                            )?;
+                        }
+                        let crate::TypeInner::Struct { ref members, .. } =
+                            context.expression.module.types[ctx.out_type].inner
+                        else {
+                            unreachable!();
+                        };
+                        let get_out_value = |bi| {
+                            format!(
+                                "{}.{}",
+                                ctx.mesh_variable_name,
+                                self.names
+                                    [&NameKey::StructMember(
+                                        ctx.out_type,
+                                        members
+                                            .iter()
+                                            .position(
+                                                |a| a.binding == Some(crate::Binding::BuiltIn(bi))
+                                            )
+                                            .unwrap()
+                                            as u32
+                                    )]
+                            )
+                        };
+                        let vert_count = get_out_value(crate::BuiltIn::VertexCount);
+                        let prim_count = get_out_value(crate::BuiltIn::PrimitiveCount);
+                        let workgroup_size: u32 = ctx.workgroup_size.iter().product();
+                        {
+                            let vert_index = self.namer.call("vertexIndex");
+                            let in_array = get_out_value(crate::BuiltIn::Vertices);
+                            writeln!(
+                                self.out,
+                                "{level}for(uint {vert_index} = {local_invocation_index}; {vert_index} < {vert_count}; {vert_index} += {workgroup_size}) {{"
+                            )?;
+                            let out_vert = self.namer.call("vertex");
+                            writeln!(
+                                self.out,
+                                "{level}{}{} {out_vert};",
+                                back::INDENT,
+                                ctx.vertex_type_name
+                            )?;
+                            for (member_idx, new_name) in ctx.vertex_member_names.iter().enumerate()
+                            {
+                                let in_value = format!(
+                                    "{in_array}[{vert_index}].{}",
+                                    self.names
+                                        [&NameKey::StructMember(ctx.vert_type, member_idx as u32)]
+                                );
+                                let out_value =
+                                    format!("{out_vert}.{}", new_name.as_deref().unwrap());
+                                writeln!(
+                                    self.out,
+                                    "{level}{}{out_value} = {in_value};",
+                                    back::INDENT
+                                )?;
+                            }
+                            writeln!(
+                                self.out,
+                                "{level}{}{}.set_vertex({vert_index}, {out_vert});",
+                                back::INDENT,
+                                ctx.mesh_out_name
+                            )?;
+                            writeln!(self.out, "{level}}}")?;
+                        }
+                        {
+                            let prim_index = self.namer.call("primitiveIndex");
+                            let in_array = get_out_value(crate::BuiltIn::Primitives);
+                            writeln!(
+                                self.out,
+                                "{level}for(uint {prim_index} = {local_invocation_index}; {prim_index} < {prim_count}; {prim_index} += {workgroup_size}) {{"
+                            )?;
+                            let out_prim = self.namer.call("primitive");
+                            writeln!(
+                                self.out,
+                                "{level}{}{} {out_prim};",
+                                back::INDENT,
+                                ctx.primitive_type_name
+                            )?;
+                            for (member_idx, new_name) in
+                                ctx.primitive_member_names.iter().enumerate()
+                            {
+                                let in_value = format!(
+                                    "{in_array}[{prim_index}].{}",
+                                    self.names
+                                        [&NameKey::StructMember(ctx.prim_type, member_idx as u32)]
+                                );
+                                if let Some(new_name) = new_name.as_deref() {
+                                    let out_value = format!("{out_prim}.{new_name}");
+                                    writeln!(
+                                        self.out,
+                                        "{level}{}{out_value} = {in_value};",
+                                        back::INDENT
+                                    )?;
+                                } else {
+                                    let num_indices = match ctx.topology {
+                                        crate::MeshOutputTopology::Points => 1,
+                                        crate::MeshOutputTopology::Lines => 2,
+                                        crate::MeshOutputTopology::Triangles => 3,
+                                    };
+                                    for i in 0..num_indices {
+                                        writeln!(
+                                            self.out,
+                                            "{level}{}{}.set_index({prim_index} * {num_indices} + {i}, {in_value}.{});",
+                                            back::INDENT,
+                                            ctx.mesh_out_name,
+                                            back::COMPONENTS[i],
+                                        )?;
+                                    }
+                                }
+                            }
+                            writeln!(
+                                self.out,
+                                "{level}{}{}.set_primitive({prim_index}, {out_prim});",
+                                back::INDENT,
+                                ctx.mesh_out_name
+                            )?;
+                            writeln!(self.out, "{level}}}")?;
+                        }
+
+                        writeln!(self.out, "{level}if ({NAMESPACE}::all({local_invocation_id} == {NAMESPACE}::uint3(0u))) {{")?;
+                        writeln!(
+                            self.out,
+                            "{level}{}{}.set_primitive_count({prim_count});",
+                            back::INDENT,
+                            ctx.mesh_out_name,
+                        )?;
+                        writeln!(self.out, "{level}}}")?;
                     }
                     writeln!(self.out, "{level}return;")?;
                 }
@@ -6639,7 +6789,7 @@ template <typename A>
                     force_loop_bounding: options.force_loop_bounding,
                 },
                 result_struct: None,
-                mesh_out_name: None,
+                mesh: None,
                 task_grid_name: None,
                 local_invocation_id_name: None,
             };
@@ -6986,13 +7136,26 @@ template <typename A>
 
             let mut out_vertex_name = None;
             let mut out_primitive_name = None;
+            let mut vertex_member_names = Vec::new();
+            let mut primitive_member_names = Vec::new();
             if let Some(ref mesh_info) = ep.mesh_info {
-                // MESH TODO: write primitive out struct
+                // MESH TODO: names of struct members must be unique across vertex and primitive output.
+                // Therefore, when writing the primitive output struct, we might need to rename some fields.
                 let vertex_out_name = self.namer.call(&format!("{fun_name}VertexOutput"));
                 let primitive_out_name = self.namer.call(&format!("{fun_name}PrimitiveOutput"));
-                for (out_name, struct_ty, is_primitive) in [
-                    (&vertex_out_name, mesh_info.vertex_output_type, false),
-                    (&primitive_out_name, mesh_info.primitive_output_type, true),
+                for (out_name, struct_ty, is_primitive, member_names) in [
+                    (
+                        &vertex_out_name,
+                        mesh_info.vertex_output_type,
+                        false,
+                        &mut vertex_member_names,
+                    ),
+                    (
+                        &primitive_out_name,
+                        mesh_info.primitive_output_type,
+                        true,
+                        &mut primitive_member_names,
+                    ),
                 ] {
                     writeln!(self.out, "struct {out_name} {{")?;
                     let crate::TypeInner::Struct { ref members, .. } =
@@ -7002,6 +7165,7 @@ template <typename A>
                     };
                     let mut has_point_size = false;
                     for (index, member) in members.iter().enumerate() {
+                        member_names.push(None);
                         let name =
                             self.names[&NameKey::StructMember(struct_ty, index as u32)].clone();
                         let ty_name = TypeContext {
@@ -7044,6 +7208,7 @@ template <typename A>
                         }
                         resolved.try_fmt(&mut self.out)?;
                         writeln!(self.out, ";")?;
+                        *member_names.last_mut().unwrap() = Some(name);
                     }
                     if pipeline_options.allow_and_force_point_size
                         && matches!(
@@ -7166,7 +7331,6 @@ template <typename A>
             // don't outlive this invocation, so we declare them below as locals
             // within the entry point.
             for (handle, var) in module.global_variables.iter() {
-                // Mesh TODO: this should be written with [[payload]]
                 let usage = fun_info[handle];
                 if usage.is_empty() || var.space == crate::AddressSpace::Private {
                     continue;
@@ -7381,16 +7545,15 @@ template <typename A>
                 writeln!(self.out)?;
             }
 
-            // MESH TODO: write exit for this
-            // MESH TODO: write vertex & primitive output types
             let mut mesh_out_name = None;
             let mut task_grid_name = None;
+            let mut mesh_variable_name = None;
             if let Some(ref info) = ep.mesh_info {
-                let mesh_name = self.namer.call("nagaMeshOutput");
+                let mesh_name = self.namer.call("meshOutput");
                 let topology_name = match info.topology {
-                    crate::MeshOutputTopology::Triangles => "triangle",
-                    crate::MeshOutputTopology::Lines => "line",
                     crate::MeshOutputTopology::Points => "point",
+                    crate::MeshOutputTopology::Lines => "line",
+                    crate::MeshOutputTopology::Triangles => "triangle",
                 };
                 let vert_type = out_vertex_name.as_deref().unwrap();
                 let prim_type = out_primitive_name.as_deref().unwrap();
@@ -7398,6 +7561,11 @@ template <typename A>
                 let num_prims = info.max_primitives;
                 writeln!(self.out, "{} {NAMESPACE}::mesh<{vert_type}, {prim_type}, {num_verts}, {num_prims}, metal::topology::{topology_name}> {mesh_name}", separator())?;
                 mesh_out_name = Some(mesh_name);
+                mesh_variable_name = Some(
+                    self.names
+                        [&NameKey::GlobalVariable(ep.mesh_info.as_ref().unwrap().output_variable)]
+                        .clone(),
+                );
             } else if ep.stage == crate::ShaderStage::Task {
                 let grid_name = self.namer.call("nagaMeshGrid");
                 writeln!(
@@ -7765,7 +7933,25 @@ template <typename A>
                     force_loop_bounding: options.force_loop_bounding,
                 },
                 result_struct: Some(&stage_out_name),
-                mesh_out_name: mesh_out_name.as_deref(),
+                mesh: if mesh_out_name.is_some() {
+                    Some(MeshShaderContext {
+                        mesh_variable_name: mesh_variable_name.as_deref().unwrap(),
+                        mesh_out_name: mesh_out_name.as_deref().unwrap(),
+                        vertex_type_name: out_vertex_name.as_deref().unwrap(),
+                        primitive_type_name: out_primitive_name.as_deref().unwrap(),
+                        vertex_member_names: &vertex_member_names,
+                        primitive_member_names: &primitive_member_names,
+                        workgroup_size: ep.workgroup_size,
+                        vert_type: ep.mesh_info.as_ref().unwrap().vertex_output_type,
+                        prim_type: ep.mesh_info.as_ref().unwrap().primitive_output_type,
+                        out_type: module.global_variables
+                            [ep.mesh_info.as_ref().unwrap().output_variable]
+                            .ty,
+                        topology: ep.mesh_info.as_ref().unwrap().topology,
+                    })
+                } else {
+                    None
+                },
                 task_grid_name: task_grid_name.as_deref(),
                 local_invocation_id_name: local_invocation_id,
             };
