@@ -278,6 +278,9 @@ enum LocationMode {
     /// Output from the fragment shader.
     FragmentOutput,
 
+    /// Output from the mesh shader.
+    MeshOutput,
+
     /// Compute shader input or output.
     Uniform,
 }
@@ -566,7 +569,9 @@ impl Options {
                         blend_src,
                     })
                 }
-                LocationMode::VertexOutput | LocationMode::FragmentInput => {
+                LocationMode::VertexOutput
+                | LocationMode::FragmentInput
+                | LocationMode::MeshOutput => {
                     Ok(ResolvedBinding::User {
                         prefix: if self.spirv_cross_compatibility {
                             "locn"

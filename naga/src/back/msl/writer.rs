@@ -6713,7 +6713,7 @@ template <typename A>
                 crate::ShaderStage::Mesh => (
                     "[[mesh]]",
                     LocationMode::Uniform,
-                    LocationMode::Uniform,
+                    LocationMode::MeshOutput,
                     false,
                 ),
             };
@@ -6983,6 +6983,89 @@ template <typename A>
                 }
                 _ => "void",
             };
+
+            let mut out_vertex_name = None;
+            let mut out_primitive_name = None;
+            if let Some(ref mesh_info) = ep.mesh_info {
+                // MESH TODO: write primitive out struct
+                let vertex_out_name = self.namer.call(&format!("{fun_name}VertexOutput"));
+                let primitive_out_name = self.namer.call(&format!("{fun_name}PrimitiveOutput"));
+                for (out_name, struct_ty, is_primitive) in [
+                    (&vertex_out_name, mesh_info.vertex_output_type, false),
+                    (&primitive_out_name, mesh_info.primitive_output_type, true),
+                ] {
+                    writeln!(self.out, "struct {out_name} {{")?;
+                    let crate::TypeInner::Struct { ref members, .. } =
+                        module.types[struct_ty].inner
+                    else {
+                        unreachable!()
+                    };
+                    let mut has_point_size = false;
+                    for (index, member) in members.iter().enumerate() {
+                        let name =
+                            self.names[&NameKey::StructMember(struct_ty, index as u32)].clone();
+                        let ty_name = TypeContext {
+                            handle: member.ty,
+                            gctx: module.to_ctx(),
+                            names: &self.names,
+                            access: crate::StorageAccess::empty(),
+                            first_time: true,
+                        };
+                        let binding = member.binding.clone().ok_or_else(|| {
+                            Error::GenericValidation("Expected binding, got None".into())
+                        })?;
+
+                        if let crate::Binding::BuiltIn(crate::BuiltIn::PointSize) = binding {
+                            has_point_size = true;
+                            if !pipeline_options.allow_and_force_point_size {
+                                continue;
+                            }
+                        }
+                        if let crate::Binding::BuiltIn(
+                            crate::BuiltIn::PointIndex
+                            | crate::BuiltIn::LineIndices
+                            | crate::BuiltIn::TriangleIndices,
+                        ) = binding
+                        {
+                            continue;
+                        }
+
+                        let array_len = match module.types[member.ty].inner {
+                            crate::TypeInner::Array {
+                                size: crate::ArraySize::Constant(size),
+                                ..
+                            } => Some(size),
+                            _ => None,
+                        };
+                        let resolved = options.resolve_local_binding(&binding, out_mode)?;
+                        write!(self.out, "{}{} {}", back::INDENT, ty_name, name)?;
+                        if let Some(array_len) = array_len {
+                            write!(self.out, " [{array_len}]")?;
+                        }
+                        resolved.try_fmt(&mut self.out)?;
+                        writeln!(self.out, ";")?;
+                    }
+                    if pipeline_options.allow_and_force_point_size
+                        && matches!(
+                            ep.stage,
+                            crate::ShaderStage::Vertex | crate::ShaderStage::Mesh
+                        )
+                        && !has_point_size
+                        && !is_primitive
+                    {
+                        // inject the point size output last
+                        writeln!(
+                            self.out,
+                            "{}float _point_size [[point_size]];",
+                            back::INDENT
+                        )?;
+                    }
+                    writeln!(self.out, "}};")?;
+                }
+
+                out_vertex_name = Some(vertex_out_name);
+                out_primitive_name = Some(primitive_out_name);
+            }
 
             // If we're doing a vertex pulling transform, define the buffer
             // structure types.
@@ -7309,8 +7392,8 @@ template <typename A>
                     crate::MeshOutputTopology::Lines => "line",
                     crate::MeshOutputTopology::Points => "point",
                 };
-                let vert_type = "MESH TODO";
-                let prim_type = "MESH TODO";
+                let vert_type = out_vertex_name.as_deref().unwrap();
+                let prim_type = out_primitive_name.as_deref().unwrap();
                 let num_verts = info.max_vertices;
                 let num_prims = info.max_primitives;
                 writeln!(self.out, "{} {NAMESPACE}::mesh<{vert_type}, {prim_type}, {num_verts}, {num_prims}, metal::topology::{topology_name}> {mesh_name}", separator())?;

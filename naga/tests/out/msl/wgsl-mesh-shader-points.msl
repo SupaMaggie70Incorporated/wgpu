@@ -39,11 +39,16 @@ struct MeshOutput {
 }
 
 
+struct ms_mainVertexOutput {
+    metal::float4 position [[position]];
+};
+struct ms_mainPrimitiveOutput {
+};
 [[mesh]] void ms_main(
   metal::uint3 __local_invocation_id [[thread_position_in_threadgroup]]
 , object_data TaskPayload const& taskPayload [[payload]]
 , threadgroup MeshOutput& mesh_output
-, metal::mesh<MESH TODO, MESH TODO, 1, 1, metal::topology::point> nagaMeshOutput
+, metal::mesh<ms_mainVertexOutput, ms_mainPrimitiveOutput, 1, 1, metal::topology::point> nagaMeshOutput
 ) {
     if (metal::all(__local_invocation_id == metal::uint3(0u))) {
         mesh_output = {};

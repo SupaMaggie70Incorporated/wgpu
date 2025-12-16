@@ -56,12 +56,20 @@ struct MeshOutput {
 }
 
 
+struct ms_mainVertexOutput {
+    metal::float4 position [[position]];
+    metal::float4 color [[user(loc0), center_perspective]];
+};
+struct ms_mainPrimitiveOutput {
+    bool cull [[primitive_culled]];
+    metal::float4 colorMask [[user(loc1), flat]];
+};
 [[mesh]] void ms_main(
   metal::uint3 __local_invocation_id [[thread_position_in_threadgroup]]
 , object_data TaskPayload const& taskPayload [[payload]]
 , threadgroup float& workgroupData
 , threadgroup MeshOutput& mesh_output
-, metal::mesh<MESH TODO, MESH TODO, 3, 1, metal::topology::triangle> nagaMeshOutput
+, metal::mesh<ms_mainVertexOutput, ms_mainPrimitiveOutput, 3, 1, metal::topology::triangle> nagaMeshOutput
 ) {
     if (metal::all(__local_invocation_id == metal::uint3(0u))) {
         workgroupData = {};
