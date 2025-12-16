@@ -811,6 +811,7 @@ impl<'a> ExpressionContext<'a> {
 struct StatementContext<'a> {
     expression: ExpressionContext<'a>,
     result_struct: Option<&'a str>,
+    mesh_out_name: Option<&'a str>,
     task_grid_name: Option<&'a str>,
     local_invocation_id_name: Option<&'a NameKey>,
 }
@@ -3788,6 +3789,9 @@ impl<W: Write> Writer<W> {
                     }
                 }
                 crate::Statement::Return { value: None } => {
+                    if let Some(_mesh_name) = context.mesh_out_name {
+                        // MESH TODO
+                    }
                     writeln!(self.out, "{level}return;")?;
                 }
                 crate::Statement::Kill => {
@@ -6635,6 +6639,7 @@ template <typename A>
                     force_loop_bounding: options.force_loop_bounding,
                 },
                 result_struct: None,
+                mesh_out_name: None,
                 task_grid_name: None,
                 local_invocation_id_name: None,
             };
@@ -7295,10 +7300,10 @@ template <typename A>
 
             // MESH TODO: write exit for this
             // MESH TODO: write vertex & primitive output types
-            let mut _mesh_name = None;
+            let mut mesh_out_name = None;
             let mut task_grid_name = None;
             if let Some(ref info) = ep.mesh_info {
-                let mesh_out_name = self.namer.call("nagaMeshOutput");
+                let mesh_name = self.namer.call("nagaMeshOutput");
                 let topology_name = match info.topology {
                     crate::MeshOutputTopology::Triangles => "triangle",
                     crate::MeshOutputTopology::Lines => "line",
@@ -7308,8 +7313,8 @@ template <typename A>
                 let prim_type = "MESH TODO";
                 let num_verts = info.max_vertices;
                 let num_prims = info.max_primitives;
-                writeln!(self.out, "{} {NAMESPACE}::mesh<{vert_type}, {prim_type}, {num_verts}, {num_prims}, metal::topology::{topology_name}> {mesh_out_name}", separator())?;
-                _mesh_name = Some(mesh_out_name);
+                writeln!(self.out, "{} {NAMESPACE}::mesh<{vert_type}, {prim_type}, {num_verts}, {num_prims}, metal::topology::{topology_name}> {mesh_name}", separator())?;
+                mesh_out_name = Some(mesh_name);
             } else if ep.stage == crate::ShaderStage::Task {
                 let grid_name = self.namer.call("nagaMeshGrid");
                 writeln!(
@@ -7677,6 +7682,7 @@ template <typename A>
                     force_loop_bounding: options.force_loop_bounding,
                 },
                 result_struct: Some(&stage_out_name),
+                mesh_out_name: mesh_out_name.as_deref(),
                 task_grid_name: task_grid_name.as_deref(),
                 local_invocation_id_name: local_invocation_id,
             };
