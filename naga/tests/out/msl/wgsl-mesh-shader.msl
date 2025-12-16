@@ -36,10 +36,7 @@ struct MeshOutput {
     char _pad4[8];
 };
 
-struct ts_mainOutput {
-    metal::uint3 member [[MESH TODO]];
-};
-[[object]] ts_mainOutput ts_main(
+[[object]] void ts_main(
   metal::uint3 __local_invocation_id [[thread_position_in_threadgroup]]
 , object_data TaskPayload& taskPayload [[payload]]
 , threadgroup float& workgroupData
@@ -52,7 +49,10 @@ struct ts_mainOutput {
     workgroupData = 1.0;
     taskPayload.colorMask = metal::float4(1.0, 1.0, 0.0, 1.0);
     taskPayload.visible = true;
-    return ts_mainOutput { metal::uint3(1u, 1u, 1u) };
+    if (metal::all(__local_invocation_id == metal::uint3(0u))) {
+        nagaMeshGrid.set_threadgroups_per_grid(metal::uint3(1u, 1u, 1u));
+    }
+    return;
 }
 
 
@@ -90,7 +90,7 @@ struct ts_mainOutput {
 
 struct fs_mainInput {
     metal::float4 color [[user(loc0), center_perspective]];
-    metal::float4 colorMask [[user(loc1), center_perspective]];
+    metal::float4 colorMask [[user(loc1), flat]];
 };
 struct fs_mainOutput {
     metal::float4 member_2 [[color(0)]];

@@ -26,14 +26,15 @@ struct MeshOutput {
     uint primitive_count;
 };
 
-struct ts_mainOutput {
-    metal::uint3 member [[MESH TODO]];
-};
-[[object]] ts_mainOutput ts_main(
-  object_data TaskPayload& taskPayload [[payload]]
+[[object]] void ts_main(
+  metal::uint3 __local_invocation_id [[thread_position_in_threadgroup]]
+, object_data TaskPayload& taskPayload [[payload]]
 , metal::mesh_grid_properties nagaMeshGrid
 ) {
-    return ts_mainOutput { metal::uint3(1u, 1u, 1u) };
+    if (metal::all(__local_invocation_id == metal::uint3(0u))) {
+        nagaMeshGrid.set_threadgroups_per_grid(metal::uint3(1u, 1u, 1u));
+    }
+    return;
 }
 
 

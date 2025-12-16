@@ -811,6 +811,8 @@ impl<'a> ExpressionContext<'a> {
 struct StatementContext<'a> {
     expression: ExpressionContext<'a>,
     result_struct: Option<&'a str>,
+    task_grid_name: Option<&'a str>,
+    local_invocation_id_name: Option<&'a NameKey>,
 }
 
 impl<W: Write> Writer<W> {
@@ -3754,12 +3756,36 @@ impl<W: Write> Writer<W> {
                 crate::Statement::Return {
                     value: Some(expr_handle),
                 } => {
-                    self.put_return_value(
-                        level,
-                        expr_handle,
-                        context.result_struct,
-                        &context.expression,
-                    )?;
+                    if let Some(grid_name) = context.task_grid_name {
+                        writeln!(
+                            self.out,
+                            "{}if ({}::all({} == {}::uint3(0u))) {{",
+                            level,
+                            NAMESPACE,
+                            context
+                                .local_invocation_id_name
+                                .map(|name_key| self.names[name_key].as_str())
+                                .unwrap_or("__local_invocation_id"),
+                            NAMESPACE,
+                        )?;
+                        {
+                            let level = level.next();
+                            write!(self.out, "{level}{grid_name}.set_threadgroups_per_grid(")?;
+                            self.put_expression(expr_handle, &context.expression, true)?;
+                            writeln!(self.out, ");")?;
+                        }
+                        writeln!(self.out, "{level}}}")?;
+
+                        // MESH TODO
+                        writeln!(self.out, "{level}return;")?;
+                    } else {
+                        self.put_return_value(
+                            level,
+                            expr_handle,
+                            context.result_struct,
+                            &context.expression,
+                        )?;
+                    }
                 }
                 crate::Statement::Return { value: None } => {
                     writeln!(self.out, "{level}return;")?;
@@ -6609,6 +6635,8 @@ template <typename A>
                     force_loop_bounding: options.force_loop_bounding,
                 },
                 result_struct: None,
+                task_grid_name: None,
+                local_invocation_id_name: None,
             };
 
             self.put_locals(&context.expression)?;
@@ -6877,7 +6905,7 @@ template <typename A>
             let stage_out_name = self.namer.call(&format!("{fun_name}Output"));
             let result_member_name = self.namer.call("member");
             let result_type_name = match fun.result {
-                Some(ref result) => {
+                Some(ref result) if ep.stage != crate::ShaderStage::Task => {
                     let mut result_members = Vec::new();
                     if let crate::TypeInner::Struct { ref members, .. } =
                         module.types[result.ty].inner
@@ -6948,7 +6976,7 @@ template <typename A>
                     writeln!(self.out, "}};")?;
                     &stage_out_name
                 }
-                None => "void",
+                _ => "void",
             };
 
             // If we're doing a vertex pulling transform, define the buffer
@@ -7036,7 +7064,9 @@ template <typename A>
             let need_workgroup_variables_initialization =
                 self.need_workgroup_variables_initialization(options, ep, module, fun_info);
 
-            if need_workgroup_variables_initialization && local_invocation_id.is_none() {
+            if (need_workgroup_variables_initialization || ep.stage == crate::ShaderStage::Task)
+                && local_invocation_id.is_none()
+            {
                 writeln!(
                     self.out,
                     "{} {NAMESPACE}::uint3 __local_invocation_id [[thread_position_in_threadgroup]]", separator()
@@ -7263,8 +7293,12 @@ template <typename A>
                 writeln!(self.out)?;
             }
 
+            // MESH TODO: write exit for this
+            // MESH TODO: write vertex & primitive output types
+            let mut _mesh_name = None;
+            let mut task_grid_name = None;
             if let Some(ref info) = ep.mesh_info {
-                let mesh_name = self.namer.call("nagaMeshOutput");
+                let mesh_out_name = self.namer.call("nagaMeshOutput");
                 let topology_name = match info.topology {
                     crate::MeshOutputTopology::Triangles => "triangle",
                     crate::MeshOutputTopology::Lines => "line",
@@ -7274,7 +7308,8 @@ template <typename A>
                 let prim_type = "MESH TODO";
                 let num_verts = info.max_vertices;
                 let num_prims = info.max_primitives;
-                writeln!(self.out, "{} {NAMESPACE}::mesh<{vert_type}, {prim_type}, {num_verts}, {num_prims}, metal::topology::{topology_name}> {mesh_name}", separator())?;
+                writeln!(self.out, "{} {NAMESPACE}::mesh<{vert_type}, {prim_type}, {num_verts}, {num_prims}, metal::topology::{topology_name}> {mesh_out_name}", separator())?;
+                _mesh_name = Some(mesh_out_name);
             } else if ep.stage == crate::ShaderStage::Task {
                 let grid_name = self.namer.call("nagaMeshGrid");
                 writeln!(
@@ -7282,6 +7317,7 @@ template <typename A>
                     "{} {NAMESPACE}::mesh_grid_properties {grid_name}",
                     separator()
                 )?;
+                task_grid_name = Some(grid_name);
             }
 
             if do_vertex_pulling {
@@ -7641,6 +7677,8 @@ template <typename A>
                     force_loop_bounding: options.force_loop_bounding,
                 },
                 result_struct: Some(&stage_out_name),
+                task_grid_name: task_grid_name.as_deref(),
+                local_invocation_id_name: local_invocation_id,
             };
 
             // Finally, declare all the local variables that we need

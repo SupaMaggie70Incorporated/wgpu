@@ -554,7 +554,7 @@ impl Options {
                 interpolation,
                 sampling,
                 blend_src,
-                per_primitive: _,
+                per_primitive,
             } => match mode {
                 LocationMode::VertexInput => Ok(ResolvedBinding::Attribute(location)),
                 LocationMode::FragmentOutput => {
@@ -580,7 +580,11 @@ impl Options {
                             // sampling is `None` only for Flat interpolation.
                             let interpolation = interpolation.unwrap();
                             let sampling = sampling.unwrap_or(crate::Sampling::Center);
-                            Some(ResolvedInterpolation::from_binding(interpolation, sampling))
+                            Some(ResolvedInterpolation::from_binding(
+                                interpolation,
+                                sampling,
+                                per_primitive,
+                            ))
                         },
                     })
                 }
@@ -717,11 +721,12 @@ impl ResolvedBinding {
                     Bi::CullPrimitive => "primitive_culled",
                     // TODO: figure out how to make this written as a function call
                     Bi::PointIndex | Bi::LineIndices | Bi::TriangleIndices => unimplemented!(),
+                    // These aren't real builtins that backends are aware of
                     Bi::MeshTaskSize
                     | Bi::VertexCount
                     | Bi::PrimitiveCount
                     | Bi::Vertices
-                    | Bi::Primitives => "MESH TODO",
+                    | Bi::Primitives => unreachable!(),
                 };
                 write!(out, "{name}")?;
             }
@@ -766,9 +771,17 @@ impl ResolvedBinding {
 }
 
 impl ResolvedInterpolation {
-    const fn from_binding(interpolation: crate::Interpolation, sampling: crate::Sampling) -> Self {
+    const fn from_binding(
+        interpolation: crate::Interpolation,
+        sampling: crate::Sampling,
+        per_primitive: bool,
+    ) -> Self {
         use crate::Interpolation as I;
         use crate::Sampling as S;
+
+        if per_primitive {
+            return Self::Flat;
+        }
 
         match (interpolation, sampling) {
             (I::Perspective, S::Center) => Self::CenterPerspective,
