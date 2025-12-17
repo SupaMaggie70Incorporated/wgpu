@@ -21,6 +21,13 @@ static TaskPayload* taskPayload;
 groupshared TaskPayload _taskPayload;
 groupshared MeshOutput mesh_output;
 
+struct MeshVertexOutput_ms_main {
+    float4 position : SV_Position;
+};
+
+struct MeshPrimitiveOutput_ms_main {
+};
+
 [numthreads(1, 1, 1)]
 void ts_main()
 {
@@ -31,11 +38,18 @@ void ts_main()
 
 [numthreads(1, 1, 1)]
 [outputtopology("line")]
-void ms_main(uint3 __local_invocation_id : SV_GroupThreadID, in payload TaskPayload _taskPayload)
+void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint2 lineIndices[1], out vertices MeshVertexOutput_ms_main vertices_[2], out primitives MeshPrimitiveOutput_ms_main primitives_[1], in payload TaskPayload _taskPayload)
 {
     taskPayload = &_taskPayload;
-    if (all(__local_invocation_id == uint3(0u, 0u, 0u))) {
+    if (all(__local_invocation_index == 0)) {
         mesh_output = (MeshOutput)0;
     }
     GroupMemoryBarrierWithGroupSync();
+    for (int vertIndex = __local_invocation_index; vertIndex < mesh_output.vertex_count; vertIndex += 1) {
+        vertices_[vertIndex].position = mesh_output.vertices_[vertIndex].position;
+    }
+    for (int primIndex = __local_invocation_index; primIndex < mesh_output.primitive_count; primIndex += 1) {
+        lineIndices[primIndex] = mesh_output.primitives_[primIndex].indices_;
+    }
+    return;
 }

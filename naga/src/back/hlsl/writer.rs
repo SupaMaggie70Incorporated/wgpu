@@ -83,6 +83,9 @@ pub(super) struct EntryPointInterface {
     /// The `EntryPointBinding::members` array is sorted by binding,
     /// So that we can walk it in `Statement::Return` handler.
     output: Option<EntryPointBinding>,
+    mesh_vertices: Option<EntryPointBinding>,
+    mesh_primitives: Option<EntryPointBinding>,
+    mesh_indices: Option<EntryPointBinding>,
 }
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
@@ -106,6 +109,8 @@ impl InterfaceKey {
 enum Io {
     Input,
     Output,
+    MeshVertices,
+    MeshPrimitives,
 }
 
 const fn is_subgroup_builtin_binding(binding: &Option<crate::Binding>) -> bool {
@@ -620,8 +625,10 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         module: &Module,
         shader_stage: (ShaderStage, Io),
         struct_name: String,
+        var_name: Option<&str>,
         mut members: Vec<EpStructMember>,
     ) -> Result<EntryPointBinding, Error> {
+        let struct_name = self.namer.call(&struct_name);
         // Sort the members so that first come the user-defined varyings
         // in ascending locations, and then built-ins. This allows VS and FS
         // interfaces to match with regards to order.
@@ -667,13 +674,15 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 // bring back the original order
                 members.sort_by_key(|m| m.index);
             }
-            Io::Output => {
+            Io::Output | Io::MeshVertices | Io::MeshPrimitives => {
                 // keep it sorted by binding
             }
         }
 
         Ok(EntryPointBinding {
-            arg_name: self.namer.call(struct_name.to_lowercase().as_str()),
+            arg_name: self
+                .namer
+                .call(var_name.unwrap_or(struct_name.to_lowercase().as_str())),
             ty_name: struct_name,
             members,
         })
@@ -723,7 +732,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             }
         }
 
-        self.write_interface_struct(module, (stage, Io::Input), struct_name, fake_members)
+        self.write_interface_struct(module, (stage, Io::Input), struct_name, None, fake_members)
     }
 
     /// Flatten all entry point results into a single struct.
@@ -799,7 +808,80 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             });
         }
 
-        self.write_interface_struct(module, (stage, Io::Output), struct_name, fake_members)
+        self.write_interface_struct(module, (stage, Io::Output), struct_name, None, fake_members)
+    }
+
+    fn write_ep_mesh_output_struct(
+        &mut self,
+        module: &Module,
+        entry_point_name: &str,
+        is_primitive: bool,
+        mesh_info: &crate::MeshStageInfo,
+    ) -> Result<EntryPointBinding, Error> {
+        let (in_type, io, var_prefix, arg_name) = if is_primitive {
+            (
+                mesh_info.primitive_output_type,
+                Io::MeshPrimitives,
+                "Primitive",
+                "primitives",
+            )
+        } else {
+            (
+                mesh_info.vertex_output_type,
+                Io::MeshVertices,
+                "Vertex",
+                "vertices",
+            )
+        };
+        let struct_name = format!("Mesh{var_prefix}Output_{entry_point_name}",);
+
+        let members = match module.types[in_type].inner {
+            TypeInner::Struct { ref members, .. } => members,
+            _ => unreachable!(),
+        };
+        let mut out_members = Vec::new();
+        for (index, member) in members.iter().enumerate() {
+            if matches!(
+                member.binding,
+                Some(crate::Binding::BuiltIn(
+                    crate::BuiltIn::PointIndex
+                        | crate::BuiltIn::LineIndices
+                        | crate::BuiltIn::TriangleIndices
+                ))
+            ) {
+                continue;
+            }
+            let member_name = self.namer.call_or(&member.name, "member");
+            out_members.push(EpStructMember {
+                name: member_name,
+                ty: member.ty,
+                binding: member.binding.clone(),
+                index: index as u32,
+            })
+        }
+        self.write_interface_struct(
+            module,
+            (ShaderStage::Mesh, io),
+            struct_name,
+            Some(arg_name),
+            out_members,
+        )
+    }
+
+    fn write_ep_mesh_output_indices(
+        &mut self,
+        topology: crate::MeshOutputTopology,
+    ) -> Result<EntryPointBinding, Error> {
+        let (indices_name, indices_type) = match topology {
+            crate::MeshOutputTopology::Points => unreachable!(),
+            crate::MeshOutputTopology::Lines => (self.namer.call("lineIndices"), "uint2"),
+            crate::MeshOutputTopology::Triangles => (self.namer.call("triangleIndices"), "uint3"),
+        };
+        Ok(EntryPointBinding {
+            ty_name: indices_type.to_string(),
+            arg_name: indices_name,
+            members: Vec::new(),
+        })
     }
 
     /// Writes special interface structures for an entry point. The special structures have
@@ -814,7 +896,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
     ) -> Result<EntryPointInterface, Error> {
         let func = &ep.function;
         let stage = ep.stage;
-        // MESH TODO: write vertex & primitive output types
         Ok(EntryPointInterface {
             input: if !func.arguments.is_empty()
                 && (stage == ShaderStage::Fragment
@@ -832,6 +913,21 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     Some(self.write_ep_output_struct(module, fr, stage, ep_name, frag_ep)?)
                 }
                 _ => None,
+            },
+            mesh_vertices: if let Some(ref info) = ep.mesh_info {
+                Some(self.write_ep_mesh_output_struct(module, ep_name, false, info)?)
+            } else {
+                None
+            },
+            mesh_primitives: if let Some(ref info) = ep.mesh_info {
+                Some(self.write_ep_mesh_output_struct(module, ep_name, true, info)?)
+            } else {
+                None
+            },
+            mesh_indices: if let Some(ref info) = ep.mesh_info {
+                Some(self.write_ep_mesh_output_indices(info.topology)?)
+            } else {
+                None
             },
         })
     }
@@ -940,7 +1036,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         module: &Module,
         handle: Handle<crate::GlobalVariable>,
     ) -> BackendResult {
-        // MESH TODO: write this as a ptr
         let global = &module.global_variables[handle];
         let inner = &module.types[global.ty].inner;
 
@@ -1564,8 +1659,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         let mesh_info = ep.and_then(|a| a.mesh_info.as_ref());
         let task_payload = ep.and_then(|a| a.task_payload);
 
-        // MESH TODO: skip writing result for task shaders
-        // MESH TODO: write input task payload, output variables
         if func.result.is_none() || is_task {
             write!(self.out, "void")?;
         } else {
@@ -1654,7 +1747,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         self.write_semantic(&arg.binding, Some((stage, Io::Input)))?;
                     }
                 }
-                if need_workgroup_variables_initialization {
+                if need_workgroup_variables_initialization || mesh_info.is_some() {
                     if self
                         .entry_point_io
                         .get(&(ep_index as usize))
@@ -1665,10 +1758,9 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     {
                         write!(self.out, ", ")?;
                     }
-                    write!(self.out, "uint3 __local_invocation_id : SV_GroupThreadID")?;
+                    write!(self.out, "uint __local_invocation_index : SV_GroupIndex")?;
                 }
-                if mesh_info.is_some() && task_payload.is_some() {
-                    // Set task payload variable
+                if let Some(mesh_info) = mesh_info {
                     if self
                         .entry_point_io
                         .get(&(ep_index as usize))
@@ -1680,11 +1772,33 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     {
                         write!(self.out, ", ")?;
                     }
-                    write!(self.out, "in payload ")?;
-                    let ty = module.global_variables[task_payload.unwrap()].ty;
-                    self.write_type(module, ty)?;
-                    let name = &self.task_payload_actual_variables[&task_payload.unwrap()];
-                    write!(self.out, " {name}")?;
+                    let mesh_interface = self.entry_point_io.get(&(ep_index as usize)).unwrap();
+                    let vert_info = mesh_interface.mesh_vertices.as_ref().unwrap();
+                    let prim_info = mesh_interface.mesh_primitives.as_ref().unwrap();
+                    let indices_info = mesh_interface.mesh_indices.as_ref().unwrap();
+                    write!(
+                        self.out,
+                        "out indices {} {}[{}]",
+                        indices_info.ty_name, indices_info.arg_name, mesh_info.max_primitives
+                    )?;
+                    write!(
+                        self.out,
+                        ", out vertices {} {}[{}]",
+                        vert_info.ty_name, vert_info.arg_name, mesh_info.max_vertices
+                    )?;
+                    write!(
+                        self.out,
+                        ", out primitives {} {}[{}]",
+                        prim_info.ty_name, prim_info.arg_name, mesh_info.max_primitives
+                    )?;
+                    if let Some(task_payload) = task_payload {
+                        // Set task payload variable
+                        write!(self.out, ", in payload ")?;
+                        let ty = module.global_variables[task_payload].ty;
+                        self.write_type(module, ty)?;
+                        let name = &self.task_payload_actual_variables[&task_payload];
+                        write!(self.out, " {name}")?;
+                    }
                 }
             }
         }
@@ -1855,7 +1969,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
 
         writeln!(
             self.out,
-            "{level}if (all(__local_invocation_id == uint3(0u, 0u, 0u))) {{"
+            "{level}if (all(__local_invocation_index == 0)) {{"
         )?;
 
         let vars = module.global_variables.iter().filter(|&(handle, var)| {
@@ -2122,7 +2236,79 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             // TODO: copy-paste from glsl-out
             Statement::Kill => writeln!(self.out, "{level}discard;")?,
             Statement::Return { value: None } if stage == Some(ShaderStage::Mesh) => {
-                // MESH TODO
+                let back::FunctionType::EntryPoint(ep_idx) = func_ctx.ty else {
+                    unreachable!()
+                };
+                let ep = &module.entry_points[ep_idx as usize];
+                let mesh_info = ep.mesh_info.as_ref().unwrap();
+                let io = self.entry_point_io.get(&(ep_idx as usize)).unwrap();
+
+                let var_name = &self.names[&NameKey::GlobalVariable(mesh_info.output_variable)];
+                let var_type = module.global_variables[mesh_info.output_variable].ty;
+                let wg_size: u32 = ep.workgroup_size.iter().product();
+
+                let get_var_member_name = |bi, var_type| {
+                    let TypeInner::Struct { ref members, .. } = module.types[var_type].inner else {
+                        unreachable!()
+                    };
+                    let idx = members
+                        .iter()
+                        .position(|f| f.binding == Some(crate::Binding::BuiltIn(bi)))
+                        .unwrap();
+                    self.names[&NameKey::StructMember(var_type, idx as u32)].clone()
+                };
+
+                for (array_bi, count_bi, io_interface, is_prim, index_name, ty) in [
+                    (
+                        crate::BuiltIn::Vertices,
+                        crate::BuiltIn::VertexCount,
+                        io.mesh_vertices.as_ref().unwrap(),
+                        false,
+                        "vertIndex",
+                        mesh_info.vertex_output_type,
+                    ),
+                    (
+                        crate::BuiltIn::Primitives,
+                        crate::BuiltIn::PrimitiveCount,
+                        io.mesh_primitives.as_ref().unwrap(),
+                        true,
+                        "primIndex",
+                        mesh_info.primitive_output_type,
+                    ),
+                ] {
+                    let out_var_name = &io_interface.arg_name;
+                    let index_name = self.namer.call(index_name);
+                    let array_name = get_var_member_name(array_bi, var_type);
+                    let item_name = format!("{var_name}.{array_name}[{index_name}]");
+                    writeln!(
+                        self.out,
+                        "{level}for (int {index_name} = __local_invocation_index; {index_name} < {var_name}.{}; {index_name} += {}) {{",
+                        get_var_member_name(count_bi, var_type),
+                        wg_size
+                    )?;
+                    {
+                        let level = level.next();
+                        if is_prim {
+                            let indices_member_name = get_var_member_name(
+                                mesh_info.topology.to_builtin(),
+                                mesh_info.primitive_output_type,
+                            );
+                            let indices_var_name = &io.mesh_indices.as_ref().unwrap().arg_name;
+                            writeln!(
+                                self.out,
+                                "{level}{indices_var_name}[{index_name}] = {item_name}.{indices_member_name};",
+                            )?;
+                        }
+                        for member in &io_interface.members {
+                            let out_member_name = &member.name;
+                            let in_member_name =
+                                &self.names[&NameKey::StructMember(ty, member.index)];
+                            writeln!(self.out, "{level}{out_var_name}[{index_name}].{out_member_name} = {item_name}.{in_member_name};",)?;
+                        }
+                    }
+                    writeln!(self.out, "{level}}}")?;
+                }
+                writeln!(self.out, "{level}return;")?;
             }
             Statement::Return { value: None } => {
                 writeln!(self.out, "{level}return;")?;
@@ -2141,7 +2327,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     "{level}DispatchMesh({temp_name}.x, {temp_name}.x, {temp_name}.x, {});",
                     self.task_payload_actual_variables[&ep.task_payload.unwrap()]
                 )?;
-                // MESH TODO: task payload
             }
             Statement::Return { value: Some(expr) } => {
                 let base_ty_res = &func_ctx.info[expr].ty;

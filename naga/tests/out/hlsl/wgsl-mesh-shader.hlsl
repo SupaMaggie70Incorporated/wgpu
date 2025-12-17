@@ -33,17 +33,27 @@ groupshared TaskPayload _taskPayload;
 groupshared float workgroupData;
 groupshared MeshOutput mesh_output;
 
-struct FragmentInput_fs_main {
+struct MeshVertexOutput_ms_main {
     float4 color : LOC0;
-    float4 colorMask : LOC1 : primitive;
     float4 position : SV_Position;
 };
 
+struct MeshPrimitiveOutput_ms_main {
+    float4 colorMask : LOC1 : primitive;
+    bool cull : SV_CullPrimitive;
+};
+
+struct FragmentInput_fs_main {
+    float4 color_1 : LOC0;
+    float4 colorMask_1 : LOC1 : primitive;
+    float4 position_1 : SV_Position;
+};
+
 [numthreads(1, 1, 1)]
-void ts_main(uint3 __local_invocation_id : SV_GroupThreadID)
+void ts_main(uint __local_invocation_index : SV_GroupIndex)
 {
     taskPayload = &_taskPayload;
-    if (all(__local_invocation_id == uint3(0u, 0u, 0u))) {
+    if (all(__local_invocation_index == 0)) {
         workgroupData = (float)0;
     }
     GroupMemoryBarrierWithGroupSync();
@@ -56,10 +66,10 @@ void ts_main(uint3 __local_invocation_id : SV_GroupThreadID)
 
 [numthreads(1, 1, 1)]
 [outputtopology("triangle")]
-void ms_main(uint3 __local_invocation_id : SV_GroupThreadID, in payload TaskPayload _taskPayload)
+void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint3 triangleIndices[1], out vertices MeshVertexOutput_ms_main vertices_[3], out primitives MeshPrimitiveOutput_ms_main primitives_[1], in payload TaskPayload _taskPayload)
 {
     taskPayload = &_taskPayload;
-    if (all(__local_invocation_id == uint3(0u, 0u, 0u))) {
+    if (all(__local_invocation_index == 0)) {
         workgroupData = (float)0;
         mesh_output = (MeshOutput)0;
     }
@@ -80,11 +90,21 @@ void ms_main(uint3 __local_invocation_id : SV_GroupThreadID, in payload TaskPayl
     bool _e88 = (*taskPayload).visible;
     mesh_output.primitives_[0].cull = !(_e88);
     mesh_output.primitives_[0].colorMask = float4(1.0, 0.0, 1.0, 1.0);
+    for (int vertIndex = __local_invocation_index; vertIndex < mesh_output.vertex_count; vertIndex += 1) {
+        vertices_[vertIndex].color = mesh_output.vertices_[vertIndex].color;
+        vertices_[vertIndex].position = mesh_output.vertices_[vertIndex].position;
+    }
+    for (int primIndex = __local_invocation_index; primIndex < mesh_output.primitive_count; primIndex += 1) {
+        triangleIndices[primIndex] = mesh_output.primitives_[primIndex].indices_;
+        primitives_[primIndex].colorMask = mesh_output.primitives_[primIndex].colorMask;
+        primitives_[primIndex].cull = mesh_output.primitives_[primIndex].cull;
+    }
+    return;
 }
 
 float4 fs_main(FragmentInput_fs_main fragmentinput_fs_main) : SV_Target0
 {
-    VertexOutput vertex = { fragmentinput_fs_main.position, fragmentinput_fs_main.color };
-    PrimitiveInput primitive = { fragmentinput_fs_main.colorMask };
+    VertexOutput vertex = { fragmentinput_fs_main.position_1, fragmentinput_fs_main.color_1 };
+    PrimitiveInput primitive = { fragmentinput_fs_main.colorMask_1 };
     return (vertex.color * primitive.colorMask);
 }
