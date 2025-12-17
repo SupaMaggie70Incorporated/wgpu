@@ -854,7 +854,7 @@ impl crate::Module {
 }
 
 impl crate::MeshOutputTopology {
-    pub fn to_builtin(&self) -> crate::BuiltIn {
+    pub const fn to_builtin(self) -> crate::BuiltIn {
         match self {
             Self::Points => crate::BuiltIn::PointIndex,
             Self::Lines => crate::BuiltIn::LineIndices,
