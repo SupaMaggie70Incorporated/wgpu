@@ -1,5 +1,4 @@
-struct TaskPayload
-{
+struct TaskPayload {
     float4 colorMask;
     bool visible;
     int _end_pad_0;
@@ -7,66 +6,60 @@ struct TaskPayload
     int _end_pad_2;
 };
 
-struct VertexOutput
-{
+struct VertexOutput {
     float4 position : SV_Position;
     float4 color : LOC0;
 };
 
-struct PrimitiveOutput
-{
+struct PrimitiveOutput {
     uint3 indices_;
     bool cull : SV_CullPrimitive;
     float4 colorMask : LOC1 : primitive;
 };
 
-struct PrimitiveInput
-{
+struct PrimitiveInput {
     float4 colorMask : LOC1 : primitive;
 };
 
-struct MeshOutput
-{
+struct MeshOutput {
     VertexOutput vertices_[3];
     PrimitiveOutput primitives_[1];
     uint vertex_count;
     uint primitive_count;
 };
 
-static TaskPayload *taskPayload;
+static TaskPayload* taskPayload;
 groupshared TaskPayload _taskPayload;
 groupshared float workgroupData;
 groupshared MeshOutput mesh_output;
 
-struct FragmentInput_fs_main
-{
+struct FragmentInput_fs_main {
     float4 color : LOC0;
     float4 colorMask : LOC1 : primitive;
     float4 position : SV_Position;
 };
 
 [numthreads(1, 1, 1)]
-void ts_main(uint3 __local_invocation_id: SV_GroupThreadID)
+void ts_main(uint3 __local_invocation_id : SV_GroupThreadID)
 {
     taskPayload = &_taskPayload;
-    if (all(__local_invocation_id == uint3(0u, 0u, 0u)))
-    {
+    if (all(__local_invocation_id == uint3(0u, 0u, 0u))) {
         workgroupData = (float)0;
     }
     GroupMemoryBarrierWithGroupSync();
     workgroupData = 1.0;
     (*taskPayload).colorMask = float4(1.0, 1.0, 0.0, 1.0);
     (*taskPayload).visible = true;
-    return uint3(1u, 1u, 1u);
+    uint3 gridSize = uint3(1u, 1u, 1u);
+    DispatchMesh(gridSize.x, gridSize.x, gridSize.x, _taskPayload);
 }
 
 [numthreads(1, 1, 1)]
 [outputtopology("triangle")]
-void ms_main(uint3 __local_invocation_id: SV_GroupThreadID, in payload TaskPayload _taskPayload)
+void ms_main(uint3 __local_invocation_id : SV_GroupThreadID, in payload TaskPayload _taskPayload)
 {
     taskPayload = &_taskPayload;
-    if (all(__local_invocation_id == uint3(0u, 0u, 0u)))
-    {
+    if (all(__local_invocation_id == uint3(0u, 0u, 0u))) {
         workgroupData = (float)0;
         mesh_output = (MeshOutput)0;
     }
@@ -87,7 +80,6 @@ void ms_main(uint3 __local_invocation_id: SV_GroupThreadID, in payload TaskPaylo
     bool _e88 = (*taskPayload).visible;
     mesh_output.primitives_[0].cull = !(_e88);
     mesh_output.primitives_[0].colorMask = float4(1.0, 0.0, 1.0, 1.0);
-    return;
 }
 
 float4 fs_main(FragmentInput_fs_main fragmentinput_fs_main) : SV_Target0

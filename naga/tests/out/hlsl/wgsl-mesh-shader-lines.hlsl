@@ -25,7 +25,8 @@ groupshared MeshOutput mesh_output;
 void ts_main()
 {
     taskPayload = &_taskPayload;
-    return uint3(1u, 1u, 1u);
+    uint3 gridSize = uint3(1u, 1u, 1u);
+    DispatchMesh(gridSize.x, gridSize.x, gridSize.x, _taskPayload);
 }
 
 [numthreads(1, 1, 1)]
@@ -37,5 +38,4 @@ void ms_main(uint3 __local_invocation_id : SV_GroupThreadID, in payload TaskPayl
         mesh_output = (MeshOutput)0;
     }
     GroupMemoryBarrierWithGroupSync();
-    return;
 }

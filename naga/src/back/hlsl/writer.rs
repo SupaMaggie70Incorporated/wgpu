@@ -2048,6 +2048,10 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
     ) -> BackendResult {
         use crate::Statement;
 
+        let stage = match func_ctx.ty {
+            back::FunctionType::EntryPoint(idx) => Some(module.entry_points[idx as usize].stage),
+            back::FunctionType::Function(_) => None,
+        };
         match *stmt {
             Statement::Emit(ref range) => {
                 for handle in range.clone() {
@@ -2117,12 +2121,29 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             }
             // TODO: copy-paste from glsl-out
             Statement::Kill => writeln!(self.out, "{level}discard;")?,
-            Statement::Return { value: None } => {
+            Statement::Return { value: None } if stage == Some(ShaderStage::Mesh) => {
                 // MESH TODO
+            }
+            Statement::Return { value: None } => {
                 writeln!(self.out, "{level}return;")?;
             }
-            Statement::Return { value: Some(expr) } => {
+            Statement::Return { value: Some(expr) } if stage == Some(ShaderStage::Task) => {
+                let back::FunctionType::EntryPoint(ep_idx) = func_ctx.ty else {
+                    unreachable!()
+                };
+                let ep = &module.entry_points[ep_idx as usize];
+                let temp_name = self.namer.call("gridSize");
+                write!(self.out, "{level}uint3 {temp_name} = ")?;
+                self.write_expr(module, expr, func_ctx)?;
+                writeln!(self.out, ";")?;
+                writeln!(
+                    self.out,
+                    "{level}DispatchMesh({temp_name}.x, {temp_name}.x, {temp_name}.x, {});",
+                    self.task_payload_actual_variables[&ep.task_payload.unwrap()]
+                )?;
                 // MESH TODO: task payload
+            }
+            Statement::Return { value: Some(expr) } => {
                 let base_ty_res = &func_ctx.info[expr].ty;
                 let mut resolved = base_ty_res.inner_with(&module.types);
                 if let TypeInner::Pointer { base, space: _ } = *resolved {
