@@ -1,5 +1,5 @@
 capabilities = "MESH_SHADER"
-targets = "SPIRV | HLSL"
+targets = "WGSL | SPIRV | HLSL"
 
 [spv]
 version = [1, 4]

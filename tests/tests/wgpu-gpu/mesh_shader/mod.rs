@@ -136,7 +136,7 @@ fn mesh_pipeline_build(ctx: &TestingContext, info: MeshPipelineTestInfo) {
     let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,
         bind_group_layouts: &[],
-        immediates_ranges: &[],
+        immediate_size: 0,
     });
     let pipeline = device.create_mesh_pipeline(&wgpu::MeshPipelineDescriptor {
         label: None,
@@ -214,7 +214,7 @@ fn mesh_draw(ctx: &TestingContext, draw_type: DrawType, info: MeshPipelineTestIn
     let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,
         bind_group_layouts: &[],
-        immediates_ranges: &[],
+        immediate_size: 0,
     });
     let pipeline = device.create_mesh_pipeline(&wgpu::MeshPipelineDescriptor {
         label: None,
