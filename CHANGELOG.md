@@ -230,6 +230,39 @@ event happens. Our new log policy is as follows:
 
 By @cwfitzgerald in [#8579](https://github.com/gfx-rs/wgpu/pull/8579).
 
+#### Push constants renamed immediates, API brought in line with spec.
+
+As the "immediate data" api is getting close to stabilization in the WebGPU specification,
+we're bringing our implementation in line with what the spec dictates.
+
+First, in the `PipelineLayoutDescriptor`, you now pass a unified size for all stages:
+
+```diff
+- push_constant_ranges: &[wgpu::PushConstantRange {
+-     stages: wgpu::ShaderStages::VERTEX_FRAGMENT,
+-     range: 0..12,
+- }]
++ immediate_size: 12,
+```
+
+Second, on the command encoder you no longer specify a shader stage, uploads apply
+to all shader stages that use immediate data.
+
+```diff
+- rpass.set_push_constants(wgpu::ShaderStages::FRAGMENT, 0, bytes);
++ rpass.set_immediates(0, bytes);
+```
+
+Finally, our implementation currently still zero-initializes the immediate data
+range you declared in the pipeline layout. This is not spec compliant and failing
+to populate immediate "slots" that are used in the shader will be a validation error
+in a future version. See [the proposal][immediate-data-spec] for details for determining
+which slots are populated in a given shader.
+
+By @cwfitzgerald in [#8724](https://github.com/gfx-rs/wgpu/pull/8724).
+
+[immediate-data-spec]: https://github.com/gpuweb/gpuweb/blob/main/proposals/immediate-data.md#immediate-slots
+
 #### `subgroup_{min,max}_size` renamed and moved from `Limits` -> `AdapterInfo`
 
 To bring our code in line with the WebGPU spec, we have moved information about subgroup size
@@ -302,6 +335,7 @@ By @cwfitzgerald in [#8609](https://github.com/gfx-rs/wgpu/pull/8609).
 - The `STORAGE_READ_ONLY` texture usage is now permitted to coexist with other read-only usages. By @andyleiserson in [#8490](https://github.com/gfx-rs/wgpu/pull/8490).
 - Validate that buffers are unmapped in `write_buffer` calls. By @ErichDonGubler in [#8454](https://github.com/gfx-rs/wgpu/pull/8454).
 - Add WGSL parsing for mesh shaders. By @inner-daemons in [#8370](https://github.com/gfx-rs/wgpu/pull/8370).
+- Add WGSL writing for mesh shaders. By @Slightlyclueless in [#8481](https://github.com/gfx-rs/wgpu/pull/8481).
 - Shorten critical section inside present such that the snatch write lock is no longer held during present, preventing other work happening on other threads. By @cwfitzgerald in [#8608](https://github.com/gfx-rs/wgpu/pull/8608).
 
 #### naga
