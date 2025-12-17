@@ -63,7 +63,7 @@ struct ms_mainPrimitiveOutput {
     }
     for(uint primitiveIndex = localInvocationIndex; primitiveIndex < mesh_output.primitive_count; primitiveIndex += 1) {
         ms_mainPrimitiveOutput primitive;
-        meshOutput.set_index(primitiveIndex * 1 + 0, mesh_output.primitives.inner[primitiveIndex].indices.x);
+        meshOutput.set_index(primitiveIndex * 1 + 0, mesh_output.primitives.inner[primitiveIndex].indices);
         meshOutput.set_primitive(primitiveIndex, primitive);
     }
     if (metal::all(__local_invocation_id == metal::uint3(0u))) {

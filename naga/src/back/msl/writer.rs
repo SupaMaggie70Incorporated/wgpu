@@ -3915,12 +3915,16 @@ impl<W: Write> Writer<W> {
                                         crate::MeshOutputTopology::Triangles => 3,
                                     };
                                     for i in 0..num_indices {
+                                        let component = if num_indices == 1 {
+                                            "".to_string()
+                                        } else {
+                                            format!(".{}", back::COMPONENTS[i])
+                                        };
                                         writeln!(
                                             self.out,
-                                            "{level}{}{}.set_index({prim_index} * {num_indices} + {i}, {in_value}.{});",
+                                            "{level}{}{}.set_index({prim_index} * {num_indices} + {i}, {in_value}{component});",
                                             back::INDENT,
                                             ctx.mesh_out_name,
-                                            back::COMPONENTS[i],
                                         )?;
                                     }
                                 }
