@@ -147,6 +147,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             continue_ctx: back::continue_forward::ContinueCtx::default(),
             temp_access_chain: Vec::new(),
             need_bake_expressions: Default::default(),
+            task_payload_actual_variables: Default::default(),
         }
     }
 
@@ -166,6 +167,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         self.written_candidate_intersection = false;
         self.continue_ctx.clear();
         self.need_bake_expressions.clear();
+        self.task_payload_actual_variables.clear();
     }
 
     /// Generates statements to be inserted immediately before and at the very
@@ -410,13 +412,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         for index in ep_range.clone() {
             let ep = &module.entry_points[index];
             let ep_name = self.names[&NameKey::EntryPoint(index as u16)].clone();
-            let ep_io = self.write_ep_interface(
-                module,
-                &ep.function,
-                ep.stage,
-                &ep_name,
-                fragment_entry_point,
-            )?;
+            let ep_io = self.write_ep_interface(module, ep, &ep_name, fragment_entry_point)?;
             self.entry_point_io.insert(index, ep_io);
         }
 
@@ -812,12 +808,13 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
     fn write_ep_interface(
         &mut self,
         module: &Module,
-        func: &crate::Function,
-        stage: ShaderStage,
+        ep: &crate::EntryPoint,
         ep_name: &str,
         frag_ep: Option<&FragmentEntryPoint<'_>>,
     ) -> Result<EntryPointInterface, Error> {
-        // MESH TODO
+        let func = &ep.function;
+        let stage = ep.stage;
+        // MESH TODO: write vertex & primitive output types
         Ok(EntryPointInterface {
             input: if !func.arguments.is_empty()
                 && (stage == ShaderStage::Fragment
@@ -999,8 +996,9 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 ""
             }
             crate::AddressSpace::TaskPayload => {
-                write!(self.out, "MESH TODO ")?;
+                write!(self.out, "static ")?;
                 self.write_type(module, global.ty)?;
+                write!(self.out, "*")?;
                 ""
             }
             crate::AddressSpace::Uniform => {
@@ -1051,7 +1049,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             write!(self.out, ">")?;
         }
 
-        let name = &self.names[&NameKey::GlobalVariable(handle)];
+        let name = self.names[&NameKey::GlobalVariable(handle)].clone();
         write!(self.out, " {name}")?;
 
         // Immediates need to be assigned a binding explicitly by the consumer
@@ -1130,6 +1128,12 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             writeln!(self.out, "; }}")?;
         } else {
             writeln!(self.out, ";")?;
+        }
+        if global.space == crate::AddressSpace::TaskPayload {
+            let new_name = self.namer.call(&format!("_{name}"));
+            write!(self.out, "groupshared ")?;
+            self.write_type(module, global.ty)?;
+            writeln!(self.out, " {new_name};")?;
         }
 
         Ok(())
@@ -3473,8 +3477,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 let global_variable = &module.global_variables[handle];
                 let ty = &module.types[global_variable.ty].inner;
 
-                // MESH TODO: dereference task payload variables
-
                 // In the case of binding arrays of samplers, we need to not write anything
                 // as the we are in the wrong position to fully write the expression.
                 //
@@ -3517,6 +3519,10 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         "{}, {}, {}, {}",
                         plane_names[0], plane_names[1], plane_names[2], params_name
                     )?;
+                } else if global_variable.space == crate::AddressSpace::TaskPayload {
+                    let name = &self.names[&NameKey::GlobalVariable(handle)];
+                    // Dereference the variable as it is just a pointer
+                    write!(self.out, "(*{name})")?;
                 } else if !is_binding_array_of_samplers && !is_storage_space {
                     let name = &self.names[&NameKey::GlobalVariable(handle)];
                     write!(self.out, "{name}")?;

@@ -17,7 +17,8 @@ struct MeshOutput {
     uint primitive_count;
 };
 
-MESH TODO TaskPayload taskPayload;
+static TaskPayload* taskPayload;
+groupshared TaskPayload _taskPayload;
 groupshared MeshOutput mesh_output;
 
 [numthreads(1, 1, 1)]
