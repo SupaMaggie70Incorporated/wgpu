@@ -4,3 +4,6 @@ targets = "SPIRV | HLSL"
 [spv]
 version = [1, 4]
 capabilities = ["MeshShadingEXT"]
+
+[hlsl]
+shader_model = "V6_5"

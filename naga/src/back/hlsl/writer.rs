@@ -516,6 +516,14 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     num_threads[0], num_threads[1], num_threads[2]
                 )?;
             }
+            if let Some(ref info) = ep.mesh_info {
+                let topology_str = match info.topology {
+                    crate::MeshOutputTopology::Points => unreachable!(),
+                    crate::MeshOutputTopology::Lines => "line",
+                    crate::MeshOutputTopology::Triangles => "triangle",
+                };
+                writeln!(self.out, "[outputtopology(\"{topology_str}\")]")?;
+            }
 
             let name = self.names[&NameKey::EntryPoint(index as u16)].clone();
             self.write_function(module, &name, &ep.function, &ctx, info)?;
@@ -540,11 +548,10 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             crate::Binding::Location {
                 interpolation,
                 sampling,
-                per_primitive,
                 ..
             } => {
                 if let Some(interpolation) = interpolation {
-                    if let Some(string) = interpolation.to_hlsl_str(per_primitive) {
+                    if let Some(string) = interpolation.to_hlsl_str() {
                         write!(self.out, "{string} ")?
                     }
                 }
@@ -568,7 +575,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         binding: &Option<crate::Binding>,
         stage: Option<(ShaderStage, Io)>,
     ) -> BackendResult {
-        match *binding {
+        let per_primitive = match *binding {
             Some(crate::Binding::BuiltIn(builtin)) if !is_subgroup_builtin_binding(binding) => {
                 if builtin == crate::BuiltIn::ViewIndex
                     && self.options.shader_model < ShaderModel::V6_1
@@ -581,20 +588,32 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 if let Some(builtin_str) = builtin.to_hlsl_str()? {
                     write!(self.out, " : {builtin_str}")?;
                 }
+                false
             }
             Some(crate::Binding::Location {
-                blend_src: Some(1), ..
+                blend_src: Some(1),
+                per_primitive,
+                ..
             }) => {
                 write!(self.out, " : SV_Target1")?;
+                per_primitive
             }
-            Some(crate::Binding::Location { location, .. }) => {
+            Some(crate::Binding::Location {
+                location,
+                per_primitive,
+                ..
+            }) => {
                 if stage == Some((ShaderStage::Fragment, Io::Output)) {
                     write!(self.out, " : SV_Target{location}")?;
                 } else {
                     write!(self.out, " : {LOCATION_SEMANTIC}{location}")?;
                 }
+                per_primitive
             }
-            _ => {}
+            _ => false,
+        };
+        if per_primitive {
+            write!(self.out, " : primitive")?;
         }
 
         Ok(())
@@ -798,6 +817,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         ep_name: &str,
         frag_ep: Option<&FragmentEntryPoint<'_>>,
     ) -> Result<EntryPointInterface, Error> {
+        // MESH TODO
         Ok(EntryPointInterface {
             input: if !func.arguments.is_empty()
                 && (stage == ShaderStage::Fragment
@@ -923,6 +943,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         module: &Module,
         handle: Handle<crate::GlobalVariable>,
     ) -> BackendResult {
+        // MESH TODO: write this as a ptr
         let global = &module.global_variables[handle];
         let inner = &module.types[global.ty].inner;
 
@@ -977,7 +998,11 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 self.write_type(module, global.ty)?;
                 ""
             }
-            crate::AddressSpace::TaskPayload => unimplemented!(),
+            crate::AddressSpace::TaskPayload => {
+                write!(self.out, "MESH TODO ")?;
+                self.write_type(module, global.ty)?;
+                ""
+            }
             crate::AddressSpace::Uniform => {
                 // constant buffer declarations are expected to be inlined, e.g.
                 // `cbuffer foo: register(b0) { field1: type1; }`
@@ -1527,6 +1552,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
 
         self.update_expressions_to_bake(module, func, info);
 
+        // MESH TODO: skip writing result for task shaders
+        // MESH TODO: write input task payload, output variables
         if let Some(ref result) = func.result {
             // Write typedef if return type is an array
             let array_return_type = match module.types[result.ty].inner {
@@ -2053,9 +2080,11 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             // TODO: copy-paste from glsl-out
             Statement::Kill => writeln!(self.out, "{level}discard;")?,
             Statement::Return { value: None } => {
+                // MESH TODO
                 writeln!(self.out, "{level}return;")?;
             }
             Statement::Return { value: Some(expr) } => {
+                // MESH TODO: task payload
                 let base_ty_res = &func_ctx.info[expr].ty;
                 let mut resolved = base_ty_res.inner_with(&module.types);
                 if let TypeInner::Pointer { base, space: _ } = *resolved {
@@ -3443,6 +3472,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             Expression::GlobalVariable(handle) => {
                 let global_variable = &module.global_variables[handle];
                 let ty = &module.types[global_variable.ty].inner;
+
+                // MESH TODO: dereference task payload variables
 
                 // In the case of binding arrays of samplers, we need to not write anything
                 // as the we are in the wrong position to fully write the expression.

@@ -200,10 +200,7 @@ impl crate::BuiltIn {
 
 impl crate::Interpolation {
     /// Return the string corresponding to the HLSL interpolation qualifier.
-    pub(super) const fn to_hlsl_str(self, per_primitive: bool) -> Option<&'static str> {
-        if per_primitive {
-            return Some("primitive");
-        }
+    pub(super) const fn to_hlsl_str(self) -> Option<&'static str> {
         match self {
             // Would be "linear", but it's the default interpolation in SM4 and up
             // https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-struct#interpolation-modifiers-introduced-in-shader-model-4
