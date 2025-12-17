@@ -5,38 +5,6 @@ fn compile_wgsl(device: &wgpu::Device) -> wgpu::ShaderModule {
         source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
     })
 }
-fn compile_hlsl(device: &wgpu::Device, entry: &str, stage_str: &str) -> wgpu::ShaderModule {
-    let out_path = format!(
-        "{}/src/mesh_shader/shader.{stage_str}.cso",
-        env!("CARGO_MANIFEST_DIR")
-    );
-    let cmd = std::process::Command::new("dxc")
-        .args([
-            "-T",
-            &format!("{stage_str}_6_5"),
-            "-E",
-            entry,
-            &format!("{}/src/mesh_shader/shader.hlsl", env!("CARGO_MANIFEST_DIR")),
-            "-Fo",
-            &out_path,
-        ])
-        .output()
-        .unwrap();
-    if !cmd.status.success() {
-        panic!("DXC failed:\n{}", String::from_utf8(cmd.stderr).unwrap());
-    }
-    let file = std::fs::read(&out_path).unwrap();
-    std::fs::remove_file(out_path).unwrap();
-    unsafe {
-        device.create_shader_module_passthrough(wgpu::ShaderModuleDescriptorPassthrough {
-            entry_point: entry.to_owned(),
-            label: None,
-            num_workgroups: (1, 1, 1),
-            dxil: Some(std::borrow::Cow::Owned(file)),
-            ..Default::default()
-        })
-    }
-}
 
 fn compile_msl(device: &wgpu::Device, entry: &str) -> wgpu::ShaderModule {
     unsafe {
@@ -61,21 +29,13 @@ impl crate::framework::Example for Example {
         _queue: &wgpu::Queue,
     ) -> Self {
         let (ts, ms, fs, ts_name, ms_name, fs_name) = match adapter.get_info().backend {
-            wgpu::Backend::Vulkan => (
+            wgpu::Backend::Vulkan | wgpu::Backend::Dx12 => (
                 compile_wgsl(device),
                 compile_wgsl(device),
                 compile_wgsl(device),
                 "ts_main",
                 "ms_main",
                 "fs_main",
-            ),
-            wgpu::Backend::Dx12 => (
-                compile_hlsl(device, "Task", "as"),
-                compile_hlsl(device, "Mesh", "ms"),
-                compile_hlsl(device, "Frag", "ps"),
-                "main",
-                "main",
-                "main",
             ),
             wgpu::Backend::Metal => (
                 compile_msl(device, "taskShader"),

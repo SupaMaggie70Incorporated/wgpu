@@ -1,5 +1,3 @@
-use std::hash::{DefaultHasher, Hash, Hasher};
-
 use wgpu::util::DeviceExt;
 use wgpu_test::{
     gpu_test, GpuTestConfiguration, GpuTestInitializer, TestParameters, TestingContext,
@@ -29,47 +27,6 @@ fn compile_wgsl(device: &wgpu::Device) -> wgpu::ShaderModule {
         source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
     })
 }
-fn compile_hlsl(
-    device: &wgpu::Device,
-    entry: &str,
-    stage_str: &str,
-    test_name: &str,
-) -> wgpu::ShaderModule {
-    // Each test needs its own files
-    let out_path = format!(
-        "{}/tests/wgpu-gpu/mesh_shader/{test_name}.{stage_str}.cso",
-        env!("CARGO_MANIFEST_DIR")
-    );
-    let cmd = std::process::Command::new("dxc")
-        .args([
-            "-T",
-            &format!("{stage_str}_6_5"),
-            "-E",
-            entry,
-            &format!(
-                "{}/tests/wgpu-gpu/mesh_shader/basic.hlsl",
-                env!("CARGO_MANIFEST_DIR")
-            ),
-            "-Fo",
-            &out_path,
-        ])
-        .output()
-        .unwrap();
-    if !cmd.status.success() {
-        panic!("DXC failed:\n{}", String::from_utf8(cmd.stderr).unwrap());
-    }
-    let file = std::fs::read(&out_path).unwrap();
-    std::fs::remove_file(out_path).unwrap();
-    unsafe {
-        device.create_shader_module_passthrough(wgpu::ShaderModuleDescriptorPassthrough {
-            entry_point: entry.to_owned(),
-            label: None,
-            num_workgroups: (1, 1, 1),
-            dxil: Some(std::borrow::Cow::Owned(file)),
-            ..Default::default()
-        })
-    }
-}
 
 fn compile_msl(device: &wgpu::Device, entry: &str) -> wgpu::ShaderModule {
     unsafe {
@@ -86,7 +43,6 @@ fn compile_msl(device: &wgpu::Device, entry: &str) -> wgpu::ShaderModule {
 fn get_shaders(
     device: &wgpu::Device,
     backend: wgpu::Backend,
-    test_name: &str,
     info: &MeshPipelineTestInfo,
 ) -> (
     Option<wgpu::ShaderModule>,
@@ -102,7 +58,7 @@ fn get_shaders(
     // In the case that the platform does support mesh shaders, the dummy
     // shader is used to avoid requiring EXPERIMENTAL_PASSTHROUGH_SHADERS.
     match backend {
-        wgpu::Backend::Vulkan => (
+        wgpu::Backend::Vulkan | wgpu::Backend::Dx12 => (
             info.use_task.then(|| compile_wgsl(device)),
             compile_wgsl(device),
             info.use_frag.then(|| compile_wgsl(device)),
@@ -115,21 +71,6 @@ fn get_shaders(
                 "ms_no_ts"
             },
             "fs_main",
-        ),
-        wgpu::Backend::Dx12 => (
-            info.use_task
-                .then(|| compile_hlsl(device, "Task", "as", test_name)),
-            compile_hlsl(
-                device,
-                if info.use_task { "Mesh" } else { "MeshNoTask" },
-                "ms",
-                test_name,
-            ),
-            info.use_frag
-                .then(|| compile_hlsl(device, "Frag", "ps", test_name)),
-            "main",
-            "main",
-            "main",
         ),
         wgpu::Backend::Metal => (
             info.use_task.then(|| compile_msl(device, "taskShader")),
@@ -186,20 +127,12 @@ struct MeshPipelineTestInfo {
     divergent: bool,
 }
 
-fn hash_testing_context(ctx: &TestingContext) -> u64 {
-    let mut hasher = DefaultHasher::new();
-    ctx.hash(&mut hasher);
-    hasher.finish()
-}
-
 fn mesh_pipeline_build(ctx: &TestingContext, info: MeshPipelineTestInfo) {
     let backend = ctx.adapter.get_info().backend;
     let device = &ctx.device;
     let (_depth_image, depth_view, depth_state) = create_depth(device);
 
-    let test_hash = hash_testing_context(ctx).to_string();
-    let (task, mesh, frag, ts_name, ms_name, fs_name) =
-        get_shaders(device, backend, &test_hash, &info);
+    let (task, mesh, frag, ts_name, ms_name, fs_name) = get_shaders(device, backend, &info);
     let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,
         bind_group_layouts: &[],
@@ -275,10 +208,8 @@ fn mesh_draw(ctx: &TestingContext, draw_type: DrawType, info: MeshPipelineTestIn
     let backend = ctx.adapter.get_info().backend;
     let device = &ctx.device;
     let (_depth_image, depth_view, depth_state) = create_depth(device);
-    let test_hash = hash_testing_context(ctx).to_string();
 
-    let (task, mesh, frag, ts_name, ms_name, fs_name) =
-        get_shaders(device, backend, &test_hash, &info);
+    let (task, mesh, frag, ts_name, ms_name, fs_name) = get_shaders(device, backend, &info);
     let frag = frag.unwrap();
     let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,

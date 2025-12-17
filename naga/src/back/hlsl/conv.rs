@@ -149,8 +149,8 @@ impl crate::StorageFormat {
 }
 
 impl crate::BuiltIn {
-    pub(super) fn to_hlsl_str(self) -> Result<&'static str, Error> {
-        Ok(match self {
+    pub(super) fn to_hlsl_str(self) -> Result<Option<&'static str>, Error> {
+        Ok(Some(match self {
             Self::Position { .. } => "SV_Position",
             // vertex
             Self::ClipDistance => "SV_ClipDistance",
@@ -186,19 +186,24 @@ impl crate::BuiltIn {
                 return Err(Error::Custom(format!("Unsupported builtin {self:?}")))
             }
             Self::CullPrimitive => "SV_CullPrimitive",
-            Self::PointIndex | Self::LineIndices | Self::TriangleIndices => unimplemented!(),
             Self::MeshTaskSize
             | Self::VertexCount
             | Self::PrimitiveCount
             | Self::Vertices
-            | Self::Primitives => unreachable!(),
-        })
+            | Self::Primitives
+            | Self::PointIndex
+            | Self::LineIndices
+            | Self::TriangleIndices => return Ok(None),
+        }))
     }
 }
 
 impl crate::Interpolation {
     /// Return the string corresponding to the HLSL interpolation qualifier.
-    pub(super) const fn to_hlsl_str(self) -> Option<&'static str> {
+    pub(super) const fn to_hlsl_str(self, per_primitive: bool) -> Option<&'static str> {
+        if per_primitive {
+            return Some("primitive");
+        }
         match self {
             // Would be "linear", but it's the default interpolation in SM4 and up
             // https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-struct#interpolation-modifiers-introduced-in-shader-model-4

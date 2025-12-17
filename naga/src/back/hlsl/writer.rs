@@ -540,10 +540,11 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             crate::Binding::Location {
                 interpolation,
                 sampling,
+                per_primitive,
                 ..
             } => {
                 if let Some(interpolation) = interpolation {
-                    if let Some(string) = interpolation.to_hlsl_str() {
+                    if let Some(string) = interpolation.to_hlsl_str(per_primitive) {
                         write!(self.out, "{string} ")?
                     }
                 }
@@ -577,8 +578,9 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         ShaderModel::V6_1,
                     ));
                 }
-                let builtin_str = builtin.to_hlsl_str()?;
-                write!(self.out, " : {builtin_str}")?;
+                if let Some(builtin_str) = builtin.to_hlsl_str()? {
+                    write!(self.out, " : {builtin_str}")?;
+                }
             }
             Some(crate::Binding::Location {
                 blend_src: Some(1), ..
