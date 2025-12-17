@@ -1817,9 +1817,9 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         writeln!(self.out)?;
         writeln!(self.out, "{{")?;
 
-        if task_payload.is_some() {
-            let to_set = &self.names[&NameKey::GlobalVariable(task_payload.unwrap())];
-            let arg = &self.task_payload_actual_variables[&task_payload.unwrap()];
+        if let Some(task_payload) = task_payload {
+            let to_set = &self.names[&NameKey::GlobalVariable(task_payload)];
+            let arg = &self.task_payload_actual_variables[&task_payload];
             writeln!(self.out, "{}{} = &{};", back::INDENT, to_set, arg)?;
         }
 
