@@ -1134,6 +1134,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             write!(self.out, "groupshared ")?;
             self.write_type(module, global.ty)?;
             writeln!(self.out, " {new_name};")?;
+            self.task_payload_actual_variables.insert(handle, new_name);
         }
 
         Ok(())
@@ -1555,10 +1556,20 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         // Function Declaration Syntax - https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-function-syntax
 
         self.update_expressions_to_bake(module, func, info);
+        let ep = match func_ctx.ty {
+            back::FunctionType::EntryPoint(idx) => Some(&module.entry_points[idx as usize]),
+            back::FunctionType::Function(_) => None,
+        };
+        let is_task = ep.is_some_and(|a| a.stage == ShaderStage::Task);
+        let mesh_info = ep.and_then(|a| a.mesh_info.as_ref());
+        let task_payload = ep.and_then(|a| a.task_payload);
 
         // MESH TODO: skip writing result for task shaders
         // MESH TODO: write input task payload, output variables
-        if let Some(ref result) = func.result {
+        if func.result.is_none() || is_task {
+            write!(self.out, "void")?;
+        } else {
+            let result = func.result.as_ref().unwrap();
             // Write typedef if return type is an array
             let array_return_type = match module.types[result.ty].inner {
                 TypeInner::Array { base, size, .. } => {
@@ -1600,8 +1611,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     }
                 }
             }
-        } else {
-            write!(self.out, "void")?;
         }
 
         // Write function name
@@ -1658,6 +1667,25 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     }
                     write!(self.out, "uint3 __local_invocation_id : SV_GroupThreadID")?;
                 }
+                if mesh_info.is_some() && task_payload.is_some() {
+                    // Set task payload variable
+                    if self
+                        .entry_point_io
+                        .get(&(ep_index as usize))
+                        .unwrap()
+                        .input
+                        .is_some()
+                        || !func.arguments.is_empty()
+                        || need_workgroup_variables_initialization
+                    {
+                        write!(self.out, ", ")?;
+                    }
+                    write!(self.out, "in payload ")?;
+                    let ty = module.global_variables[task_payload.unwrap()].ty;
+                    self.write_type(module, ty)?;
+                    let name = &self.task_payload_actual_variables[&task_payload.unwrap()];
+                    write!(self.out, " {name}")?;
+                }
             }
         }
         // Ends of arguments
@@ -1674,6 +1702,12 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         // Function body start
         writeln!(self.out)?;
         writeln!(self.out, "{{")?;
+
+        if task_payload.is_some() {
+            let to_set = &self.names[&NameKey::GlobalVariable(task_payload.unwrap())];
+            let arg = &self.task_payload_actual_variables[&task_payload.unwrap()];
+            writeln!(self.out, "{}{} = &{};", back::INDENT, to_set, arg)?;
+        }
 
         if need_workgroup_variables_initialization {
             self.write_workgroup_variables_initialization(func_ctx, module)?;

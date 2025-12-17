@@ -22,15 +22,17 @@ groupshared TaskPayload _taskPayload;
 groupshared MeshOutput mesh_output;
 
 [numthreads(1, 1, 1)]
-uint3 ts_main()
+void ts_main()
 {
+    taskPayload = &_taskPayload;
     return uint3(1u, 1u, 1u);
 }
 
 [numthreads(1, 1, 1)]
 [outputtopology("line")]
-void ms_main(uint3 __local_invocation_id : SV_GroupThreadID)
+void ms_main(uint3 __local_invocation_id : SV_GroupThreadID, in payload TaskPayload _taskPayload)
 {
+    taskPayload = &_taskPayload;
     if (all(__local_invocation_id == uint3(0u, 0u, 0u))) {
         mesh_output = (MeshOutput)0;
     }

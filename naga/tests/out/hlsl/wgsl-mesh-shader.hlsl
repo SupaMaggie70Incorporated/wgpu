@@ -46,8 +46,9 @@ struct FragmentInput_fs_main
 };
 
 [numthreads(1, 1, 1)]
-uint3 ts_main(uint3 __local_invocation_id: SV_GroupThreadID)
+void ts_main(uint3 __local_invocation_id: SV_GroupThreadID)
 {
+    taskPayload = &_taskPayload;
     if (all(__local_invocation_id == uint3(0u, 0u, 0u)))
     {
         workgroupData = (float)0;
@@ -61,8 +62,9 @@ uint3 ts_main(uint3 __local_invocation_id: SV_GroupThreadID)
 
 [numthreads(1, 1, 1)]
 [outputtopology("triangle")]
-void ms_main(uint3 __local_invocation_id: SV_GroupThreadID)
+void ms_main(uint3 __local_invocation_id: SV_GroupThreadID, in payload TaskPayload _taskPayload)
 {
+    taskPayload = &_taskPayload;
     if (all(__local_invocation_id == uint3(0u, 0u, 0u)))
     {
         workgroupData = (float)0;
