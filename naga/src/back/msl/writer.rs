@@ -4477,6 +4477,10 @@ impl<W: Write> Writer<W> {
         // Work around Metal bug where `uint` is not available by default
         writeln!(self.out, "using {NAMESPACE}::uint;")?;
 
+        if module.uses_mesh_shaders() && options.lang_version < (3, 0) {
+            return Err(Error::UnsupportedMeshShader);
+        }
+
         let mut uses_ray_query = false;
         for (_, ty) in module.types.iter() {
             match ty.inner {
@@ -7400,9 +7404,6 @@ template <typename A>
                         }
                         _ => {}
                     }
-                }
-                if options.lang_version < (3, 0) && var.space == crate::AddressSpace::TaskPayload {
-                    return Err(Error::UnsupportedMeshShader);
                 }
 
                 // Check min MSL version for binding arrays
