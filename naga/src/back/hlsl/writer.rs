@@ -1963,6 +1963,19 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     arg_names.push(name.clone());
                 }
                 writeln!(self.out, ") {{")?;
+                write!(self.out, "{}{nested_name}(", back::INDENT)?;
+                for (i, arg_name) in arg_names.iter().enumerate() {
+                    if i != 0 {
+                        write!(self.out, ", ")?;
+                    }
+                    write!(self.out, "{arg_name}")?;
+                }
+                writeln!(self.out, ");")?;
+                writeln!(
+                    self.out,
+                    "{}GroupMemoryBarrierWithGroupSync();",
+                    back::INDENT
+                )?;
 
                 let back::FunctionType::EntryPoint(ep_idx) = func_ctx.ty else {
                     unreachable!()
@@ -2051,7 +2064,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     }
                     writeln!(self.out, "{level}}}")?;
                 }
-                writeln!(self.out, "{level}return;")?;
                 // TODO: mesh call and copies
                 writeln!(self.out, "}}")?;
             } else {
@@ -2069,6 +2081,11 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     write!(self.out, "{arg_name}")?;
                 }
                 writeln!(self.out, ");")?;
+                writeln!(
+                    self.out,
+                    "{}GroupMemoryBarrierWithGroupSync();",
+                    back::INDENT
+                )?;
                 writeln!(
                     self.out,
                     "{}DispatchMesh({grid_size}.x, {grid_size}.y, {grid_size}.z, {});",

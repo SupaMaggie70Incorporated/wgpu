@@ -90,6 +90,7 @@ uint3 _ts_main(uint __local_invocation_index)
 [numthreads(1, 1, 1)]
 void ts_main(uint __local_invocation_index : SV_GroupIndex) {
     uint3 gridSize = _ts_main(__local_invocation_index);
+    GroupMemoryBarrierWithGroupSync();
     DispatchMesh(gridSize.x, gridSize.y, gridSize.z, taskPayload);
 }
 
@@ -105,6 +106,7 @@ uint3 _ts_divergent(uint3 thread_id : SV_GroupThreadID)
 [numthreads(2, 1, 1)]
 void ts_divergent(uint3 thread_id : SV_GroupThreadID) {
     uint3 gridSize_1 = _ts_divergent(thread_id);
+    GroupMemoryBarrierWithGroupSync();
     DispatchMesh(gridSize_1.x, gridSize_1.y, gridSize_1.z, taskPayload);
 }
 
@@ -136,6 +138,8 @@ void _ms_main(uint __local_invocation_index, in TaskPayload taskPayload)
 [numthreads(1, 1, 1)]
 [outputtopology("triangle")]
 void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint3 triangleIndices[1], out vertices MeshVertexOutput_ms_main vertices_[3], out primitives MeshPrimitiveOutput_ms_main primitives_[1], in payload TaskPayload taskPayload) {
+    _ms_main(__local_invocation_index, taskPayload);
+    GroupMemoryBarrierWithGroupSync();
     SetMeshOutputCounts(mesh_output.vertex_count, mesh_output.primitive_count);
     for (int vertIndex = __local_invocation_index; vertIndex < mesh_output.vertex_count; vertIndex += 1) {
         vertices_[vertIndex].color = mesh_output.vertices_[vertIndex].color;
@@ -146,7 +150,6 @@ void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint3 tr
         primitives_[primIndex].colorMask = mesh_output.primitives_[primIndex].colorMask;
         primitives_[primIndex].cull = mesh_output.primitives_[primIndex].cull;
     }
-    return;
 }
 
 void _ms_no_ts(uint __local_invocation_index)
@@ -173,6 +176,8 @@ void _ms_no_ts(uint __local_invocation_index)
 [numthreads(1, 1, 1)]
 [outputtopology("triangle")]
 void ms_no_ts(uint __local_invocation_index : SV_GroupIndex, out indices uint3 triangleIndices_1[1], out vertices MeshVertexOutput_ms_no_ts vertices_1[3], out primitives MeshPrimitiveOutput_ms_no_ts primitives_1[1]) {
+    _ms_no_ts(__local_invocation_index);
+    GroupMemoryBarrierWithGroupSync();
     SetMeshOutputCounts(mesh_output.vertex_count, mesh_output.primitive_count);
     for (int vertIndex_1 = __local_invocation_index; vertIndex_1 < mesh_output.vertex_count; vertIndex_1 += 1) {
         vertices_1[vertIndex_1].color_1 = mesh_output.vertices_[vertIndex_1].color;
@@ -183,7 +188,6 @@ void ms_no_ts(uint __local_invocation_index : SV_GroupIndex, out indices uint3 t
         primitives_1[primIndex_1].colorMask_1 = mesh_output.primitives_[primIndex_1].colorMask;
         primitives_1[primIndex_1].cull_1 = mesh_output.primitives_[primIndex_1].cull;
     }
-    return;
 }
 
 void _ms_divergent(uint3 thread_id_1 : SV_GroupThreadID, uint __local_invocation_index)
@@ -214,6 +218,8 @@ void _ms_divergent(uint3 thread_id_1 : SV_GroupThreadID, uint __local_invocation
 [numthreads(2, 1, 1)]
 [outputtopology("triangle")]
 void ms_divergent(uint3 thread_id_1 : SV_GroupThreadID, uint __local_invocation_index : SV_GroupIndex, out indices uint3 triangleIndices_2[1], out vertices MeshVertexOutput_ms_divergent vertices_2[3], out primitives MeshPrimitiveOutput_ms_divergent primitives_2[1]) {
+    _ms_divergent(thread_id_1, __local_invocation_index);
+    GroupMemoryBarrierWithGroupSync();
     SetMeshOutputCounts(mesh_output.vertex_count, mesh_output.primitive_count);
     for (int vertIndex_2 = __local_invocation_index; vertIndex_2 < mesh_output.vertex_count; vertIndex_2 += 2) {
         vertices_2[vertIndex_2].color_2 = mesh_output.vertices_[vertIndex_2].color;
@@ -224,7 +230,6 @@ void ms_divergent(uint3 thread_id_1 : SV_GroupThreadID, uint __local_invocation_
         primitives_2[primIndex_2].colorMask_2 = mesh_output.primitives_[primIndex_2].colorMask;
         primitives_2[primIndex_2].cull_2 = mesh_output.primitives_[primIndex_2].cull;
     }
-    return;
 }
 
 float4 fs_main(FragmentInput_fs_main fragmentinput_fs_main) : SV_Target0
