@@ -31,8 +31,11 @@ struct PrimitiveInput {
 var<task_payload> taskPayload: TaskPayload;
 var<workgroup> workgroupData: f32;
 
-fn helper_function() -> bool {
+fn helper_reader() -> bool {
     return taskPayload.visible;
+}
+fn helper_writer(value: bool) {
+    taskPayload.visible = value;
 }
 
 @task
@@ -41,8 +44,8 @@ fn helper_function() -> bool {
 fn ts_main() -> @builtin(mesh_task_size) vec3<u32> {
     workgroupData = 1.0;
     taskPayload.colorMask = vec4(1.0, 1.0, 0.0, 1.0);
-    taskPayload.visible = true;
-    taskPayload.visible = helper_function();
+    helper_writer(true);
+    taskPayload.visible = helper_reader();
     return vec3(1, 1, 1);
 }
 
@@ -87,7 +90,7 @@ fn ms_main() {
     mesh_output.vertices[2].color = colors[2] * taskPayload.colorMask;
 
     mesh_output.primitives[0].indices = vec3<u32>(0, 1, 2);
-    mesh_output.primitives[0].cull = !helper_function();
+    mesh_output.primitives[0].cull = !helper_reader();
     mesh_output.primitives[0].colorMask = vec4<f32>(1.0, 0.0, 1.0, 1.0);
 }
 

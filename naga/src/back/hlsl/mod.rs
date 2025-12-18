@@ -755,6 +755,6 @@ pub struct Writer<'a, W> {
     /// [`AccessIndex`]: crate::Expression::AccessIndex
     temp_access_chain: Vec<storage::SubAccess>,
     need_bake_expressions: back::NeedBakeExpressions,
-    used_task_payload:
+    readonly_task_payload:
         crate::FastHashMap<Handle<crate::Function>, Option<Handle<crate::GlobalVariable>>>,
 }

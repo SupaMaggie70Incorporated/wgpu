@@ -155,7 +155,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             continue_ctx: back::continue_forward::ContinueCtx::default(),
             temp_access_chain: Vec::new(),
             need_bake_expressions: Default::default(),
-            used_task_payload: Default::default(),
+            readonly_task_payload: Default::default(),
         }
     }
 
@@ -175,7 +175,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         self.written_candidate_intersection = false;
         self.continue_ctx.clear();
         self.need_bake_expressions.clear();
-        self.used_task_payload.clear();
+        self.readonly_task_payload.clear();
     }
 
     /// Generates statements to be inserted immediately before and at the very
@@ -1747,26 +1747,19 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     let usage = info[var_handle];
                     if usage.is_empty() {
                         continue;
+                    } else if usage.contains(valid::GlobalUse::WRITE) {
+                        break;
                     }
-                    let decoration = if usage.contains(valid::GlobalUse::WRITE) {
-                        "inout"
-                    } else {
-                        "in"
-                    };
                     let var_name = &self.names[&NameKey::GlobalVariable(var_handle)];
                     let var_type = &self.names[&NameKey::Type(var.ty)];
-                    write!(
-                        self.out,
-                        "{}{decoration} {var_type} {var_name}",
-                        separator()
-                    )?;
+                    write!(self.out, "{}in {var_type} {var_name}", separator())?;
 
-                    self.used_task_payload.insert(handle, Some(var_handle));
+                    self.readonly_task_payload.insert(handle, Some(var_handle));
                     any_task_payload = true;
                     break;
                 }
                 if !any_task_payload {
-                    self.used_task_payload.insert(handle, None);
+                    self.readonly_task_payload.insert(handle, None);
                 }
             }
             back::FunctionType::EntryPoint(ep_index) => {
@@ -2828,6 +2821,13 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 ref arguments,
                 result,
             } => {
+                // Write a barrier if caller can write but callee only reads (i.e. callee gets passed by value)
+                let needs_barrier = self.readonly_task_payload[&function].is_some()
+                    && self.function_task_payload_write(func_ctx.ty, module);
+
+                if needs_barrier {
+                    writeln!(self.out, "{level}GroupMemoryBarrierWithGroupSync();")?;
+                }
                 write!(self.out, "{level}")?;
                 if let Some(expr) = result {
                     write!(self.out, "const ")?;
@@ -2858,14 +2858,17 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     }
                     self.write_expr(module, *argument, func_ctx)?;
                 }
-                if let Some(task) = self.used_task_payload[&function] {
+                if let Some(task) = self.readonly_task_payload[&function] {
                     if !arguments.is_empty() {
                         write!(self.out, ", ")?;
                     }
                     let name = &self.names[&NameKey::GlobalVariable(task)];
                     write!(self.out, "{name}")?;
                 }
-                writeln!(self.out, ");")?
+                writeln!(self.out, ");")?;
+                if needs_barrier {
+                    writeln!(self.out, "{level}GroupMemoryBarrierWithGroupSync();")?;
+                }
             }
             Statement::Atomic {
                 pointer,
@@ -4963,6 +4966,15 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         }
         writeln!(self.out, ");")?;
         Ok(())
+    }
+
+    fn function_task_payload_write(&self, ty: back::FunctionType, module: &Module) -> bool {
+        match ty {
+            back::FunctionType::EntryPoint(ep) => {
+                module.entry_points[ep as usize].stage == ShaderStage::Task
+            }
+            back::FunctionType::Function(handle) => self.readonly_task_payload[&handle].is_none(),
+        }
     }
 }
 

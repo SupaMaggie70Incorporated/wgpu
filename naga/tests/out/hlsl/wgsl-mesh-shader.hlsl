@@ -68,10 +68,16 @@ struct FragmentInput_fs_main {
     float4 position_3 : SV_Position;
 };
 
-bool helper_function(in TaskPayload taskPayload)
+bool helper_reader(in TaskPayload taskPayload)
 {
     bool _e2 = taskPayload.visible;
     return _e2;
+}
+
+void helper_writer(bool value)
+{
+    taskPayload.visible = value;
+    return;
 }
 
 uint3 _ts_main(uint __local_invocation_index)
@@ -83,9 +89,11 @@ uint3 _ts_main(uint __local_invocation_index)
     GroupMemoryBarrierWithGroupSync();
     workgroupData = 1.0;
     taskPayload.colorMask = float4(1.0, 1.0, 0.0, 1.0);
-    taskPayload.visible = true;
-    const bool _e14 = helper_function(taskPayload);
-    taskPayload.visible = _e14;
+    helper_writer(true);
+    GroupMemoryBarrierWithGroupSync();
+    const bool _e12 = helper_reader(taskPayload);
+    GroupMemoryBarrierWithGroupSync();
+    taskPayload.visible = _e12;
     return uint3(1u, 1u, 1u);
 }
 [numthreads(1, 1, 1)]
@@ -135,7 +143,7 @@ void _ms_main(uint __local_invocation_index, in TaskPayload taskPayload)
     float4 _e67 = taskPayload.colorMask;
     mesh_output.vertices_[2].color = (float4(1.0, 0.0, 0.0, 1.0) * _e67);
     mesh_output.primitives_[0].indices_ = uint3(0u, 1u, 2u);
-    const bool _e86 = helper_function(taskPayload);
+    const bool _e86 = helper_reader(taskPayload);
     mesh_output.primitives_[0].cull = !(_e86);
     mesh_output.primitives_[0].colorMask = float4(1.0, 0.0, 1.0, 1.0);
     return;
