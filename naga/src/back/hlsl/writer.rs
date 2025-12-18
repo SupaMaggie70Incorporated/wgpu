@@ -1774,6 +1774,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     self.entry_point_io.get(&(ep_index as usize)).unwrap().input
                 {
                     write!(self.out, "{} {}", ep_input.ty_name, ep_input.arg_name)?;
+                    separator();
                 } else {
                     let stage = module.entry_points[ep_index as usize].stage;
                     for (index, arg) in func.arguments.iter().enumerate() {
