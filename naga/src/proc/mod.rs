@@ -862,3 +862,9 @@ impl crate::MeshOutputTopology {
         }
     }
 }
+
+impl crate::AddressSpace {
+    pub const fn is_workgroup_like(self) -> bool {
+        matches!(self, Self::WorkGroup | Self::TaskPayload)
+    }
+}

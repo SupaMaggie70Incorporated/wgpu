@@ -1827,7 +1827,14 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         writeln!(self.out, "{{")?;
 
         if need_workgroup_variables_initialization {
-            self.write_workgroup_variables_initialization(func_ctx, module)?;
+            let back::FunctionType::EntryPoint(index) = func_ctx.ty else {
+                unreachable!();
+            };
+            self.write_workgroup_variables_initialization(
+                func_ctx,
+                module,
+                module.entry_points[index as usize].stage,
+            )?;
         }
 
         if let back::FunctionType::EntryPoint(index) = func_ctx.ty {
@@ -2179,7 +2186,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         self.options.zero_initialize_workgroup_memory
             && func_ctx.ty.is_compute_like_entry_point(module)
             && module.global_variables.iter().any(|(handle, var)| {
-                !func_ctx.info[handle].is_empty() && var.space == crate::AddressSpace::WorkGroup
+                !func_ctx.info[handle].is_empty() && var.space.is_workgroup_like()
             })
     }
 
@@ -2187,6 +2194,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         &mut self,
         func_ctx: &back::FunctionCtx,
         module: &Module,
+        stage: ShaderStage,
     ) -> BackendResult {
         let level = back::Level(1);
 
@@ -2196,7 +2204,11 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         )?;
 
         let vars = module.global_variables.iter().filter(|&(handle, var)| {
-            !func_ctx.info[handle].is_empty() && var.space == crate::AddressSpace::WorkGroup
+            // Read-only in mesh shaders
+            let task_needs_zero =
+                (var.space == crate::AddressSpace::TaskPayload) && stage == ShaderStage::Task;
+            !func_ctx.info[handle].is_empty()
+                && (var.space == crate::AddressSpace::WorkGroup || task_needs_zero)
         });
 
         for (handle, var) in vars {

@@ -27,13 +27,17 @@ struct MeshVertexOutput_ms_main {
 struct MeshPrimitiveOutput_ms_main {
 };
 
-uint3 _ts_main()
+uint3 _ts_main(uint __local_invocation_index)
 {
+    if (all(__local_invocation_index == 0)) {
+        taskPayload = (TaskPayload)0;
+    }
+    GroupMemoryBarrierWithGroupSync();
     return uint3(1u, 1u, 1u);
 }
 [numthreads(1, 1, 1)]
-void ts_main() {
-    uint3 gridSize = _ts_main();
+void ts_main(uint __local_invocation_index : SV_GroupIndex) {
+    uint3 gridSize = _ts_main(__local_invocation_index);
     GroupMemoryBarrierWithGroupSync();
     DispatchMesh(gridSize.x, gridSize.y, gridSize.z, taskPayload);
 }

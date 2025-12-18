@@ -77,6 +77,7 @@ bool helper_function(in TaskPayload taskPayload)
 uint3 _ts_main(uint __local_invocation_index)
 {
     if (all(__local_invocation_index == 0)) {
+        taskPayload = (TaskPayload)0;
         workgroupData = (float)0;
     }
     GroupMemoryBarrierWithGroupSync();
@@ -94,8 +95,12 @@ void ts_main(uint __local_invocation_index : SV_GroupIndex) {
     DispatchMesh(gridSize.x, gridSize.y, gridSize.z, taskPayload);
 }
 
-uint3 _ts_divergent(uint3 thread_id : SV_GroupThreadID)
+uint3 _ts_divergent(uint3 thread_id : SV_GroupThreadID, uint __local_invocation_index)
 {
+    if (all(__local_invocation_index == 0)) {
+        taskPayload = (TaskPayload)0;
+    }
+    GroupMemoryBarrierWithGroupSync();
     if ((thread_id.x == 0u)) {
         taskPayload.colorMask = float4(1.0, 1.0, 0.0, 1.0);
         taskPayload.visible = true;
@@ -104,8 +109,8 @@ uint3 _ts_divergent(uint3 thread_id : SV_GroupThreadID)
     return uint3(2u, 2u, 2u);
 }
 [numthreads(2, 1, 1)]
-void ts_divergent(uint3 thread_id : SV_GroupThreadID) {
-    uint3 gridSize_1 = _ts_divergent(thread_id);
+void ts_divergent(uint3 thread_id : SV_GroupThreadID, uint __local_invocation_index : SV_GroupIndex) {
+    uint3 gridSize_1 = _ts_divergent(thread_id, __local_invocation_index);
     GroupMemoryBarrierWithGroupSync();
     DispatchMesh(gridSize_1.x, gridSize_1.y, gridSize_1.z, taskPayload);
 }
