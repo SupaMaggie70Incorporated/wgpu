@@ -14,10 +14,22 @@
             entry_point:"ts_main",
             target_profile:"as_6_5",
         ),
+        (
+            entry_point:"ts_divergent",
+            target_profile:"as_6_5",
+        ),
     ],
     mesh:[
         (
             entry_point:"ms_main",
+            target_profile:"ms_6_5",
+        ),
+        (
+            entry_point:"ms_no_ts",
+            target_profile:"ms_6_5",
+        ),
+        (
+            entry_point:"ms_divergent",
             target_profile:"ms_6_5",
         ),
     ],

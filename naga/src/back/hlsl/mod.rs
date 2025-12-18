@@ -755,10 +755,6 @@ pub struct Writer<'a, W> {
     /// [`AccessIndex`]: crate::Expression::AccessIndex
     temp_access_chain: Vec<storage::SubAccess>,
     need_bake_expressions: back::NeedBakeExpressions,
-
-    /// Task payload variables are represented as a pointer to allow using the same variables
-    /// in task and mesh entry points, even though mesh shaders take them as a function input
-    /// and task payloads have a global groupshared variable. This represents the name of the
-    /// actual groupshared variable to be used.
-    task_payload_actual_variables: crate::FastHashMap<Handle<crate::GlobalVariable>, String>,
+    used_task_payload:
+        crate::FastHashMap<Handle<crate::Function>, Option<Handle<crate::GlobalVariable>>>,
 }

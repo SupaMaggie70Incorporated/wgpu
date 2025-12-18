@@ -152,7 +152,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             continue_ctx: back::continue_forward::ContinueCtx::default(),
             temp_access_chain: Vec::new(),
             need_bake_expressions: Default::default(),
-            task_payload_actual_variables: Default::default(),
+            used_task_payload: Default::default(),
         }
     }
 
@@ -172,7 +172,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         self.written_candidate_intersection = false;
         self.continue_ctx.clear();
         self.need_bake_expressions.clear();
-        self.task_payload_actual_variables.clear();
+        self.used_task_payload.clear();
     }
 
     /// Generates statements to be inserted immediately before and at the very
@@ -1085,15 +1085,9 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 self.write_type(module, global.ty)?;
                 ""
             }
-            crate::AddressSpace::WorkGroup => {
+            crate::AddressSpace::WorkGroup | crate::AddressSpace::TaskPayload => {
                 write!(self.out, "groupshared ")?;
                 self.write_type(module, global.ty)?;
-                ""
-            }
-            crate::AddressSpace::TaskPayload => {
-                write!(self.out, "static ")?;
-                self.write_type(module, global.ty)?;
-                write!(self.out, "*")?;
                 ""
             }
             crate::AddressSpace::Uniform => {
@@ -1223,13 +1217,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             writeln!(self.out, "; }}")?;
         } else {
             writeln!(self.out, ";")?;
-        }
-        if global.space == crate::AddressSpace::TaskPayload {
-            let new_name = self.namer.call(&format!("_{name}"));
-            write!(self.out, "groupshared ")?;
-            self.write_type(module, global.ty)?;
-            writeln!(self.out, " {new_name};")?;
-            self.task_payload_actual_variables.insert(handle, new_name);
         }
 
         Ok(())
@@ -1722,6 +1709,36 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
 
                     self.write_function_argument(module, handle, arg, index)?;
                 }
+                // MESH TODO: every time a function is written or called, we have to iterate over EVERY
+                // global variable. Maybe improve this?
+                let mut any_task_payload = false;
+                for (var_handle, var) in module.global_variables.iter() {
+                    if var.space != crate::AddressSpace::TaskPayload {
+                        continue;
+                    }
+                    let usage = info[var_handle];
+                    if usage.is_empty() {
+                        continue;
+                    }
+                    if !func.arguments.is_empty() {
+                        write!(self.out, ", ")?;
+                    }
+                    let decoration = if usage.contains(valid::GlobalUse::WRITE) {
+                        "inout"
+                    } else {
+                        "in"
+                    };
+                    let var_name = &self.names[&NameKey::GlobalVariable(var_handle)];
+                    let var_type = &self.names[&NameKey::Type(var.ty)];
+                    write!(self.out, "{decoration} {var_type} {var_name}")?;
+
+                    self.used_task_payload.insert(handle, Some(var_handle));
+                    any_task_payload = true;
+                    break;
+                }
+                if !any_task_payload {
+                    self.used_task_payload.insert(handle, None);
+                }
             }
             back::FunctionType::EntryPoint(ep_index) => {
                 if let Some(ref ep_input) =
@@ -1796,7 +1813,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         write!(self.out, ", in payload ")?;
                         let ty = module.global_variables[task_payload].ty;
                         self.write_type(module, ty)?;
-                        let name = &self.task_payload_actual_variables[&task_payload];
+
+                        let name = &self.names[&NameKey::GlobalVariable(task_payload)];
                         write!(self.out, " {name}")?;
                     }
                 }
@@ -1816,12 +1834,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         // Function body start
         writeln!(self.out)?;
         writeln!(self.out, "{{")?;
-
-        if let Some(task_payload) = task_payload {
-            let to_set = &self.names[&NameKey::GlobalVariable(task_payload)];
-            let arg = &self.task_payload_actual_variables[&task_payload];
-            writeln!(self.out, "{}{} = &{};", back::INDENT, to_set, arg)?;
-        }
 
         if need_workgroup_variables_initialization {
             self.write_workgroup_variables_initialization(func_ctx, module)?;
@@ -2258,10 +2270,24 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     self.names[&NameKey::StructMember(var_type, idx as u32)].clone()
                 };
 
-                for (array_bi, count_bi, io_interface, is_prim, index_name, ty) in [
+                let vert_count = format!(
+                    "{var_name}.{}",
+                    get_var_member_name(crate::BuiltIn::VertexCount, var_type),
+                );
+                let prim_count = format!(
+                    "{var_name}.{}",
+                    get_var_member_name(crate::BuiltIn::PrimitiveCount, var_type),
+                );
+
+                writeln!(
+                    self.out,
+                    "{level}SetMeshOutputCounts({vert_count}, {prim_count});"
+                )?;
+
+                for (array_bi, count, io_interface, is_prim, index_name, ty) in [
                     (
                         crate::BuiltIn::Vertices,
-                        crate::BuiltIn::VertexCount,
+                        vert_count,
                         io.mesh_vertices.as_ref().unwrap(),
                         false,
                         "vertIndex",
@@ -2269,7 +2295,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     ),
                     (
                         crate::BuiltIn::Primitives,
-                        crate::BuiltIn::PrimitiveCount,
+                        prim_count,
                         io.mesh_primitives.as_ref().unwrap(),
                         true,
                         "primIndex",
@@ -2282,8 +2308,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     let item_name = format!("{var_name}.{array_name}[{index_name}]");
                     writeln!(
                         self.out,
-                        "{level}for (int {index_name} = __local_invocation_index; {index_name} < {var_name}.{}; {index_name} += {}) {{",
-                        get_var_member_name(count_bi, var_type),
+                        "{level}for (int {index_name} = __local_invocation_index; {index_name} < {count}; {index_name} += {}) {{",
                         wg_size
                     )?;
                     {
@@ -2325,7 +2350,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 writeln!(
                     self.out,
                     "{level}DispatchMesh({temp_name}.x, {temp_name}.x, {temp_name}.x, {});",
-                    self.task_payload_actual_variables[&ep.task_payload.unwrap()]
+                    self.names[&NameKey::GlobalVariable(ep.task_payload.unwrap())]
                 )?;
             }
             Statement::Return { value: Some(expr) } => {
@@ -2716,6 +2741,13 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         write!(self.out, ", ")?;
                     }
                     self.write_expr(module, *argument, func_ctx)?;
+                }
+                if let Some(task) = self.used_task_payload[&function] {
+                    if !arguments.is_empty() {
+                        write!(self.out, ", ")?;
+                    }
+                    let name = &self.names[&NameKey::GlobalVariable(task)];
+                    write!(self.out, "{name}")?;
                 }
                 writeln!(self.out, ");")?
             }
@@ -3759,10 +3791,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         "{}, {}, {}, {}",
                         plane_names[0], plane_names[1], plane_names[2], params_name
                     )?;
-                } else if global_variable.space == crate::AddressSpace::TaskPayload {
-                    let name = &self.names[&NameKey::GlobalVariable(handle)];
-                    // Dereference the variable as it is just a pointer
-                    write!(self.out, "(*{name})")?;
                 } else if !is_binding_array_of_samplers && !is_storage_space {
                     let name = &self.names[&NameKey::GlobalVariable(handle)];
                     write!(self.out, "{name}")?;

@@ -31,11 +31,18 @@ var<task_payload> taskPayload: TaskPayload;
 var<workgroup> workgroupData: f32;
 var<workgroup> mesh_output: MeshOutput;
 
+fn helper_function() -> bool {
+    let _e2 = taskPayload.visible;
+    return _e2;
+}
+
 @task @payload(taskPayload) @workgroup_size(1, 1, 1) 
 fn ts_main() -> @builtin(mesh_task_size) vec3<u32> {
     workgroupData = 1f;
     taskPayload.colorMask = vec4<f32>(1f, 1f, 0f, 1f);
     taskPayload.visible = true;
+    let _e14 = helper_function();
+    taskPayload.visible = _e14;
     return vec3<u32>(1u, 1u, 1u);
 }
 
@@ -64,8 +71,8 @@ fn ms_main() {
     let _e67 = taskPayload.colorMask;
     mesh_output.vertices[2].color = (vec4<f32>(1f, 0f, 0f, 1f) * _e67);
     mesh_output.primitives[0].indices = vec3<u32>(0u, 1u, 2u);
-    let _e88 = taskPayload.visible;
-    mesh_output.primitives[0].cull = !(_e88);
+    let _e86 = helper_function();
+    mesh_output.primitives[0].cull = !(_e86);
     mesh_output.primitives[0].colorMask = vec4<f32>(1f, 0f, 1f, 1f);
     return;
 }
