@@ -47,8 +47,8 @@ fn ts_main() -> @builtin(mesh_task_size) vec3<u32> {
 }
 
 @task @payload(taskPayload) @workgroup_size(2, 1, 1) 
-fn ts_divergent(@builtin(local_invocation_index) thread_id: u32) -> @builtin(mesh_task_size) vec3<u32> {
-    if (thread_id == 0u) {
+fn ts_divergent(@builtin(local_invocation_id) thread_id: vec3<u32>) -> @builtin(mesh_task_size) vec3<u32> {
+    if (thread_id.x == 0u) {
         taskPayload.colorMask = vec4<f32>(1f, 1f, 0f, 1f);
         taskPayload.visible = true;
         return vec3<u32>(1u, 1u, 1u);
@@ -94,9 +94,9 @@ fn ms_no_ts() {
     return;
 }
 
-@mesh(mesh_output) @workgroup_size(1, 1, 1) 
-fn ms_divergent(@builtin(local_invocation_index) thread_id_1: u32) {
-    if (thread_id_1 == 0u) {
+@mesh(mesh_output) @workgroup_size(2, 1, 1) 
+fn ms_divergent(@builtin(local_invocation_id) thread_id_1: vec3<u32>) {
+    if (thread_id_1.x == 0u) {
         mesh_output.vertex_count = 3u;
         mesh_output.primitive_count = 1u;
         workgroupData = 2f;
