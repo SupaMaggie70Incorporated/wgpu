@@ -42,7 +42,7 @@ void ts_main(uint __local_invocation_index : SV_GroupIndex) {
     DispatchMesh(gridSize.x, gridSize.y, gridSize.z, taskPayload);
 }
 
-void _ms_main(uint __local_invocation_index, in TaskPayload taskPayload)
+void _ms_main(uint __local_invocation_index)
 {
     return;
 }

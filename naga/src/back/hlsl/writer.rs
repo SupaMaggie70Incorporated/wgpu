@@ -1765,17 +1765,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         write!(self.out, " : SV_GroupIndex")?;
                     }
                 }
-                if ep.is_some_and(|a| a.stage == ShaderStage::Mesh) {
-                    if let Some(task_payload) = task_payload {
-                        // Set task payload variable
-                        write!(self.out, ", in ")?;
-                        let ty = module.global_variables[task_payload].ty;
-                        self.write_type(module, ty)?;
-
-                        let name = &self.names[&NameKey::GlobalVariable(task_payload)];
-                        write!(self.out, " {name}")?;
-                    }
-                }
             }
         }
         // Ends of arguments

@@ -121,7 +121,7 @@ void ts_divergent(uint3 thread_id : SV_GroupThreadID, uint __local_invocation_in
     DispatchMesh(gridSize_1.x, gridSize_1.y, gridSize_1.z, taskPayload);
 }
 
-void _ms_main(uint __local_invocation_index, in TaskPayload taskPayload)
+void _ms_main(uint __local_invocation_index)
 {
     mesh_output.vertex_count = 3u;
     mesh_output.primitive_count = 1u;
