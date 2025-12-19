@@ -2821,14 +2821,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 ref arguments,
                 result,
             } => {
-                // Write a barrier if caller can write but callee only reads (i.e. callee gets passed by value)
-                let needs_barrier = self.readonly_task_payload[&function].is_some()
-                    && self.function_task_payload_write(func_ctx.ty, module);
-
-                if needs_barrier {
-                    writeln!(self.out, "{level}GroupMemoryBarrierWithGroupSync();")?;
-                }
                 write!(self.out, "{level}")?;
+
                 if let Some(expr) = result {
                     write!(self.out, "const ")?;
                     let name = Baked(expr).to_string();
@@ -2866,9 +2860,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     write!(self.out, "{name}")?;
                 }
                 writeln!(self.out, ");")?;
-                if needs_barrier {
-                    writeln!(self.out, "{level}GroupMemoryBarrierWithGroupSync();")?;
-                }
             }
             Statement::Atomic {
                 pointer,
@@ -4966,15 +4957,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         }
         writeln!(self.out, ");")?;
         Ok(())
-    }
-
-    fn function_task_payload_write(&self, ty: back::FunctionType, module: &Module) -> bool {
-        match ty {
-            back::FunctionType::EntryPoint(ep) => {
-                module.entry_points[ep as usize].stage == ShaderStage::Task
-            }
-            back::FunctionType::Function(handle) => self.readonly_task_payload[&handle].is_none(),
-        }
     }
 }
 

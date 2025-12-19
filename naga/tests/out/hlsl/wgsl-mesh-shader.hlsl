@@ -90,9 +90,7 @@ uint3 _ts_main(uint __local_invocation_index)
     workgroupData = 1.0;
     taskPayload.colorMask = float4(1.0, 1.0, 0.0, 1.0);
     helper_writer(true);
-    GroupMemoryBarrierWithGroupSync();
     const bool _e12 = helper_reader(taskPayload);
-    GroupMemoryBarrierWithGroupSync();
     taskPayload.visible = _e12;
     return uint3(1u, 1u, 1u);
 }
