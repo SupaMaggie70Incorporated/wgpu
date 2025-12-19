@@ -68,7 +68,7 @@ struct FragmentInput_fs_main {
     float4 position_3 : SV_Position;
 };
 
-bool helper_reader(in TaskPayload taskPayload)
+bool helper_reader()
 {
     bool _e2 = taskPayload.visible;
     return _e2;
@@ -82,20 +82,20 @@ void helper_writer(bool value)
 
 uint3 _ts_main(uint __local_invocation_index)
 {
-    if (all(__local_invocation_index == 0)) {
-        taskPayload = (TaskPayload)0;
-        workgroupData = (float)0;
-    }
-    GroupMemoryBarrierWithGroupSync();
     workgroupData = 1.0;
     taskPayload.colorMask = float4(1.0, 1.0, 0.0, 1.0);
     helper_writer(true);
-    const bool _e12 = helper_reader(taskPayload);
+    const bool _e12 = helper_reader();
     taskPayload.visible = _e12;
     return uint3(1u, 1u, 1u);
 }
 [numthreads(1, 1, 1)]
 void ts_main(uint __local_invocation_index : SV_GroupIndex) {
+    if (all(__local_invocation_index == 0)) {
+        taskPayload = (TaskPayload)0;
+        workgroupData = (float)0;
+    }
+    GroupMemoryBarrierWithGroupSync();
     uint3 gridSize = _ts_main(__local_invocation_index);
     GroupMemoryBarrierWithGroupSync();
     DispatchMesh(gridSize.x, gridSize.y, gridSize.z, taskPayload);
@@ -103,10 +103,6 @@ void ts_main(uint __local_invocation_index : SV_GroupIndex) {
 
 uint3 _ts_divergent(uint3 thread_id : SV_GroupThreadID, uint __local_invocation_index)
 {
-    if (all(__local_invocation_index == 0)) {
-        taskPayload = (TaskPayload)0;
-    }
-    GroupMemoryBarrierWithGroupSync();
     if ((thread_id.x == 0u)) {
         taskPayload.colorMask = float4(1.0, 1.0, 0.0, 1.0);
         taskPayload.visible = true;
@@ -116,6 +112,10 @@ uint3 _ts_divergent(uint3 thread_id : SV_GroupThreadID, uint __local_invocation_
 }
 [numthreads(2, 1, 1)]
 void ts_divergent(uint3 thread_id : SV_GroupThreadID, uint __local_invocation_index : SV_GroupIndex) {
+    if (all(__local_invocation_index == 0)) {
+        taskPayload = (TaskPayload)0;
+    }
+    GroupMemoryBarrierWithGroupSync();
     uint3 gridSize_1 = _ts_divergent(thread_id, __local_invocation_index);
     GroupMemoryBarrierWithGroupSync();
     DispatchMesh(gridSize_1.x, gridSize_1.y, gridSize_1.z, taskPayload);
@@ -123,11 +123,6 @@ void ts_divergent(uint3 thread_id : SV_GroupThreadID, uint __local_invocation_in
 
 void _ms_main(uint __local_invocation_index, in TaskPayload taskPayload)
 {
-    if (all(__local_invocation_index == 0)) {
-        workgroupData = (float)0;
-        mesh_output = (MeshOutput)0;
-    }
-    GroupMemoryBarrierWithGroupSync();
     mesh_output.vertex_count = 3u;
     mesh_output.primitive_count = 1u;
     workgroupData = 2.0;
@@ -141,15 +136,21 @@ void _ms_main(uint __local_invocation_index, in TaskPayload taskPayload)
     float4 _e67 = taskPayload.colorMask;
     mesh_output.vertices_[2].color = (float4(1.0, 0.0, 0.0, 1.0) * _e67);
     mesh_output.primitives_[0].indices_ = uint3(0u, 1u, 2u);
-    const bool _e86 = helper_reader(taskPayload);
+    const bool _e86 = helper_reader();
     mesh_output.primitives_[0].cull = !(_e86);
     mesh_output.primitives_[0].colorMask = float4(1.0, 0.0, 1.0, 1.0);
     return;
 }
 [numthreads(1, 1, 1)]
 [outputtopology("triangle")]
-void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint3 triangleIndices[1], out vertices MeshVertexOutput_ms_main vertices_[3], out primitives MeshPrimitiveOutput_ms_main primitives_[1], in payload TaskPayload taskPayload) {
-    _ms_main(__local_invocation_index, taskPayload);
+void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint3 triangleIndices[1], out vertices MeshVertexOutput_ms_main vertices_[3], out primitives MeshPrimitiveOutput_ms_main primitives_[1], in payload TaskPayload _taskPayload) {
+    if (all(__local_invocation_index == 0)) {
+        taskPayload = _taskPayload;
+        workgroupData = (float)0;
+        mesh_output = (MeshOutput)0;
+    }
+    GroupMemoryBarrierWithGroupSync();
+    _ms_main(__local_invocation_index);
     GroupMemoryBarrierWithGroupSync();
     SetMeshOutputCounts(mesh_output.vertex_count, mesh_output.primitive_count);
     for (int vertIndex = __local_invocation_index; vertIndex < mesh_output.vertex_count; vertIndex += 1) {
@@ -165,11 +166,6 @@ void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint3 tr
 
 void _ms_no_ts(uint __local_invocation_index)
 {
-    if (all(__local_invocation_index == 0)) {
-        workgroupData = (float)0;
-        mesh_output = (MeshOutput)0;
-    }
-    GroupMemoryBarrierWithGroupSync();
     mesh_output.vertex_count = 3u;
     mesh_output.primitive_count = 1u;
     workgroupData = 2.0;
@@ -187,6 +183,11 @@ void _ms_no_ts(uint __local_invocation_index)
 [numthreads(1, 1, 1)]
 [outputtopology("triangle")]
 void ms_no_ts(uint __local_invocation_index : SV_GroupIndex, out indices uint3 triangleIndices_1[1], out vertices MeshVertexOutput_ms_no_ts vertices_1[3], out primitives MeshPrimitiveOutput_ms_no_ts primitives_1[1]) {
+    if (all(__local_invocation_index == 0)) {
+        workgroupData = (float)0;
+        mesh_output = (MeshOutput)0;
+    }
+    GroupMemoryBarrierWithGroupSync();
     _ms_no_ts(__local_invocation_index);
     GroupMemoryBarrierWithGroupSync();
     SetMeshOutputCounts(mesh_output.vertex_count, mesh_output.primitive_count);
@@ -203,11 +204,6 @@ void ms_no_ts(uint __local_invocation_index : SV_GroupIndex, out indices uint3 t
 
 void _ms_divergent(uint3 thread_id_1 : SV_GroupThreadID, uint __local_invocation_index)
 {
-    if (all(__local_invocation_index == 0)) {
-        workgroupData = (float)0;
-        mesh_output = (MeshOutput)0;
-    }
-    GroupMemoryBarrierWithGroupSync();
     if ((thread_id_1.x == 0u)) {
         mesh_output.vertex_count = 3u;
         mesh_output.primitive_count = 1u;
@@ -229,6 +225,11 @@ void _ms_divergent(uint3 thread_id_1 : SV_GroupThreadID, uint __local_invocation
 [numthreads(2, 1, 1)]
 [outputtopology("triangle")]
 void ms_divergent(uint3 thread_id_1 : SV_GroupThreadID, uint __local_invocation_index : SV_GroupIndex, out indices uint3 triangleIndices_2[1], out vertices MeshVertexOutput_ms_divergent vertices_2[3], out primitives MeshPrimitiveOutput_ms_divergent primitives_2[1]) {
+    if (all(__local_invocation_index == 0)) {
+        workgroupData = (float)0;
+        mesh_output = (MeshOutput)0;
+    }
+    GroupMemoryBarrierWithGroupSync();
     _ms_divergent(thread_id_1, __local_invocation_index);
     GroupMemoryBarrierWithGroupSync();
     SetMeshOutputCounts(mesh_output.vertex_count, mesh_output.primitive_count);

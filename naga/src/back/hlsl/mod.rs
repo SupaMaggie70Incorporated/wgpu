@@ -155,7 +155,7 @@ use core::fmt::Error as FmtError;
 
 use thiserror::Error;
 
-use crate::{back, ir, proc, Handle};
+use crate::{back, ir, proc};
 
 /// Direct3D 12 binding information for a global variable.
 ///
@@ -755,6 +755,4 @@ pub struct Writer<'a, W> {
     /// [`AccessIndex`]: crate::Expression::AccessIndex
     temp_access_chain: Vec<storage::SubAccess>,
     need_bake_expressions: back::NeedBakeExpressions,
-    readonly_task_payload:
-        crate::FastHashMap<Handle<crate::Function>, Option<Handle<crate::GlobalVariable>>>,
 }

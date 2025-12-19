@@ -155,7 +155,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             continue_ctx: back::continue_forward::ContinueCtx::default(),
             temp_access_chain: Vec::new(),
             need_bake_expressions: Default::default(),
-            readonly_task_payload: Default::default(),
         }
     }
 
@@ -175,7 +174,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         self.written_candidate_intersection = false;
         self.continue_ctx.clear();
         self.need_bake_expressions.clear();
-        self.readonly_task_payload.clear();
     }
 
     /// Generates statements to be inserted immediately before and at the very
@@ -1737,30 +1735,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     write!(self.out, "{}", separator())?;
                     self.write_function_argument(module, handle, arg, index)?;
                 }
-                // MESH TODO: every time a function is written or called, we have to iterate over EVERY
-                // global variable. Maybe improve this?
-                let mut any_task_payload = false;
-                for (var_handle, var) in module.global_variables.iter() {
-                    if var.space != crate::AddressSpace::TaskPayload {
-                        continue;
-                    }
-                    let usage = info[var_handle];
-                    if usage.is_empty() {
-                        continue;
-                    } else if usage.contains(valid::GlobalUse::WRITE) {
-                        break;
-                    }
-                    let var_name = &self.names[&NameKey::GlobalVariable(var_handle)];
-                    let var_type = &self.names[&NameKey::Type(var.ty)];
-                    write!(self.out, "{}in {var_type} {var_name}", separator())?;
-
-                    self.readonly_task_payload.insert(handle, Some(var_handle));
-                    any_task_payload = true;
-                    break;
-                }
-                if !any_task_payload {
-                    self.readonly_task_payload.insert(handle, None);
-                }
             }
             back::FunctionType::EntryPoint(ep_index) => {
                 if let Some(ref ep_input) =
@@ -1819,15 +1793,23 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         writeln!(self.out)?;
         writeln!(self.out, "{{")?;
 
-        if need_workgroup_variables_initialization {
+        if need_workgroup_variables_initialization && !nested {
             let back::FunctionType::EntryPoint(index) = func_ctx.ty else {
                 unreachable!();
             };
+            writeln!(
+                self.out,
+                "{}if (all(__local_invocation_index == 0)) {{",
+                back::INDENT
+            )?;
             self.write_workgroup_variables_initialization(
                 func_ctx,
                 module,
                 module.entry_points[index as usize].stage,
             )?;
+
+            writeln!(self.out, "{}}}", back::INDENT)?;
+            self.write_control_barrier(crate::Barrier::WORK_GROUP, back::Level(1))?;
         }
 
         if let back::FunctionType::EntryPoint(index) = func_ctx.ty {
@@ -1953,17 +1935,38 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     ", out primitives {} {}[{}]",
                     prim_info.ty_name, prim_info.arg_name, mesh_info.max_primitives
                 )?;
+                let mut payload_names = None;
                 if let Some(task_payload) = task_payload {
                     // Set task payload variable
                     write!(self.out, ", in payload ")?;
                     let ty = module.global_variables[task_payload].ty;
                     self.write_type(module, ty)?;
 
-                    let name = &self.names[&NameKey::GlobalVariable(task_payload)];
+                    let out_payload_name = &self.names[&NameKey::GlobalVariable(task_payload)];
+                    let name = self.namer.call(&format!("_{}", out_payload_name));
                     write!(self.out, " {name}")?;
-                    arg_names.push(name.clone());
+                    payload_names = Some((name, out_payload_name));
                 }
                 writeln!(self.out, ") {{")?;
+                if payload_names.is_some() || need_workgroup_variables_initialization {
+                    writeln!(
+                        self.out,
+                        "{}if (all(__local_invocation_index == 0)) {{",
+                        back::INDENT
+                    )?;
+                    if let Some((in_name, out_name)) = payload_names {
+                        writeln!(self.out, "{}{out_name} = {in_name};", back::Level(2))?;
+                    }
+                    if need_workgroup_variables_initialization {
+                        self.write_workgroup_variables_initialization(
+                            func_ctx,
+                            module,
+                            module.entry_points[ep_index as usize].stage,
+                        )?;
+                    }
+                    writeln!(self.out, "{}}}", back::INDENT)?;
+                    self.write_control_barrier(crate::Barrier::WORK_GROUP, back::Level(1))?;
+                }
                 write!(self.out, "{}{nested_name}(", back::INDENT)?;
                 for (i, arg_name) in arg_names.iter().enumerate() {
                     if i != 0 {
@@ -2069,6 +2072,20 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 writeln!(self.out, "}}")?;
             } else {
                 writeln!(self.out, ") {{")?;
+                if need_workgroup_variables_initialization {
+                    writeln!(
+                        self.out,
+                        "{}if (all(__local_invocation_index == 0)) {{",
+                        back::INDENT
+                    )?;
+                    self.write_workgroup_variables_initialization(
+                        func_ctx,
+                        module,
+                        module.entry_points[ep_index as usize].stage,
+                    )?;
+                    writeln!(self.out, "{}}}", back::INDENT)?;
+                    self.write_control_barrier(crate::Barrier::WORK_GROUP, back::Level(1))?;
+                }
                 let grid_size = self.namer.call("gridSize");
                 write!(
                     self.out,
@@ -2189,13 +2206,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         module: &Module,
         stage: ShaderStage,
     ) -> BackendResult {
-        let level = back::Level(1);
-
-        writeln!(
-            self.out,
-            "{level}if (all(__local_invocation_index == 0)) {{"
-        )?;
-
         let vars = module.global_variables.iter().filter(|&(handle, var)| {
             // Read-only in mesh shaders
             let task_needs_zero =
@@ -2206,13 +2216,11 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
 
         for (handle, var) in vars {
             let name = &self.names[&NameKey::GlobalVariable(handle)];
-            write!(self.out, "{}{} = ", level.next(), name)?;
+            write!(self.out, "{}{} = ", back::Level(2), name)?;
             self.write_default_init(module, var.ty)?;
             writeln!(self.out, ";")?;
         }
-
-        writeln!(self.out, "{level}}}")?;
-        self.write_control_barrier(crate::Barrier::WORK_GROUP, level)
+        Ok(())
     }
 
     /// Helper method used to write switches
@@ -2851,13 +2859,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         write!(self.out, ", ")?;
                     }
                     self.write_expr(module, *argument, func_ctx)?;
-                }
-                if let Some(task) = self.readonly_task_payload[&function] {
-                    if !arguments.is_empty() {
-                        write!(self.out, ", ")?;
-                    }
-                    let name = &self.names[&NameKey::GlobalVariable(task)];
-                    write!(self.out, "{name}")?;
                 }
                 writeln!(self.out, ");")?;
             }
