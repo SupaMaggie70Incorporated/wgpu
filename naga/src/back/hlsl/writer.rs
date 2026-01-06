@@ -1992,7 +1992,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     write!(self.out, "{}", separator())?;
                     self.write_function_argument(module, handle, arg, index)?;
                 }
-                // If this reads a global variable the variable needs to be passed as an `in` argument
+                // If this reads a task payload variable the variable needs to be passed as an `in` argument
                 for (var_handle, var) in module.global_variables.iter() {
                     let uses = info[var_handle];
                     if uses.contains(valid::GlobalUse::READ)
