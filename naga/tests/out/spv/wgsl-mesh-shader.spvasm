@@ -7,60 +7,59 @@ OpCapability MeshShadingEXT
 OpExtension "SPV_EXT_mesh_shader"
 %1 = OpExtInstImport "GLSL.std.450"
 OpMemoryModel Logical GLSL450
-OpEntryPoint TaskEXT %37 "ts_main" %17 %19 %46
-OpEntryPoint TaskEXT %70 "ts_divergent" %68 %17
-OpEntryPoint MeshEXT %110 "ms_main" %17 %86 %96 %100 %103 %106 %109 %19 %21 %122
-OpEntryPoint MeshEXT %228 "ms_no_ts" %206 %214 %218 %221 %224 %227 %19 %21 %231
-OpEntryPoint MeshEXT %317 "ms_divergent" %293 %295 %303 %307 %310 %313 %316 %19 %21
-OpEntryPoint Fragment %394 "fs_main" %385 %388 %391 %393
-OpExecutionMode %37 LocalSize 1 1 1
-OpExecutionMode %70 LocalSize 2 1 1
-OpExecutionMode %110 LocalSize 1 1 1
-OpExecutionMode %110 OutputTrianglesNV
-OpExecutionMode %110 OutputVertices 3
-OpExecutionMode %110 OutputPrimitivesNV 1
-OpExecutionMode %228 LocalSize 1 1 1
-OpExecutionMode %228 OutputTrianglesNV
-OpExecutionMode %228 OutputVertices 3
-OpExecutionMode %228 OutputPrimitivesNV 1
-OpExecutionMode %317 LocalSize 2 1 1
-OpExecutionMode %317 OutputTrianglesNV
-OpExecutionMode %317 OutputVertices 3
-OpExecutionMode %317 OutputPrimitivesNV 1
-OpExecutionMode %394 OriginUpperLeft
-OpDecorate %86 BuiltIn LocalInvocationIndex
-OpMemberDecorate %93 0 BuiltIn Position
-OpDecorate %93 Block
-OpMemberDecorate %97 0 BuiltIn CullPrimitiveEXT
-OpMemberDecorate %97 0 PerPrimitiveNV
-OpDecorate %97 Block
-OpDecorate %100 PerPrimitiveNV
-OpDecorate %103 Location 0
-OpDecorate %106 BuiltIn PrimitiveTriangleIndicesEXT
-OpDecorate %109 Location 1
-OpDecorate %109 PerPrimitiveNV
-OpDecorate %206 BuiltIn LocalInvocationIndex
-OpMemberDecorate %211 0 BuiltIn Position
-OpDecorate %211 Block
-OpMemberDecorate %215 0 BuiltIn CullPrimitiveEXT
-OpMemberDecorate %215 0 PerPrimitiveNV
-OpDecorate %215 Block
-OpDecorate %218 PerPrimitiveNV
-OpDecorate %221 Location 0
-OpDecorate %224 BuiltIn PrimitiveTriangleIndicesEXT
-OpDecorate %227 Location 1
-OpDecorate %227 PerPrimitiveNV
-OpDecorate %295 BuiltIn LocalInvocationIndex
-OpMemberDecorate %300 0 BuiltIn Position
-OpDecorate %300 Block
-OpMemberDecorate %304 0 BuiltIn CullPrimitiveEXT
-OpMemberDecorate %304 0 PerPrimitiveNV
-OpDecorate %304 Block
-OpDecorate %307 PerPrimitiveNV
-OpDecorate %310 Location 0
-OpDecorate %313 BuiltIn PrimitiveTriangleIndicesEXT
-OpDecorate %316 Location 1
-OpDecorate %316 PerPrimitiveNV
+OpEntryPoint TaskEXT %24 "ts_main" %17 %19 %33
+OpEntryPoint TaskEXT %57 "ts_divergent" %54 %17
+OpEntryPoint MeshEXT %95 "ms_main" %17 %72 %81 %85 %88 %91 %94 %19 %21 %107
+OpEntryPoint MeshEXT %214 "ms_no_ts" %192 %200 %204 %207 %210 %213 %19 %21 %217
+OpEntryPoint MeshEXT %301 "ms_divergent" %279 %287 %291 %294 %297 %300 %19 %21 %303
+OpEntryPoint Fragment %379 "fs_main" %370 %373 %376 %378
+OpExecutionMode %24 LocalSize 1 1 1
+OpExecutionMode %57 LocalSize 2 1 1
+OpExecutionMode %95 LocalSize 1 1 1
+OpExecutionMode %95 OutputTrianglesEXT
+OpExecutionMode %95 OutputVertices 3
+OpExecutionMode %95 OutputPrimitivesEXT 1
+OpExecutionMode %214 LocalSize 1 1 1
+OpExecutionMode %214 OutputTrianglesEXT
+OpExecutionMode %214 OutputVertices 3
+OpExecutionMode %214 OutputPrimitivesEXT 1
+OpExecutionMode %301 LocalSize 1 1 1
+OpExecutionMode %301 OutputTrianglesEXT
+OpExecutionMode %301 OutputVertices 3
+OpExecutionMode %301 OutputPrimitivesEXT 1
+OpExecutionMode %379 OriginUpperLeft
+OpDecorate %72 BuiltIn LocalInvocationIndex
+OpMemberDecorate %78 0 BuiltIn Position
+OpDecorate %78 Block
+OpMemberDecorate %82 0 BuiltIn CullPrimitiveEXT
+OpMemberDecorate %82 0 PerPrimitiveEXT
+OpDecorate %82 Block
+OpDecorate %85 PerPrimitiveEXT
+OpDecorate %88 Location 0
+OpDecorate %91 BuiltIn PrimitiveTriangleIndicesEXT
+OpDecorate %94 Location 1
+OpDecorate %94 PerPrimitiveEXT
+OpDecorate %192 BuiltIn LocalInvocationIndex
+OpMemberDecorate %197 0 BuiltIn Position
+OpDecorate %197 Block
+OpMemberDecorate %201 0 BuiltIn CullPrimitiveEXT
+OpMemberDecorate %201 0 PerPrimitiveEXT
+OpDecorate %201 Block
+OpDecorate %204 PerPrimitiveEXT
+OpDecorate %207 Location 0
+OpDecorate %210 BuiltIn PrimitiveTriangleIndicesEXT
+OpDecorate %213 Location 1
+OpDecorate %213 PerPrimitiveEXT
+OpMemberDecorate %284 0 BuiltIn Position
+OpDecorate %284 Block
+OpMemberDecorate %288 0 BuiltIn CullPrimitiveEXT
+OpMemberDecorate %288 0 PerPrimitiveEXT
+OpDecorate %288 Block
+OpDecorate %291 PerPrimitiveEXT
+OpDecorate %294 Location 0
+OpDecorate %297 BuiltIn PrimitiveTriangleIndicesEXT
+OpDecorate %300 Location 1
+OpDecorate %300 PerPrimitiveEXT
 OpMemberDecorate %6 0 Offset 0
 OpMemberDecorate %6 1 Offset 16
 OpMemberDecorate %7 0 Offset 0
@@ -75,16 +74,17 @@ OpMemberDecorate %16 0 Offset 0
 OpMemberDecorate %16 1 Offset 96
 OpMemberDecorate %16 2 Offset 128
 OpMemberDecorate %16 3 Offset 132
-OpDecorate %46 BuiltIn LocalInvocationId
-OpDecorate %68 BuiltIn LocalInvocationId
-OpDecorate %122 BuiltIn LocalInvocationId
-OpDecorate %231 BuiltIn LocalInvocationId
-OpDecorate %293 BuiltIn LocalInvocationId
-OpDecorate %385 BuiltIn FragCoord
-OpDecorate %388 Location 0
-OpDecorate %391 Location 1
-OpDecorate %391 PerPrimitiveNV
-OpDecorate %393 Location 0
+OpDecorate %33 BuiltIn LocalInvocationId
+OpDecorate %54 BuiltIn LocalInvocationIndex
+OpDecorate %107 BuiltIn LocalInvocationId
+OpDecorate %217 BuiltIn LocalInvocationId
+OpDecorate %279 BuiltIn LocalInvocationIndex
+OpDecorate %303 BuiltIn LocalInvocationId
+OpDecorate %370 BuiltIn FragCoord
+OpDecorate %373 Location 0
+OpDecorate %376 Location 1
+OpDecorate %376 PerPrimitiveEXT
+OpDecorate %378 Location 0
 %2 = OpTypeVoid
 %3 = OpTypeFloat 32
 %4 = OpTypeVector %3 4
