@@ -155,7 +155,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             continue_ctx: back::continue_forward::ContinueCtx::default(),
             temp_access_chain: Vec::new(),
             need_bake_expressions: Default::default(),
-            task_payload_groupshared_names: Default::default(),
+            function_task_payload_var: Default::default(),
         }
     }
 
@@ -175,7 +175,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         self.written_candidate_intersection = false;
         self.continue_ctx.clear();
         self.need_bake_expressions.clear();
-        self.task_payload_groupshared_names.clear();
+        self.function_task_payload_var.clear();
     }
 
     /// Generates statements to be inserted immediately before and at the very
@@ -1091,7 +1091,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 self.write_type(module, global.ty)?;
                 ""
             }
-            crate::AddressSpace::WorkGroup => {
+            crate::AddressSpace::WorkGroup | crate::AddressSpace::TaskPayload => {
                 write!(self.out, "groupshared ")?;
                 self.write_type(module, global.ty)?;
                 ""
@@ -1127,28 +1127,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 // The type of the immediates will be wrapped in `ConstantBuffer`
                 write!(self.out, "ConstantBuffer<")?;
                 "b"
-            }
-            crate::AddressSpace::TaskPayload => {
-                let static_var_name = self.namer.call(&format!("{}Static", name));
-                let groupshared_var_name = self.namer.call(&format!("{}Shared", name));
-                let is_groupshared = self.namer.call(&format!("{}IsShared", name));
-                write!(self.out, "static ")?;
-                self.write_type(module, global.ty)?;
-                writeln!(self.out, " {static_var_name};")?;
-
-                write!(self.out, "groupshared ")?;
-                self.write_type(module, global.ty)?;
-                writeln!(self.out, " {groupshared_var_name};")?;
-                writeln!(self.out, "static bool {is_groupshared};")?;
-                writeln!(
-                    self.out,
-                    "#define {name} ({is_groupshared} ? {groupshared_var_name} : {static_var_name})"
-                )?;
-                self.task_payload_groupshared_names.insert(
-                    handle,
-                    (static_var_name, groupshared_var_name, is_groupshared),
-                );
-                return Ok(());
             }
         };
 
@@ -1760,6 +1738,22 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     write!(self.out, "{}", separator())?;
                     self.write_function_argument(module, handle, arg, index)?;
                 }
+                // If this reads a global variable the variable needs to be passed as an `in` argument
+                for (var_handle, var) in module.global_variables.iter() {
+                    let uses = info[var_handle];
+                    if uses.contains(valid::GlobalUse::READ)
+                        && !uses.contains(valid::GlobalUse::WRITE)
+                        && var.space == crate::AddressSpace::TaskPayload
+                    {
+                        self.function_task_payload_var.insert(handle, var_handle);
+                        write!(self.out, "{}in ", separator())?;
+
+                        self.write_type(module, var.ty)?;
+                        let name = &self.names[&NameKey::GlobalVariable(var_handle)];
+                        write!(self.out, " {name}")?;
+                        break;
+                    }
+                }
             }
             back::FunctionType::EntryPoint(ep_index) => {
                 if let Some(ref ep_input) =
@@ -1949,25 +1943,16 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     ", out primitives {} {}[{}]",
                     prim_info.ty_name, prim_info.arg_name, mesh_info.max_primitives
                 )?;
-                let mut in_payload_name = None;
                 if let Some(task_payload) = task_payload {
                     // Set task payload variable
                     write!(self.out, ", in payload ")?;
                     let ty = module.global_variables[task_payload].ty;
                     self.write_type(module, ty)?;
 
-                    let out_payload_name = &self.names[&NameKey::GlobalVariable(task_payload)];
-                    let name = self.namer.call(&format!("_{}", out_payload_name));
+                    let name = &self.names[&NameKey::GlobalVariable(task_payload)];
                     write!(self.out, " {name}")?;
-                    in_payload_name = Some(name);
                 }
                 writeln!(self.out, ") {{")?;
-                if let Some(in_name) = in_payload_name {
-                    let (ref static_name, _, ref is_groupshared) =
-                        self.task_payload_groupshared_names[&task_payload.unwrap()];
-                    writeln!(self.out, "{}{} = false;", back::INDENT, is_groupshared)?;
-                    writeln!(self.out, "{}{} = {};", back::INDENT, static_name, in_name)?;
-                }
                 if need_workgroup_variables_initialization {
                     writeln!(
                         self.out,
@@ -2087,12 +2072,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 writeln!(self.out, "}}")?;
             } else {
                 writeln!(self.out, ") {{")?;
-                writeln!(
-                    self.out,
-                    "{}{} = true;",
-                    back::INDENT,
-                    self.task_payload_groupshared_names[&task_payload.unwrap()].2
-                )?;
                 if need_workgroup_variables_initialization {
                     writeln!(
                         self.out,
@@ -2236,11 +2215,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         });
 
         for (handle, var) in vars {
-            let name = if var.space == crate::AddressSpace::TaskPayload {
-                &self.task_payload_groupshared_names[&handle].1
-            } else {
-                &self.names[&NameKey::GlobalVariable(handle)]
-            };
+            let name = &self.names[&NameKey::GlobalVariable(handle)];
             write!(self.out, "{}{} = ", back::Level(2), name)?;
             self.write_default_init(module, var.ty)?;
             writeln!(self.out, ";")?;
@@ -2879,11 +2854,23 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 }
                 let func_name = &self.names[&NameKey::Function(function)];
                 write!(self.out, "{func_name}(")?;
-                for (index, argument) in arguments.iter().enumerate() {
-                    if index != 0 {
-                        write!(self.out, ", ")?;
+                let mut any_args_written = false;
+                let mut separator = || {
+                    if any_args_written {
+                        ", "
+                    } else {
+                        any_args_written = true;
+                        ""
                     }
+                };
+                for argument in arguments {
+                    write!(self.out, "{}", separator())?;
                     self.write_expr(module, *argument, func_ctx)?;
+                }
+                if let Some(&var) = self.function_task_payload_var.get(&function) {
+                    let name = &self.names[&NameKey::GlobalVariable(var)];
+                    // Pass it through directly, whether its an in variable to this function or the global variable
+                    write!(self.out, "{}{name}", separator())?;
                 }
                 writeln!(self.out, ");")?;
             }
@@ -3927,11 +3914,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         "{}, {}, {}, {}",
                         plane_names[0], plane_names[1], plane_names[2], params_name
                     )?;
-                } else if global_variable.space == crate::AddressSpace::TaskPayload
-                    && func_ctx.info[handle].contains(valid::GlobalUse::WRITE)
-                {
-                    let name = &self.task_payload_groupshared_names[&handle].1;
-                    write!(self.out, "{name}")?;
                 } else if !is_binding_array_of_samplers && !is_storage_space {
                     let name = &self.names[&NameKey::GlobalVariable(handle)];
                     write!(self.out, "{name}")?;

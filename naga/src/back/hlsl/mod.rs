@@ -756,7 +756,6 @@ pub struct Writer<'a, W> {
     temp_access_chain: Vec<storage::SubAccess>,
     need_bake_expressions: back::NeedBakeExpressions,
 
-    // Static var name, groupshared var name, is groupshared var name
-    task_payload_groupshared_names:
-        crate::FastHashMap<Handle<crate::GlobalVariable>, (String, String, String)>,
+    function_task_payload_var:
+        crate::FastHashMap<Handle<crate::Function>, Handle<crate::GlobalVariable>>,
 }

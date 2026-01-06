@@ -28,10 +28,7 @@ struct MeshOutput {
     uint primitive_count;
 };
 
-static TaskPayload taskPayloadStatic;
-groupshared TaskPayload taskPayloadShared;
-static bool taskPayloadIsShared;
-#define taskPayload (taskPayloadIsShared ? taskPayloadShared : taskPayloadStatic)
+groupshared TaskPayload taskPayload;
 groupshared float workgroupData;
 groupshared MeshOutput mesh_output;
 
@@ -71,7 +68,7 @@ struct FragmentInput_fs_main {
     float4 position_3 : SV_Position;
 };
 
-bool helper_reader()
+bool helper_reader(in TaskPayload taskPayload)
 {
     bool _e2 = taskPayload.visible;
     return _e2;
@@ -79,24 +76,23 @@ bool helper_reader()
 
 void helper_writer(bool value)
 {
-    taskPayloadShared.visible = value;
+    taskPayload.visible = value;
     return;
 }
 
 uint3 _ts_main(uint __local_invocation_index)
 {
     workgroupData = 1.0;
-    taskPayloadShared.colorMask = float4(1.0, 1.0, 0.0, 1.0);
+    taskPayload.colorMask = float4(1.0, 1.0, 0.0, 1.0);
     helper_writer(true);
-    const bool _e12 = helper_reader();
-    taskPayloadShared.visible = _e12;
+    const bool _e12 = helper_reader(taskPayload);
+    taskPayload.visible = _e12;
     return uint3(1u, 1u, 1u);
 }
 [numthreads(1, 1, 1)]
 void ts_main(uint __local_invocation_index : SV_GroupIndex) {
-    taskPayloadIsShared = true;
     if (all(__local_invocation_index == 0)) {
-        taskPayloadShared = (TaskPayload)0;
+        taskPayload = (TaskPayload)0;
         workgroupData = (float)0;
     }
     GroupMemoryBarrierWithGroupSync();
@@ -108,17 +104,16 @@ void ts_main(uint __local_invocation_index : SV_GroupIndex) {
 uint3 _ts_divergent(uint3 thread_id : SV_GroupThreadID, uint __local_invocation_index)
 {
     if ((thread_id.x == 0u)) {
-        taskPayloadShared.colorMask = float4(1.0, 1.0, 0.0, 1.0);
-        taskPayloadShared.visible = true;
+        taskPayload.colorMask = float4(1.0, 1.0, 0.0, 1.0);
+        taskPayload.visible = true;
         return uint3(1u, 1u, 1u);
     }
     return uint3(2u, 2u, 2u);
 }
 [numthreads(2, 1, 1)]
 void ts_divergent(uint3 thread_id : SV_GroupThreadID, uint __local_invocation_index : SV_GroupIndex) {
-    taskPayloadIsShared = true;
     if (all(__local_invocation_index == 0)) {
-        taskPayloadShared = (TaskPayload)0;
+        taskPayload = (TaskPayload)0;
     }
     GroupMemoryBarrierWithGroupSync();
     uint3 gridSize_1 = _ts_divergent(thread_id, __local_invocation_index);
@@ -141,16 +136,14 @@ void _ms_main(uint __local_invocation_index)
     float4 _e67 = taskPayload.colorMask;
     mesh_output.vertices_[2].color = (float4(1.0, 0.0, 0.0, 1.0) * _e67);
     mesh_output.primitives_[0].indices_ = uint3(0u, 1u, 2u);
-    const bool _e86 = helper_reader();
+    const bool _e86 = helper_reader(taskPayload);
     mesh_output.primitives_[0].cull = !(_e86);
     mesh_output.primitives_[0].colorMask = float4(1.0, 0.0, 1.0, 1.0);
     return;
 }
 [numthreads(1, 1, 1)]
 [outputtopology("triangle")]
-void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint3 triangleIndices[1], out vertices MeshVertexOutput_ms_main vertices_[3], out primitives MeshPrimitiveOutput_ms_main primitives_[1], in payload TaskPayload _taskPayload) {
-    taskPayloadIsShared = false;
-    taskPayloadStatic = _taskPayload;
+void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint3 triangleIndices[1], out vertices MeshVertexOutput_ms_main vertices_[3], out primitives MeshPrimitiveOutput_ms_main primitives_[1], in payload TaskPayload taskPayload) {
     if (all(__local_invocation_index == 0)) {
         workgroupData = (float)0;
         mesh_output = (MeshOutput)0;

@@ -17,10 +17,7 @@ struct MeshOutput {
     uint primitive_count;
 };
 
-static TaskPayload taskPayloadStatic;
-groupshared TaskPayload taskPayloadShared;
-static bool taskPayloadIsShared;
-#define taskPayload (taskPayloadIsShared ? taskPayloadShared : taskPayloadStatic)
+groupshared TaskPayload taskPayload;
 groupshared MeshOutput mesh_output;
 
 struct MeshVertexOutput_ms_main {
@@ -36,9 +33,8 @@ uint3 _ts_main(uint __local_invocation_index)
 }
 [numthreads(1, 1, 1)]
 void ts_main(uint __local_invocation_index : SV_GroupIndex) {
-    taskPayloadIsShared = true;
     if (all(__local_invocation_index == 0)) {
-        taskPayloadShared = (TaskPayload)0;
+        taskPayload = (TaskPayload)0;
     }
     GroupMemoryBarrierWithGroupSync();
     uint3 gridSize = _ts_main(__local_invocation_index);
@@ -52,9 +48,7 @@ void _ms_main(uint __local_invocation_index)
 }
 [numthreads(1, 1, 1)]
 [outputtopology("line")]
-void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint2 lineIndices[1], out vertices MeshVertexOutput_ms_main vertices_[2], out primitives MeshPrimitiveOutput_ms_main primitives_[1], in payload TaskPayload _taskPayload) {
-    taskPayloadIsShared = false;
-    taskPayloadStatic = _taskPayload;
+void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint2 lineIndices[1], out vertices MeshVertexOutput_ms_main vertices_[2], out primitives MeshPrimitiveOutput_ms_main primitives_[1], in payload TaskPayload taskPayload) {
     if (all(__local_invocation_index == 0)) {
         mesh_output = (MeshOutput)0;
     }
