@@ -12,7 +12,6 @@ use crate::{
     GpuTestConfiguration,
 };
 
-#[derive(Hash)]
 /// Parameters and resources handed to the test function.
 pub struct TestingContext {
     pub instance: Instance,
