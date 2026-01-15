@@ -1631,7 +1631,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
     /// Mesh and task entry points must all return at the same `return` statement,
     /// so we have a nested function that can return wherever. This writes the caller,
     /// or the actual entry point.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments)]
     fn write_nested_function_outer(
         &mut self,
         module: &Module,
