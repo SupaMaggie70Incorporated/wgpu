@@ -8067,13 +8067,6 @@ template <typename A>
                 } else if var.space == crate::AddressSpace::WorkGroup
                     && ep.stage == crate::ShaderStage::Mesh
                 {
-                    /*writeln!(
-                        self.out,
-                        "{}threadgroup {} {};",
-                        back::INDENT,
-                        self.names[&NameKey::Type(var.ty)],
-                        self.names[&NameKey::GlobalVariable(handle)],
-                    )?;*/
                     let tyvar = TypedGlobalVariable {
                         module,
                         names: &self.names,
