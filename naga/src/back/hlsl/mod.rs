@@ -156,7 +156,10 @@ use core::fmt::Error as FmtError;
 
 use thiserror::Error;
 
-use crate::{back, ir, proc, Handle};
+use crate::{
+    back::{self, TaskRuntimeLimits},
+    ir, proc, Handle,
+};
 
 /// Direct3D 12 binding information for a global variable.
 ///
@@ -540,6 +543,8 @@ pub struct Options {
     /// If set, loops will have code injected into them, forcing the compiler
     /// to think the number of iterations is bounded.
     pub force_loop_bounding: bool,
+
+    pub task_runtime_limits: Option<TaskRuntimeLimits>,
 }
 
 impl Default for Options {
@@ -557,6 +562,7 @@ impl Default for Options {
             zero_initialize_workgroup_memory: true,
             restrict_indexing: true,
             force_loop_bounding: true,
+            task_runtime_limits: None,
         }
     }
 }

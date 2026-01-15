@@ -76,6 +76,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             )?;
         }
         if let Some(ref mesh_info) = entry_point.mesh_info {
+            // Mesh shader wrapper
             let mesh_interface = self.entry_point_io.get(&(ep_index as usize)).unwrap();
             let vert_info = mesh_interface.mesh_vertices.as_ref().unwrap();
             let prim_info = mesh_interface.mesh_primitives.as_ref().unwrap();
@@ -250,6 +251,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             }
             writeln!(self.out, "}}")?;
         } else {
+            // Task shader wrapper
             writeln!(self.out, ") {{")?;
             if need_workgroup_variables_initialization {
                 writeln!(
@@ -283,6 +285,28 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
                 "{}GroupMemoryBarrierWithGroupSync();",
                 back::INDENT
             )?;
+            if let Some(limits) = self.options.task_runtime_limits {
+                let level = back::Level(2);
+                writeln!(self.out, "{}if (", back::INDENT)?;
+
+                let max_per_dim = limits.max_mesh_workgroups_per_dim.min(2 << 21);
+                let max_total = limits.max_mesh_workgroups_total;
+                for i in 0..3 {
+                    writeln!(
+                        self.out,
+                        "{level}{grid_size}.{} >= {max_per_dim} ||",
+                        back::COMPONENTS[i],
+                    )?;
+                }
+                writeln!(
+                    self.out,
+                    "{level}((uint64_t){grid_size}.x) * ((uint64_t){grid_size}.y) * ((uint64_t){grid_size}.z) >= {max_total}",
+                )?;
+
+                writeln!(self.out, "{}) {{", back::INDENT)?;
+                writeln!(self.out, "{level}{grid_size} = uint3(0, 0, 0);")?;
+                writeln!(self.out, "{}}}", back::INDENT)?;
+            }
             writeln!(
                 self.out,
                 "{}DispatchMesh({grid_size}.x, {grid_size}.y, {grid_size}.z, {});",
