@@ -78,6 +78,7 @@ use core::fmt::{Error as FmtError, Write};
 use crate::{arena::Handle, back::TaskRuntimeLimits, ir, proc::index, valid::ModuleInfo};
 
 mod keywords;
+mod mesh;
 pub mod sampler;
 mod writer;
 
