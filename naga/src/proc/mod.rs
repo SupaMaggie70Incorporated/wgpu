@@ -664,6 +664,14 @@ impl super::ShaderStage {
             Self::Compute | Self::Task | Self::Mesh => true,
         }
     }
+
+    /// Mesh or task shader
+    pub const fn mesh_like(self) -> bool {
+        match self {
+            Self::Task | Self::Mesh => true,
+            Self::Vertex | Self::Fragment | Self::Compute => false,
+        }
+    }
 }
 
 #[test]
@@ -852,6 +860,50 @@ impl crate::Module {
                 .inner
                 .map(|a| a.with_span_handle(self.global_variables[gv].ty, &self.types)),
         )
+    }
+
+    pub fn uses_mesh_shaders(&self) -> bool {
+        for (_, ty) in self.types.iter() {
+            match ty.inner {
+                crate::TypeInner::Struct { ref members, .. } => {
+                    for member in members {
+                        if matches!(
+                            member.binding,
+                            Some(crate::Binding::BuiltIn(
+                                crate::BuiltIn::MeshTaskSize
+                                    | crate::BuiltIn::CullPrimitive
+                                    | crate::BuiltIn::PointIndex
+                                    | crate::BuiltIn::LineIndices
+                                    | crate::BuiltIn::TriangleIndices
+                                    | crate::BuiltIn::VertexCount
+                                    | crate::BuiltIn::Vertices
+                                    | crate::BuiltIn::PrimitiveCount
+                                    | crate::BuiltIn::Primitives,
+                            ))
+                        ) {
+                            return true;
+                        }
+                    }
+                }
+                _ => (),
+            }
+        }
+        if self.entry_points.iter().any(|ep| {
+            matches!(
+                ep.stage,
+                crate::ShaderStage::Mesh | crate::ShaderStage::Task
+            )
+        }) {
+            return true;
+        }
+        if self
+            .global_variables
+            .iter()
+            .any(|gv| gv.1.space == crate::AddressSpace::TaskPayload)
+        {
+            return true;
+        }
+        false
     }
 }
 
