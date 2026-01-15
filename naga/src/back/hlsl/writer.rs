@@ -1788,55 +1788,73 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 "{level}SetMeshOutputCounts({vert_count}, {prim_count});"
             )?;
 
-            for (array_bi, count, io_interface, is_prim, index_name, ty) in [
-                (
-                    crate::BuiltIn::Vertices,
-                    vert_count,
-                    io.mesh_vertices.as_ref().unwrap(),
-                    false,
-                    "vertIndex",
-                    mesh_info.vertex_output_type,
-                ),
-                (
-                    crate::BuiltIn::Primitives,
-                    prim_count,
-                    io.mesh_primitives.as_ref().unwrap(),
-                    true,
-                    "primIndex",
-                    mesh_info.primitive_output_type,
-                ),
-            ] {
+            // We need separate loops for vertices and primitives writing
+            struct OutputArray<'a> {
+                array_bi: crate::BuiltIn,
+                count: String,
+                io_interface: &'a EntryPointBinding,
+                is_primitive: bool,
+                index_name: &'static str,
+                ty: Handle<crate::Type>,
+            }
+            let output_arrays = [
+                OutputArray {
+                    array_bi: crate::BuiltIn::Vertices,
+                    count: vert_count,
+                    io_interface: io.mesh_vertices.as_ref().unwrap(),
+                    is_primitive: false,
+                    index_name: "vertIndex",
+                    ty: mesh_info.vertex_output_type,
+                },
+                OutputArray {
+                    array_bi: crate::BuiltIn::Primitives,
+                    count: prim_count,
+                    io_interface: io.mesh_primitives.as_ref().unwrap(),
+                    is_primitive: true,
+                    index_name: "primIndex",
+                    ty: mesh_info.primitive_output_type,
+                },
+            ];
+
+            for output in output_arrays {
+                let OutputArray {
+                    array_bi,
+                    count,
+                    io_interface,
+                    is_primitive,
+                    index_name,
+                    ty,
+                } = output;
                 let out_var_name = &io_interface.arg_name;
                 let index_name = self.namer.call(index_name);
                 let array_name = get_var_member_name(array_bi, var_type);
                 let item_name = format!("{var_name}.{array_name}[{index_name}]");
                 writeln!(
-                        self.out,
-                        "{level}for (int {index_name} = __local_invocation_index; {index_name} < {count}; {index_name} += {}) {{",
-                        wg_size
-                    )?;
-                {
-                    let level = level.next();
-                    if is_prim {
-                        let indices_member_name = get_var_member_name(
-                            mesh_info.topology.to_builtin(),
-                            mesh_info.primitive_output_type,
-                        );
-                        let indices_var_name = &io.mesh_indices.as_ref().unwrap().arg_name;
-                        writeln!(
+                    self.out,
+                    "{level}for (int {index_name} = __local_invocation_index; {index_name} < {count}; {index_name} += {}) {{",
+                    wg_size
+                )?;
+
+                let level = level.next();
+                for member in &io_interface.members {
+                    let out_member_name = &member.name;
+                    let in_member_name = &self.names[&NameKey::StructMember(ty, member.index)];
+                    writeln!(self.out, "{level}{out_var_name}[{index_name}].{out_member_name} = {item_name}.{in_member_name};",)?;
+                }
+                if is_primitive {
+                    let indices_member_name = get_var_member_name(
+                        mesh_info.topology.to_builtin(),
+                        mesh_info.primitive_output_type,
+                    );
+                    let indices_var_name = &io.mesh_indices.as_ref().unwrap().arg_name;
+                    writeln!(
                                 self.out,
                                 "{level}{indices_var_name}[{index_name}] = {item_name}.{indices_member_name};",
                             )?;
-                    }
-                    for member in &io_interface.members {
-                        let out_member_name = &member.name;
-                        let in_member_name = &self.names[&NameKey::StructMember(ty, member.index)];
-                        writeln!(self.out, "{level}{out_var_name}[{index_name}].{out_member_name} = {item_name}.{in_member_name};",)?;
-                    }
                 }
+
                 writeln!(self.out, "{level}}}")?;
             }
-            // TODO: mesh call and copies
             writeln!(self.out, "}}")?;
         } else {
             writeln!(self.out, ") {{")?;
@@ -1878,7 +1896,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 back::INDENT,
                 self.names[&NameKey::GlobalVariable(entry_point.task_payload.unwrap())]
             )?;
-            // TODO: task call and dispatch
             writeln!(self.out, "}}")?;
         }
 
