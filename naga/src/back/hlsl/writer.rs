@@ -307,6 +307,13 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
     ) -> Result<super::ReflectionInfo, Error> {
         self.reset(module);
 
+        if module.uses_mesh_shaders() && self.options.shader_model < ShaderModel::V6_5 {
+            return Err(Error::ShaderModelTooLow(
+                "mesh shaders".to_string(),
+                ShaderModel::V6_5,
+            ));
+        }
+
         // Write special constants, if needed
         if let Some(ref bt) = self.options.special_constants_binding {
             writeln!(self.out, "struct {SPECIAL_CBUF_TYPE} {{")?;
