@@ -859,7 +859,7 @@ struct StatementContext<'a> {
     result_struct: Option<&'a str>,
     task_grid_name: Option<&'a str>,
     mesh: Option<MeshShaderContext<'a>>,
-    local_invocation_id_name: Option<&'a NameKey>,
+    local_invocation_index_name: Option<&'a NameKey>,
 }
 
 impl<W: Write> Writer<W> {
@@ -3844,14 +3844,12 @@ impl<W: Write> Writer<W> {
                     if let Some(grid_name) = context.task_grid_name {
                         writeln!(
                             self.out,
-                            "{}if ({}::all({} == {}::uint3(0u))) {{",
+                            "{}if ({} == 0u) {{",
                             level,
-                            NAMESPACE,
                             context
-                                .local_invocation_id_name
+                                .local_invocation_index_name
                                 .map(|name_key| self.names[name_key].as_str())
-                                .unwrap_or("__local_invocation_id"),
-                            NAMESPACE,
+                                .unwrap_or("__local_invocation_index"),
                         )?;
                         {
                             let level = level.next();
@@ -3873,19 +3871,10 @@ impl<W: Write> Writer<W> {
                 crate::Statement::Return { value: None } => {
                     if let Some(ref ctx) = context.mesh {
                         self.write_barrier(crate::Barrier::WORK_GROUP, level)?;
-                        let local_invocation_id = context
-                            .local_invocation_id_name
+                        let local_invocation_index = context
+                            .local_invocation_index_name
                             .map(|name_key| self.names[name_key].as_str())
-                            .unwrap_or("__local_invocation_id");
-                        let local_invocation_index = self.namer.call("localInvocationIndex");
-                        {
-                            let tid = local_invocation_id;
-                            let [tgx, tgy, _] = ctx.workgroup_size;
-                            writeln!(
-                                self.out,
-                                "{level}uint {local_invocation_index} = {tid}.x + {tgx} * ({tid}.y + {tgy} * {tid}.z);"
-                            )?;
-                        }
+                            .unwrap_or("__local_invocation_index");
                         let crate::TypeInner::Struct { ref members, .. } =
                             context.expression.module.types[ctx.out_type].inner
                         else {
@@ -4001,7 +3990,7 @@ impl<W: Write> Writer<W> {
                             writeln!(self.out, "{level}}}")?;
                         }
 
-                        writeln!(self.out, "{level}if ({NAMESPACE}::all({local_invocation_id} == {NAMESPACE}::uint3(0u))) {{")?;
+                        writeln!(self.out, "{level}if ({local_invocation_index} == 0u) {{")?;
                         writeln!(
                             self.out,
                             "{level}{}{}.set_primitive_count({prim_count});",
@@ -6998,7 +6987,7 @@ template <typename A>
                 result_struct: None,
                 mesh: None,
                 task_grid_name: None,
-                local_invocation_id_name: None,
+                local_invocation_index_name: None,
             };
 
             self.put_locals(&context.expression)?;
@@ -7486,7 +7475,7 @@ template <typename A>
                 )?;
             }
 
-            let mut local_invocation_id = None;
+            let mut local_invocation_index = None;
 
             // Then pass the remaining arguments not included in the varyings
             // struct.
@@ -7500,8 +7489,8 @@ template <typename A>
                     _ => &self.names[name_key],
                 };
 
-                if binding == &crate::Binding::BuiltIn(crate::BuiltIn::LocalInvocationId) {
-                    local_invocation_id = Some(name_key);
+                if binding == &crate::Binding::BuiltIn(crate::BuiltIn::LocalInvocationIndex) {
+                    local_invocation_index = Some(name_key);
                 }
 
                 let ty_name = TypeContext {
@@ -7532,11 +7521,12 @@ template <typename A>
                 self.need_workgroup_variables_initialization(options, ep, module, fun_info);
 
             if (need_workgroup_variables_initialization || ep.stage == crate::ShaderStage::Task)
-                && local_invocation_id.is_none()
+                && local_invocation_index.is_none()
             {
                 writeln!(
                     self.out,
-                    "{} {NAMESPACE}::uint3 __local_invocation_id [[thread_position_in_threadgroup]]", separator()
+                    "{} uint __local_invocation_index [[thread_index_in_threadgroup]]",
+                    separator()
                 )?;
             }
 
@@ -8079,7 +8069,7 @@ template <typename A>
                     module,
                     mod_info,
                     fun_info,
-                    local_invocation_id,
+                    local_invocation_index,
                     ep.stage,
                 )?;
             }
@@ -8183,7 +8173,7 @@ template <typename A>
                     None
                 },
                 task_grid_name: task_grid_name.as_deref(),
-                local_invocation_id_name: local_invocation_id,
+                local_invocation_index_name: local_invocation_index,
             };
 
             // Finally, declare all the local variables that we need
@@ -8334,20 +8324,18 @@ mod workgroup_mem_init {
             module: &crate::Module,
             module_info: &valid::ModuleInfo,
             fun_info: &valid::FunctionInfo,
-            local_invocation_id: Option<&NameKey>,
+            local_invocation_index: Option<&NameKey>,
             stage: crate::ShaderStage,
         ) -> BackendResult {
             let level = back::Level(1);
 
             writeln!(
                 self.out,
-                "{}if ({}::all({} == {}::uint3(0u))) {{",
+                "{}if ({} == 0u) {{",
                 level,
-                NAMESPACE,
-                local_invocation_id
+                local_invocation_index
                     .map(|name_key| self.names[name_key].as_str())
-                    .unwrap_or("__local_invocation_id"),
-                NAMESPACE,
+                    .unwrap_or("__local_invocation_index"),
             )?;
 
             let mut access_stack = AccessStack::new();
