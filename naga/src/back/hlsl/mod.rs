@@ -146,6 +146,7 @@ it works for our purposes.
 mod conv;
 mod help;
 mod keywords;
+mod mesh_shader;
 mod ray;
 mod storage;
 mod writer;
