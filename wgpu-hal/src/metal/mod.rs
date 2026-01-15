@@ -401,6 +401,7 @@ pub struct Device {
     shared: Arc<AdapterShared>,
     features: wgt::Features,
     counters: Arc<wgt::HalCounters>,
+    limits: wgt::Limits,
 }
 
 pub struct Surface {
@@ -838,7 +839,7 @@ pub struct PassthroughShader {
 #[derive(Debug)]
 pub struct ShaderModule {
     source: ShaderModuleSource,
-    bounds_checks: wgt::ShaderRuntimeChecks,
+    runtime_checks: wgt::ShaderRuntimeChecks,
 }
 
 impl crate::DynShaderModule for ShaderModule {}

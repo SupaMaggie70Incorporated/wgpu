@@ -141,7 +141,7 @@ impl super::Device {
 
                 let ep_resources = &layout.per_stage_map[naga_stage];
 
-                let bounds_check_policy = if stage.module.bounds_checks.bounds_checks {
+                let bounds_check_policy = if stage.module.runtime_checks.bounds_checks {
                     naga::proc::BoundsCheckPolicy::Restrict
                 } else {
                     naga::proc::BoundsCheckPolicy::Unchecked
@@ -175,7 +175,19 @@ impl super::Device {
                         binding_array: naga::proc::BoundsCheckPolicy::Unchecked,
                     },
                     zero_initialize_workgroup_memory: stage.zero_initialize_workgroup_memory,
-                    force_loop_bounding: stage.module.bounds_checks.force_loop_bounding,
+                    force_loop_bounding: stage.module.runtime_checks.force_loop_bounding,
+                    task_runtime_limits: stage
+                        .module
+                        .runtime_checks
+                        .task_shader_dispatch_tracking
+                        .then_some(naga::back::TaskRuntimeLimits {
+                            max_mesh_workgroups_per_dim: self
+                                .limits
+                                .max_task_mesh_workgroups_per_dimension,
+                            max_mesh_workgroups_total: self
+                                .limits
+                                .max_task_mesh_workgroup_total_count,
+                        }),
                 };
 
                 let pipeline_options = naga::back::msl::PipelineOptions {
@@ -347,11 +359,16 @@ impl super::Device {
         }
     }
 
-    pub unsafe fn device_from_raw(raw: metal::Device, features: wgt::Features) -> super::Device {
+    pub unsafe fn device_from_raw(
+        raw: metal::Device,
+        features: wgt::Features,
+        limits: &wgt::Limits,
+    ) -> super::Device {
         super::Device {
             shared: Arc::new(super::AdapterShared::new(raw)),
             features,
             counters: Default::default(),
+            limits: limits.clone(),
         }
     }
 
@@ -1046,7 +1063,7 @@ impl crate::Device for super::Device {
         match shader {
             crate::ShaderInput::Naga(naga) => Ok(super::ShaderModule {
                 source: ShaderModuleSource::Naga(naga),
-                bounds_checks: desc.runtime_checks,
+                runtime_checks: desc.runtime_checks,
             }),
             crate::ShaderInput::Msl {
                 shader: source,
@@ -1072,7 +1089,7 @@ impl crate::Device for super::Device {
                         entry_point,
                         num_workgroups,
                     }),
-                    bounds_checks: desc.runtime_checks,
+                    runtime_checks: desc.runtime_checks,
                 })
             }
             crate::ShaderInput::SpirV(_)

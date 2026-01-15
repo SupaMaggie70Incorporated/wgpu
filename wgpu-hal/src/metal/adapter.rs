@@ -44,7 +44,7 @@ impl crate::Adapter for super::Adapter {
     unsafe fn open(
         &self,
         features: wgt::Features,
-        _limits: &wgt::Limits,
+        limits: &wgt::Limits,
         _memory_hints: &wgt::MemoryHints,
     ) -> Result<crate::OpenDevice<super::Api>, crate::DeviceError> {
         let queue = self
@@ -83,6 +83,7 @@ impl crate::Adapter for super::Adapter {
                 shared: Arc::clone(&self.shared),
                 features,
                 counters: Default::default(),
+                limits: limits.clone(),
             },
             queue: super::Queue {
                 raw: Arc::new(Mutex::new(queue)),

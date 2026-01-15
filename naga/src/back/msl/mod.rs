@@ -75,7 +75,7 @@ use alloc::{
 };
 use core::fmt::{Error as FmtError, Write};
 
-use crate::{arena::Handle, ir, proc::index, valid::ModuleInfo};
+use crate::{arena::Handle, back::TaskRuntimeLimits, ir, proc::index, valid::ModuleInfo};
 
 mod keywords;
 pub mod sampler;
@@ -309,6 +309,9 @@ pub struct Options {
     /// If set, loops will have code injected into them, forcing the compiler
     /// to think the number of iterations is bounded.
     pub force_loop_bounding: bool,
+    /// Whether and how checks in the task shader should verify the dispatched
+    /// mesh grid size.
+    pub task_runtime_limits: Option<TaskRuntimeLimits>,
 }
 
 impl Default for Options {
@@ -322,6 +325,7 @@ impl Default for Options {
             bounds_check_policies: index::BoundsCheckPolicies::default(),
             zero_initialize_workgroup_memory: true,
             force_loop_bounding: true,
+            task_runtime_limits: None,
         }
     }
 }

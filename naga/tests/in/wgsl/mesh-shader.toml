@@ -7,3 +7,7 @@ capabilities = ["MeshShadingEXT"]
 
 [msl]
 lang_version = [3, 0]
+
+[msl.task_runtime_limits]
+max_mesh_workgroups_per_dim = 256
+max_mesh_workgroups_total = 1024
