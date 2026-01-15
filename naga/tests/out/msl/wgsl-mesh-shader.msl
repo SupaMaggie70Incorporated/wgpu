@@ -58,6 +58,7 @@ void helper_writer(
 , metal::mesh_grid_properties nagaMeshGrid
 ) {
     if (metal::all(__local_invocation_id == metal::uint3(0u))) {
+        taskPayload = {};
         workgroupData = {};
     }
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
@@ -80,6 +81,10 @@ struct ts_divergentInput {
 , object_data TaskPayload& taskPayload [[payload]]
 , metal::mesh_grid_properties nagaMeshGrid_1
 ) {
+    if (metal::all(thread_id == metal::uint3(0u))) {
+        taskPayload = {};
+    }
+    metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
     if (thread_id.x == 0u) {
         taskPayload.colorMask = metal::float4(1.0, 1.0, 0.0, 1.0);
         taskPayload.visible = true;

@@ -32,6 +32,10 @@ struct MeshOutput {
 , metal::mesh_grid_properties nagaMeshGrid
 ) {
     if (metal::all(__local_invocation_id == metal::uint3(0u))) {
+        taskPayload = {};
+    }
+    metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    if (metal::all(__local_invocation_id == metal::uint3(0u))) {
         nagaMeshGrid.set_threadgroups_per_grid(metal::uint3(1u, 1u, 1u));
     }
     return;

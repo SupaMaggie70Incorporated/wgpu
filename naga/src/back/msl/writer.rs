@@ -8080,6 +8080,7 @@ template <typename A>
                     mod_info,
                     fun_info,
                     local_invocation_id,
+                    ep.stage,
                 )?;
             }
 
@@ -8318,10 +8319,13 @@ mod workgroup_mem_init {
             module: &crate::Module,
             fun_info: &valid::FunctionInfo,
         ) -> bool {
+            let is_task = ep.stage == crate::ShaderStage::Task;
             options.zero_initialize_workgroup_memory
                 && ep.stage.compute_like()
                 && module.global_variables.iter().any(|(handle, var)| {
-                    !fun_info[handle].is_empty() && var.space == crate::AddressSpace::WorkGroup
+                    let is_right_address_space = var.space == crate::AddressSpace::WorkGroup
+                        || (var.space == crate::AddressSpace::TaskPayload && is_task);
+                    !fun_info[handle].is_empty() && is_right_address_space
                 })
         }
 
@@ -8331,6 +8335,7 @@ mod workgroup_mem_init {
             module_info: &valid::ModuleInfo,
             fun_info: &valid::FunctionInfo,
             local_invocation_id: Option<&NameKey>,
+            stage: crate::ShaderStage,
         ) -> BackendResult {
             let level = back::Level(1);
 
@@ -8347,8 +8352,11 @@ mod workgroup_mem_init {
 
             let mut access_stack = AccessStack::new();
 
+            let is_task = stage == crate::ShaderStage::Task;
             let vars = module.global_variables.iter().filter(|&(handle, var)| {
-                !fun_info[handle].is_empty() && var.space == crate::AddressSpace::WorkGroup
+                let is_right_address_space = var.space == crate::AddressSpace::WorkGroup
+                    || (var.space == crate::AddressSpace::TaskPayload && is_task);
+                !fun_info[handle].is_empty() && is_right_address_space
             });
 
             for (handle, var) in vars {
