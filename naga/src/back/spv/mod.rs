@@ -120,6 +120,7 @@ use spirv::Word;
 use thiserror::Error;
 
 use crate::arena::{Handle, HandleVec};
+use crate::back::TaskRuntimeLimits;
 use crate::proc::{BoundsCheckPolicies, TypeResolution};
 
 #[derive(Clone)]
@@ -967,6 +968,8 @@ pub struct Writer {
     /// Non semantic debug printf extension `OpExtInstImport`
     debug_printf: Option<Word>,
     pub(crate) ray_query_initialization_tracking: bool,
+
+    task_runtime_limits: Option<TaskRuntimeLimits>,
 }
 
 bitflags::bitflags! {
@@ -1084,6 +1087,8 @@ pub struct Options<'a> {
     pub use_storage_input_output_16: bool,
 
     pub debug_info: Option<DebugInfo<'a>>,
+
+    pub task_runtime_limits: Option<TaskRuntimeLimits>,
 }
 
 impl Default for Options<'_> {
@@ -1106,6 +1111,7 @@ impl Default for Options<'_> {
             ray_query_initialization_tracking: true,
             use_storage_input_output_16: true,
             debug_info: None,
+            task_runtime_limits: None,
         }
     }
 }
