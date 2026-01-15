@@ -1685,9 +1685,6 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 "{}uint __local_invocation_index : SV_GroupIndex",
                 separator()
             )?;
-            if need_workgroup_variables_initialization {
-                arg_names.push("__local_invocation_index".to_string());
-            }
         }
         if let Some(ref mesh_info) = entry_point.mesh_info {
             let mesh_interface = self.entry_point_io.get(&(ep_index as usize)).unwrap();
@@ -1715,11 +1712,15 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             if let Some(task_payload) = entry_point.task_payload {
                 // Set task payload variable
                 write!(self.out, ", in payload ")?;
-                let ty = module.global_variables[task_payload].ty;
-                self.write_type(module, ty)?;
+                let var = &module.global_variables[task_payload];
+                self.write_type(module, var.ty)?;
 
                 let name = &self.names[&NameKey::GlobalVariable(task_payload)];
                 write!(self.out, " {name}")?;
+                arg_names.push(name.clone());
+                if let TypeInner::Array { base, size, .. } = module.types[var.ty].inner {
+                    self.write_array_size(module, base, size)?;
+                }
             }
             writeln!(self.out, ") {{")?;
             if need_workgroup_variables_initialization {
@@ -1835,22 +1836,25 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     wg_size
                 )?;
 
-                let level = level.next();
-                for member in &io_interface.members {
-                    let out_member_name = &member.name;
-                    let in_member_name = &self.names[&NameKey::StructMember(ty, member.index)];
-                    writeln!(self.out, "{level}{out_var_name}[{index_name}].{out_member_name} = {item_name}.{in_member_name};",)?;
-                }
-                if is_primitive {
-                    let indices_member_name = get_var_member_name(
-                        mesh_info.topology.to_builtin(),
-                        mesh_info.primitive_output_type,
-                    );
-                    let indices_var_name = &io.mesh_indices.as_ref().unwrap().arg_name;
-                    writeln!(
+                // Loop body, uses more indentation
+                {
+                    let level = level.next();
+                    for member in &io_interface.members {
+                        let out_member_name = &member.name;
+                        let in_member_name = &self.names[&NameKey::StructMember(ty, member.index)];
+                        writeln!(self.out, "{level}{out_var_name}[{index_name}].{out_member_name} = {item_name}.{in_member_name};",)?;
+                    }
+                    if is_primitive {
+                        let indices_member_name = get_var_member_name(
+                            mesh_info.topology.to_builtin(),
+                            mesh_info.primitive_output_type,
+                        );
+                        let indices_var_name = &io.mesh_indices.as_ref().unwrap().arg_name;
+                        writeln!(
                                 self.out,
                                 "{level}{indices_var_name}[{index_name}] = {item_name}.{indices_member_name};",
                             )?;
+                    }
                 }
 
                 writeln!(self.out, "{level}}}")?;
@@ -2027,13 +2031,14 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 }
             }
             back::FunctionType::EntryPoint(ep_index) => {
+                let ep = &module.entry_points[ep_index as usize];
                 if let Some(ref ep_input) =
                     self.entry_point_io.get(&(ep_index as usize)).unwrap().input
                 {
                     write!(self.out, "{} {}", ep_input.ty_name, ep_input.arg_name)?;
                     separator();
                 } else {
-                    let stage = module.entry_points[ep_index as usize].stage;
+                    let stage = ep.stage;
                     for (index, arg) in func.arguments.iter().enumerate() {
                         write!(self.out, "{}", separator())?;
                         self.write_type(module, arg.ty)?;
@@ -2049,11 +2054,21 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         self.write_semantic(&arg.binding, Some((stage, Io::Input)))?;
                     }
                 }
-                if need_workgroup_variables_initialization {
-                    write!(self.out, "{}uint __local_invocation_index", separator())?;
-                    if !nested {
-                        write!(self.out, " : SV_GroupIndex")?;
+                if ep.stage == ShaderStage::Mesh {
+                    if let Some(var_handle) = ep.task_payload {
+                        let var = &module.global_variables[var_handle];
+                        write!(self.out, "{}in ", separator())?;
+                        self.write_type(module, var.ty)?;
+                        let arg_name = &self.names[&NameKey::GlobalVariable(var_handle)];
+                        write!(self.out, " {arg_name}")?;
+                        if let TypeInner::Array { base, size, .. } = module.types[var.ty].inner {
+                            self.write_array_size(module, base, size)?;
+                        }
                     }
+                }
+                if need_workgroup_variables_initialization && !nested {
+                    write!(self.out, "{}uint __local_invocation_index", separator())?;
+                    write!(self.out, " : SV_GroupIndex")?;
                 }
             }
         }

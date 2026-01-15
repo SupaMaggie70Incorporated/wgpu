@@ -27,7 +27,7 @@ struct MeshVertexOutput_ms_main {
 struct MeshPrimitiveOutput_ms_main {
 };
 
-uint3 _ts_main(uint __local_invocation_index)
+uint3 _ts_main()
 {
     return uint3(1u, 1u, 1u);
 }
@@ -37,12 +37,12 @@ void ts_main(uint __local_invocation_index : SV_GroupIndex) {
         taskPayload = (TaskPayload)0;
     }
     GroupMemoryBarrierWithGroupSync();
-    uint3 gridSize = _ts_main(__local_invocation_index);
+    uint3 gridSize = _ts_main();
     GroupMemoryBarrierWithGroupSync();
     DispatchMesh(gridSize.x, gridSize.y, gridSize.z, taskPayload);
 }
 
-void _ms_main(uint __local_invocation_index)
+void _ms_main(in TaskPayload taskPayload)
 {
     return;
 }
@@ -53,7 +53,7 @@ void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint3 tr
         mesh_output = (MeshOutput)0;
     }
     GroupMemoryBarrierWithGroupSync();
-    _ms_main(__local_invocation_index);
+    _ms_main(taskPayload);
     GroupMemoryBarrierWithGroupSync();
     SetMeshOutputCounts(mesh_output.vertex_count, mesh_output.primitive_count);
     for (int vertIndex = __local_invocation_index; vertIndex < mesh_output.vertex_count; vertIndex += 1) {
