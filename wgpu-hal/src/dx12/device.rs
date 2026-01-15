@@ -228,6 +228,7 @@ impl super::Device {
             compiler_container,
             shader_cache: Default::default(),
             counters: Default::default(),
+            limits: limits.clone(),
         })
     }
 
