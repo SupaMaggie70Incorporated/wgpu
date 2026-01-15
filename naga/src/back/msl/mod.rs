@@ -728,7 +728,8 @@ impl ResolvedBinding {
                     Bi::CullPrimitive => "primitive_culled",
                     // TODO: figure out how to make this written as a function call
                     Bi::PointIndex | Bi::LineIndices | Bi::TriangleIndices => unimplemented!(),
-                    // These aren't real builtins that backends are aware of
+                    // These aren't real builtins passed into MSL. They are extracted by the
+                    // wrapper function which actually sets the outputs.
                     Bi::MeshTaskSize
                     | Bi::VertexCount
                     | Bi::PrimitiveCount

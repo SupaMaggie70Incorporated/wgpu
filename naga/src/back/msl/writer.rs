@@ -3892,20 +3892,14 @@ impl<W: Write> Writer<W> {
                             unreachable!();
                         };
                         let get_out_value = |bi| {
+                            let member_idx = members
+                                .iter()
+                                .position(|a| a.binding == Some(crate::Binding::BuiltIn(bi)))
+                                .unwrap() as u32;
                             format!(
                                 "{}.{}",
                                 ctx.mesh_variable_name,
-                                self.names
-                                    [&NameKey::StructMember(
-                                        ctx.out_type,
-                                        members
-                                            .iter()
-                                            .position(
-                                                |a| a.binding == Some(crate::Binding::BuiltIn(bi))
-                                            )
-                                            .unwrap()
-                                            as u32
-                                    )]
+                                self.names[&NameKey::StructMember(ctx.out_type, member_idx)]
                             )
                         };
                         let vert_count = get_out_value(crate::BuiltIn::VertexCount);
