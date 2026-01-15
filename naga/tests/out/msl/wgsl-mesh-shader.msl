@@ -36,6 +36,21 @@ struct MeshOutput {
     char _pad4[8];
 };
 
+bool helper_reader(
+    object_data TaskPayload const& taskPayload
+) {
+    bool _e2 = taskPayload.visible;
+    return _e2;
+}
+
+void helper_writer(
+    bool value,
+    object_data TaskPayload& taskPayload
+) {
+    taskPayload.visible = value;
+    return;
+}
+
 [[object]] void ts_main(
   metal::uint3 __local_invocation_id [[thread_position_in_threadgroup]]
 , object_data TaskPayload& taskPayload [[payload]]
@@ -48,7 +63,9 @@ struct MeshOutput {
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
     workgroupData = 1.0;
     taskPayload.colorMask = metal::float4(1.0, 1.0, 0.0, 1.0);
-    taskPayload.visible = true;
+    helper_writer(true, taskPayload);
+    bool _e12 = helper_reader(taskPayload);
+    taskPayload.visible = _e12;
     if (metal::all(__local_invocation_id == metal::uint3(0u))) {
         nagaMeshGrid.set_threadgroups_per_grid(metal::uint3(1u, 1u, 1u));
     }
@@ -59,20 +76,19 @@ struct MeshOutput {
 struct ts_divergentInput {
 };
 [[object]] void ts_divergent(
-  uint thread_id [[thread_index_in_threadgroup]]
-, metal::uint3 __local_invocation_id [[thread_position_in_threadgroup]]
+  metal::uint3 thread_id [[thread_position_in_threadgroup]]
 , object_data TaskPayload& taskPayload [[payload]]
 , metal::mesh_grid_properties nagaMeshGrid_1
 ) {
-    if (thread_id == 0u) {
+    if (thread_id.x == 0u) {
         taskPayload.colorMask = metal::float4(1.0, 1.0, 0.0, 1.0);
         taskPayload.visible = true;
-        if (metal::all(__local_invocation_id == metal::uint3(0u))) {
+        if (metal::all(thread_id == metal::uint3(0u))) {
             nagaMeshGrid_1.set_threadgroups_per_grid(metal::uint3(1u, 1u, 1u));
         }
         return;
     }
-    if (metal::all(__local_invocation_id == metal::uint3(0u))) {
+    if (metal::all(thread_id == metal::uint3(0u))) {
         nagaMeshGrid_1.set_threadgroups_per_grid(metal::uint3(2u, 2u, 2u));
     }
     return;
@@ -112,8 +128,8 @@ struct ms_mainPrimitiveOutput {
     metal::float4 _e67 = taskPayload.colorMask;
     mesh_output.vertices.inner[2].color = metal::float4(1.0, 0.0, 0.0, 1.0) * _e67;
     mesh_output.primitives.inner[0].indices = metal::uint3(0u, 1u, 2u);
-    bool _e88 = taskPayload.visible;
-    mesh_output.primitives.inner[0].cull = !(_e88);
+    bool _e86 = helper_reader(taskPayload);
+    mesh_output.primitives.inner[0].cull = !(_e86);
     mesh_output.primitives.inner[0].colorMask = metal::float4(1.0, 0.0, 1.0, 1.0);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
     uint localInvocationIndex = __local_invocation_id.x + 1 * (__local_invocation_id.y + 1 * __local_invocation_id.z);
@@ -205,18 +221,17 @@ struct ms_divergentPrimitiveOutput {
     metal::float4 colorMask [[user(loc1), flat]];
 };
 [[mesh]] void ms_divergent(
-  uint thread_id_1 [[thread_index_in_threadgroup]]
-, metal::uint3 __local_invocation_id [[thread_position_in_threadgroup]]
+  metal::uint3 thread_id_1 [[thread_position_in_threadgroup]]
 , metal::mesh<ms_divergentVertexOutput, ms_divergentPrimitiveOutput, 3, 1, metal::topology::triangle> meshOutput_2
 ) {
     threadgroup float workgroupData;
     threadgroup MeshOutput mesh_output;
-    if (metal::all(__local_invocation_id == metal::uint3(0u))) {
+    if (metal::all(thread_id_1 == metal::uint3(0u))) {
         workgroupData = {};
         mesh_output = {};
     }
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
-    if (thread_id_1 == 0u) {
+    if (thread_id_1.x == 0u) {
         mesh_output.vertex_count = 3u;
         mesh_output.primitive_count = 1u;
         workgroupData = 2.0;
@@ -230,14 +245,14 @@ struct ms_divergentPrimitiveOutput {
         mesh_output.primitives.inner[0].cull = false;
         mesh_output.primitives.inner[0].colorMask = metal::float4(1.0, 0.0, 1.0, 1.0);
         metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
-        uint localInvocationIndex_2 = __local_invocation_id.x + 1 * (__local_invocation_id.y + 1 * __local_invocation_id.z);
-        for(uint vertexIndex_2 = localInvocationIndex_2; vertexIndex_2 < mesh_output.vertex_count; vertexIndex_2 += 1) {
+        uint localInvocationIndex_2 = thread_id_1.x + 2 * (thread_id_1.y + 1 * thread_id_1.z);
+        for(uint vertexIndex_2 = localInvocationIndex_2; vertexIndex_2 < mesh_output.vertex_count; vertexIndex_2 += 2) {
             ms_divergentVertexOutput vertex_3;
             vertex_3.position = mesh_output.vertices.inner[vertexIndex_2].position;
             vertex_3.color = mesh_output.vertices.inner[vertexIndex_2].color;
             meshOutput_2.set_vertex(vertexIndex_2, vertex_3);
         }
-        for(uint primitiveIndex_2 = localInvocationIndex_2; primitiveIndex_2 < mesh_output.primitive_count; primitiveIndex_2 += 1) {
+        for(uint primitiveIndex_2 = localInvocationIndex_2; primitiveIndex_2 < mesh_output.primitive_count; primitiveIndex_2 += 2) {
             ms_divergentPrimitiveOutput primitive_3;
             meshOutput_2.set_index(primitiveIndex_2 * 3 + 0, mesh_output.primitives.inner[primitiveIndex_2].indices.x);
             meshOutput_2.set_index(primitiveIndex_2 * 3 + 1, mesh_output.primitives.inner[primitiveIndex_2].indices.y);
@@ -246,20 +261,20 @@ struct ms_divergentPrimitiveOutput {
             primitive_3.colorMask = mesh_output.primitives.inner[primitiveIndex_2].colorMask;
             meshOutput_2.set_primitive(primitiveIndex_2, primitive_3);
         }
-        if (metal::all(__local_invocation_id == metal::uint3(0u))) {
+        if (metal::all(thread_id_1 == metal::uint3(0u))) {
             meshOutput_2.set_primitive_count(mesh_output.primitive_count);
         }
         return;
     } else {
         metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
-        uint localInvocationIndex_3 = __local_invocation_id.x + 1 * (__local_invocation_id.y + 1 * __local_invocation_id.z);
-        for(uint vertexIndex_3 = localInvocationIndex_3; vertexIndex_3 < mesh_output.vertex_count; vertexIndex_3 += 1) {
+        uint localInvocationIndex_3 = thread_id_1.x + 2 * (thread_id_1.y + 1 * thread_id_1.z);
+        for(uint vertexIndex_3 = localInvocationIndex_3; vertexIndex_3 < mesh_output.vertex_count; vertexIndex_3 += 2) {
             ms_divergentVertexOutput vertex_4;
             vertex_4.position = mesh_output.vertices.inner[vertexIndex_3].position;
             vertex_4.color = mesh_output.vertices.inner[vertexIndex_3].color;
             meshOutput_2.set_vertex(vertexIndex_3, vertex_4);
         }
-        for(uint primitiveIndex_3 = localInvocationIndex_3; primitiveIndex_3 < mesh_output.primitive_count; primitiveIndex_3 += 1) {
+        for(uint primitiveIndex_3 = localInvocationIndex_3; primitiveIndex_3 < mesh_output.primitive_count; primitiveIndex_3 += 2) {
             ms_divergentPrimitiveOutput primitive_4;
             meshOutput_2.set_index(primitiveIndex_3 * 3 + 0, mesh_output.primitives.inner[primitiveIndex_3].indices.x);
             meshOutput_2.set_index(primitiveIndex_3 * 3 + 1, mesh_output.primitives.inner[primitiveIndex_3].indices.y);
@@ -268,7 +283,7 @@ struct ms_divergentPrimitiveOutput {
             primitive_4.colorMask = mesh_output.primitives.inner[primitiveIndex_3].colorMask;
             meshOutput_2.set_primitive(primitiveIndex_3, primitive_4);
         }
-        if (metal::all(__local_invocation_id == metal::uint3(0u))) {
+        if (metal::all(thread_id_1 == metal::uint3(0u))) {
             meshOutput_2.set_primitive_count(mesh_output.primitive_count);
         }
         return;
