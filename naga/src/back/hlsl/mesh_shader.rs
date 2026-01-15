@@ -294,13 +294,13 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
                 for i in 0..3 {
                     writeln!(
                         self.out,
-                        "{level}{grid_size}.{} >= {max_per_dim} ||",
+                        "{level}{grid_size}.{} > {max_per_dim} ||",
                         back::COMPONENTS[i],
                     )?;
                 }
                 writeln!(
                     self.out,
-                    "{level}((uint64_t){grid_size}.x) * ((uint64_t){grid_size}.y) * ((uint64_t){grid_size}.z) >= {max_total}",
+                    "{level}((uint64_t){grid_size}.x) * ((uint64_t){grid_size}.y) * ((uint64_t){grid_size}.z) > {max_total}",
                 )?;
 
                 writeln!(self.out, "{}) {{", back::INDENT)?;
