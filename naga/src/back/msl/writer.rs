@@ -7520,7 +7520,9 @@ template <typename A>
             let need_workgroup_variables_initialization =
                 self.need_workgroup_variables_initialization(options, ep, module, fun_info);
 
-            if (need_workgroup_variables_initialization || ep.stage == crate::ShaderStage::Task)
+            if (need_workgroup_variables_initialization
+                || ep.stage == crate::ShaderStage::Task
+                || ep.stage == crate::ShaderStage::Mesh)
                 && local_invocation_index.is_none()
             {
                 writeln!(
