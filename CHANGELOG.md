@@ -47,6 +47,12 @@ Bottom level categories:
 - Added support for obtaining `AdapterInfo` from `Device`. By @sagudev in [#8807](https://github.com/gfx-rs/wgpu/pull/8807).
 - Added `Limits::or_worse_values_from`. By @atlv24 in [#8870](https://github.com/gfx-rs/wgpu/pull/8870).
 
+### General
+
+#### DX12
+
+- Full support for mesh shaders in HLSL/DX12. By @inner-daemons in #8752.
+
 ### Bug Fixes
 
 #### General
