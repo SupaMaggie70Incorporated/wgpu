@@ -194,12 +194,12 @@ impl Display for Reinterpreted<'_> {
     }
 }
 
-struct TypeContext<'a> {
-    handle: Handle<crate::Type>,
-    gctx: proc::GlobalCtx<'a>,
-    names: &'a FastHashMap<NameKey, String>,
-    access: crate::StorageAccess,
-    first_time: bool,
+pub(super) struct TypeContext<'a> {
+    pub(super) handle: Handle<crate::Type>,
+    pub(super) gctx: proc::GlobalCtx<'a>,
+    pub(super) names: &'a FastHashMap<NameKey, String>,
+    pub(super) access: crate::StorageAccess,
+    pub(super) first_time: bool,
 }
 
 impl TypeContext<'_> {
@@ -6973,7 +6973,7 @@ template <typename A>
                 info.entry_point_names.push(Err(err));
                 continue;
             }
-            let fun_name = &self.names[&NameKey::EntryPoint(ep_index as _)];
+            let fun_name = self.names[&NameKey::EntryPoint(ep_index as _)].clone();
             info.entry_point_names.push(Ok(fun_name.clone()));
 
             writeln!(self.out)?;
@@ -7167,112 +7167,17 @@ template <typename A>
                 _ => "void",
             };
 
-            let mut out_vertex_name = None;
-            let mut out_primitive_name = None;
-            let mut vertex_member_names = Vec::new();
-            let mut primitive_member_names = Vec::new();
-            if let Some(ref mesh_info) = ep.mesh_info {
-                let vertex_out_name = self.namer.call(&format!("{fun_name}VertexOutput"));
-                let primitive_out_name = self.namer.call(&format!("{fun_name}PrimitiveOutput"));
-                let mut existing_names = Vec::new();
-                for (out_name, struct_ty, is_primitive, member_names) in [
-                    (
-                        &vertex_out_name,
-                        mesh_info.vertex_output_type,
-                        false,
-                        &mut vertex_member_names,
-                    ),
-                    (
-                        &primitive_out_name,
-                        mesh_info.primitive_output_type,
-                        true,
-                        &mut primitive_member_names,
-                    ),
-                ] {
-                    writeln!(self.out, "struct {out_name} {{")?;
-                    let crate::TypeInner::Struct { ref members, .. } =
-                        module.types[struct_ty].inner
-                    else {
-                        unreachable!()
-                    };
-                    let mut has_point_size = false;
-                    for (index, member) in members.iter().enumerate() {
-                        member_names.push(None);
-                        let ty_name = TypeContext {
-                            handle: member.ty,
-                            gctx: module.to_ctx(),
-                            names: &self.names,
-                            access: crate::StorageAccess::empty(),
-                            first_time: true,
-                        };
-                        let binding = member.binding.clone().ok_or_else(|| {
-                            Error::GenericValidation("Expected binding, got None".into())
-                        })?;
-
-                        if let crate::Binding::BuiltIn(crate::BuiltIn::PointSize) = binding {
-                            has_point_size = true;
-                            if !pipeline_options.allow_and_force_point_size {
-                                continue;
-                            }
-                        }
-                        if let crate::Binding::BuiltIn(
-                            crate::BuiltIn::PointIndex
-                            | crate::BuiltIn::LineIndices
-                            | crate::BuiltIn::TriangleIndices,
-                        ) = binding
-                        {
-                            continue;
-                        }
-
-                        // Names of struct members must be unique across vertex and primitive output.
-                        // Therefore, when writing the primitive output struct, we might need to rename some fields.
-                        let mut name =
-                            self.names[&NameKey::StructMember(struct_ty, index as u32)].clone();
-                        if existing_names.contains(&name) {
-                            name = self.namer.call(&name);
-                        } else {
-                            // Let the namer know this is illegal to use again
-                            let _ = self.namer.call(&name);
-                        }
-
-                        let array_len = match module.types[member.ty].inner {
-                            crate::TypeInner::Array {
-                                size: crate::ArraySize::Constant(size),
-                                ..
-                            } => Some(size),
-                            _ => None,
-                        };
-                        let resolved = options.resolve_local_binding(&binding, out_mode)?;
-                        write!(self.out, "{}{} {}", back::INDENT, ty_name, name)?;
-                        if let Some(array_len) = array_len {
-                            write!(self.out, " [{array_len}]")?;
-                        }
-                        resolved.try_fmt(&mut self.out)?;
-                        writeln!(self.out, ";")?;
-                        *member_names.last_mut().unwrap() = Some(name.clone());
-                        existing_names.push(name);
-                    }
-                    if pipeline_options.allow_and_force_point_size
-                        && matches!(
-                            ep.stage,
-                            crate::ShaderStage::Vertex | crate::ShaderStage::Mesh
-                        )
-                        && !has_point_size
-                        && !is_primitive
-                    {
-                        // inject the point size output last
-                        writeln!(
-                            self.out,
-                            "{}float _point_size [[point_size]];",
-                            back::INDENT
-                        )?;
-                    }
-                    writeln!(self.out, "}};")?;
-                }
-
-                out_vertex_name = Some(vertex_out_name);
-                out_primitive_name = Some(primitive_out_name);
-            }
+            let out_mesh_info = if let Some(ref mesh_info) = ep.mesh_info {
+                Some(self.write_mesh_output_types(
+                    mesh_info,
+                    &fun_name,
+                    module,
+                    pipeline_options.allow_and_force_point_size,
+                    options,
+                )?)
+            } else {
+                None
+            };
 
             // If we're doing a vertex pulling transform, define the buffer
             // structure types.
@@ -8060,10 +7965,7 @@ template <typename A>
                     local_invocation_index,
                     nested_name: &nested_fun_name,
                     outer_name: &fun_name,
-                    out_vertex_ty_name: out_vertex_name.as_deref(),
-                    out_primitive_ty_name: out_primitive_name.as_deref(),
-                    out_vertex_member_names: &vertex_member_names,
-                    out_primitive_member_names: &primitive_member_names,
+                    out_mesh_info,
                 })?;
             }
         }

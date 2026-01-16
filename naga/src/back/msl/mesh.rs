@@ -8,12 +8,19 @@ use crate::{
     back::{
         self,
         msl::{
-            writer::TypedGlobalVariable, BackendResult, EntryPointArgument, NAMESPACE,
-            WRAPPED_ARRAY_FIELD,
+            writer::{TypeContext, TypedGlobalVariable},
+            BackendResult, EntryPointArgument, Error, NAMESPACE, WRAPPED_ARRAY_FIELD,
         },
     },
     proc::NameKey,
 };
+
+pub(super) struct MeshOutputInfo {
+    out_vertex_ty_name: String,
+    out_primitive_ty_name: String,
+    out_vertex_member_names: Vec<Option<String>>,
+    out_primitive_member_names: Vec<Option<String>>,
+}
 
 pub(super) struct NestedFunctionInfo<'a> {
     pub(super) options: &'a super::Options,
@@ -25,13 +32,117 @@ pub(super) struct NestedFunctionInfo<'a> {
     pub(super) local_invocation_index: Option<&'a NameKey>,
     pub(super) nested_name: &'a str,
     pub(super) outer_name: &'a str,
-    pub(super) out_vertex_ty_name: Option<&'a str>,
-    pub(super) out_primitive_ty_name: Option<&'a str>,
-    pub(super) out_vertex_member_names: &'a [Option<String>],
-    pub(super) out_primitive_member_names: &'a [Option<String>],
+    pub(super) out_mesh_info: Option<MeshOutputInfo>,
 }
 
 impl<W: core::fmt::Write> super::Writer<W> {
+    pub(super) fn write_mesh_output_types(
+        &mut self,
+        mesh_info: &crate::MeshStageInfo,
+        fun_name: &str,
+        module: &crate::Module,
+        allow_and_force_point_size: bool,
+        options: &super::Options,
+    ) -> Result<MeshOutputInfo, Error> {
+        let mut vertex_member_names = Vec::new();
+        let mut primitive_member_names = Vec::new();
+        let vertex_out_name = self.namer.call(&format!("{fun_name}VertexOutput"));
+        let primitive_out_name = self.namer.call(&format!("{fun_name}PrimitiveOutput"));
+        let mut existing_names = Vec::new();
+        for (out_name, struct_ty, is_primitive, member_names) in [
+            (
+                &vertex_out_name,
+                mesh_info.vertex_output_type,
+                false,
+                &mut vertex_member_names,
+            ),
+            (
+                &primitive_out_name,
+                mesh_info.primitive_output_type,
+                true,
+                &mut primitive_member_names,
+            ),
+        ] {
+            writeln!(self.out, "struct {out_name} {{")?;
+            let crate::TypeInner::Struct { ref members, .. } = module.types[struct_ty].inner else {
+                unreachable!()
+            };
+            let mut has_point_size = false;
+            for (index, member) in members.iter().enumerate() {
+                member_names.push(None);
+                let ty_name = TypeContext {
+                    handle: member.ty,
+                    gctx: module.to_ctx(),
+                    names: &self.names,
+                    access: crate::StorageAccess::empty(),
+                    first_time: true,
+                };
+                let binding = member
+                    .binding
+                    .clone()
+                    .ok_or_else(|| Error::GenericValidation("Expected binding, got None".into()))?;
+
+                if let crate::Binding::BuiltIn(crate::BuiltIn::PointSize) = binding {
+                    has_point_size = true;
+                    if !allow_and_force_point_size {
+                        continue;
+                    }
+                }
+                if let crate::Binding::BuiltIn(
+                    crate::BuiltIn::PointIndex
+                    | crate::BuiltIn::LineIndices
+                    | crate::BuiltIn::TriangleIndices,
+                ) = binding
+                {
+                    continue;
+                }
+
+                // Names of struct members must be unique across vertex and primitive output.
+                // Therefore, when writing the primitive output struct, we might need to rename some fields.
+                let mut name = self.names[&NameKey::StructMember(struct_ty, index as u32)].clone();
+                if existing_names.contains(&name) {
+                    name = self.namer.call(&name);
+                } else {
+                    // Let the namer know this is illegal to use again
+                    let _ = self.namer.call(&name);
+                }
+
+                let array_len = match module.types[member.ty].inner {
+                    crate::TypeInner::Array {
+                        size: crate::ArraySize::Constant(size),
+                        ..
+                    } => Some(size),
+                    _ => None,
+                };
+                let resolved =
+                    options.resolve_local_binding(&binding, back::msl::LocationMode::MeshOutput)?;
+                write!(self.out, "{}{} {}", back::INDENT, ty_name, name)?;
+                if let Some(array_len) = array_len {
+                    write!(self.out, " [{array_len}]")?;
+                }
+                resolved.try_fmt(&mut self.out)?;
+                writeln!(self.out, ";")?;
+                *member_names.last_mut().unwrap() = Some(name.clone());
+                existing_names.push(name);
+            }
+            if allow_and_force_point_size && !has_point_size && !is_primitive {
+                // inject the point size output last
+                writeln!(
+                    self.out,
+                    "{}float _point_size [[point_size]];",
+                    back::INDENT
+                )?;
+            }
+            writeln!(self.out, "}};")?;
+        }
+        Ok(MeshOutputInfo {
+            out_vertex_ty_name: vertex_out_name,
+            out_primitive_ty_name: primitive_out_name,
+            out_vertex_member_names: vertex_member_names,
+            out_primitive_member_names: primitive_member_names,
+        })
+    }
+
     pub(super) fn write_wrapper_function(&mut self, info: NestedFunctionInfo<'_>) -> BackendResult {
         let NestedFunctionInfo {
             options,
@@ -43,10 +154,7 @@ impl<W: core::fmt::Write> super::Writer<W> {
             local_invocation_index: local_invocation_index_key,
             nested_name,
             outer_name,
-            out_vertex_ty_name,
-            out_primitive_ty_name,
-            out_vertex_member_names,
-            out_primitive_member_names,
+            out_mesh_info,
         } = info;
         let indent = back::INDENT;
 
@@ -63,6 +171,7 @@ impl<W: core::fmt::Write> super::Writer<W> {
         let mut mesh_variable_name = None;
         let mut task_grid_name = None;
         if let Some(ref info) = ep.mesh_info {
+            let mesh_out = out_mesh_info.as_ref().unwrap();
             let mesh_name = self.namer.call("meshOutput");
             let topology_name = match info.topology {
                 crate::MeshOutputTopology::Points => "point",
@@ -73,8 +182,8 @@ impl<W: core::fmt::Write> super::Writer<W> {
             let num_prims = info.max_primitives;
             writeln!(self.out,
                 "  {NAMESPACE}::mesh<{}, {}, {num_verts}, {num_prims}, metal::topology::{topology_name}> {mesh_name}",
-                out_vertex_ty_name.unwrap(),
-                out_primitive_ty_name.unwrap(),
+                mesh_out.out_vertex_ty_name,
+                mesh_out.out_primitive_ty_name,
             )?;
             mesh_out_name = Some(mesh_name);
             mesh_variable_name = Some(
@@ -185,11 +294,10 @@ impl<W: core::fmt::Write> super::Writer<W> {
             writeln!(self.out, "{indent}}}")?;
             writeln!(self.out, "{indent}return;")?;
         } else if let Some(ref info) = ep.mesh_info {
+            let mesh_out = out_mesh_info.as_ref().unwrap();
             let out_ty = module.global_variables[info.output_variable].ty;
             let mesh_out_name = mesh_out_name.unwrap();
             let mesh_variable_name = mesh_variable_name.unwrap();
-            let out_vertex_ty_name = out_vertex_ty_name.unwrap();
-            let out_primitive_ty_name = out_primitive_ty_name.unwrap();
             let crate::TypeInner::Struct { ref members, .. } = module.types[out_ty].inner else {
                 unreachable!();
             };
@@ -226,9 +334,9 @@ impl<W: core::fmt::Write> super::Writer<W> {
                 writeln!(
                     self.out,
                     "{indent}{indent}{} {out_vert};",
-                    out_vertex_ty_name,
+                    mesh_out.out_vertex_ty_name,
                 )?;
-                for (member_idx, new_name) in out_vertex_member_names.iter().enumerate() {
+                for (member_idx, new_name) in mesh_out.out_vertex_member_names.iter().enumerate() {
                     let in_value = format!(
                         "{in_array}.{WRAPPED_ARRAY_FIELD}[{vert_index}].{}",
                         self.names
@@ -255,9 +363,10 @@ impl<W: core::fmt::Write> super::Writer<W> {
                 writeln!(
                     self.out,
                     "{indent}{indent}{} {out_prim};",
-                    out_primitive_ty_name
+                    mesh_out.out_primitive_ty_name
                 )?;
-                for (member_idx, new_name) in out_primitive_member_names.iter().enumerate() {
+                for (member_idx, new_name) in mesh_out.out_primitive_member_names.iter().enumerate()
+                {
                     let in_value = format!(
                         "{in_array}.{WRAPPED_ARRAY_FIELD}[{prim_index}].{}",
                         self.names
