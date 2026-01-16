@@ -300,6 +300,10 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
                 }
                 writeln!(
                     self.out,
+                    "{level}((uint64_t){grid_size}.x) * ((uint64_t){grid_size}.y) > 0xffffffffull ||"
+                )?;
+                writeln!(
+                    self.out,
                     "{level}((uint64_t){grid_size}.x) * ((uint64_t){grid_size}.y) * ((uint64_t){grid_size}.z) > {max_total}",
                 )?;
 
