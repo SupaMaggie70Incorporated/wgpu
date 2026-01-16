@@ -82,7 +82,9 @@ metal::uint3 _ts_main(
             nagaGridSize.x > 256 ||
             nagaGridSize.y > 256 ||
             nagaGridSize.z > 256 ||
-            ((metal::uint64_t)nagaGridSize.x * (metal::uint64_t)nagaGridSize.y * (metal::uint64_t)nagaGridSize.z) > 1024ull
+            metal::mulhi(nagaGridSize.x, nagaGridSize.y) != 0u ||
+            metal::mulhi(nagaGridSize.x * nagaGridSize.y, nagaGridSize.z) != 0u ||
+            (nagaGridSize.x * nagaGridSize.y * nagaGridSize.z) > 1024u
         ) {
             nagaGridSize = metal::uint3(0u);
         }
@@ -123,7 +125,9 @@ metal::uint3 _ts_divergent(
             nagaGridSize_1.x > 256 ||
             nagaGridSize_1.y > 256 ||
             nagaGridSize_1.z > 256 ||
-            ((metal::uint64_t)nagaGridSize_1.x * (metal::uint64_t)nagaGridSize_1.y * (metal::uint64_t)nagaGridSize_1.z) > 1024ull
+            metal::mulhi(nagaGridSize_1.x, nagaGridSize_1.y) != 0u ||
+            metal::mulhi(nagaGridSize_1.x * nagaGridSize_1.y, nagaGridSize_1.z) != 0u ||
+            (nagaGridSize_1.x * nagaGridSize_1.y * nagaGridSize_1.z) > 1024u
         ) {
             nagaGridSize_1 = metal::uint3(0u);
         }

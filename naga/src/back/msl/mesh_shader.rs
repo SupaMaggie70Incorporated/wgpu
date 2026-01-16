@@ -274,13 +274,20 @@ impl<W: core::fmt::Write> super::Writer<W> {
                     let level3 = back::Level(3);
                     let max_per_dim = limits.max_mesh_workgroups_per_dim;
                     let max_total = limits.max_mesh_workgroups_total;
-                    let u64_name = format!("{NAMESPACE}::uint64_t");
                     writeln!(self.out, "{level2}if (")?;
 
                     writeln!(self.out, "{level3}{result_name}.x > {max_per_dim} ||")?;
                     writeln!(self.out, "{level3}{result_name}.y > {max_per_dim} ||")?;
                     writeln!(self.out, "{level3}{result_name}.z > {max_per_dim} ||")?;
-                    writeln!(self.out, "{level3}(({u64_name}){result_name}.x * ({u64_name}){result_name}.y * ({u64_name}){result_name}.z) > {max_total}ull")?;
+                    writeln!(
+                        self.out,
+                        "{level3}{NAMESPACE}::mulhi({result_name}.x, {result_name}.y) != 0u ||"
+                    )?;
+                    writeln!(
+                        self.out,
+                        "{level3}{NAMESPACE}::mulhi({result_name}.x * {result_name}.y, {result_name}.z) != 0u ||"
+                    )?;
+                    writeln!(self.out, "{level3}({result_name}.x * {result_name}.y * {result_name}.z) > {max_total}u")?;
 
                     writeln!(self.out, "{level2}) {{")?;
                     writeln!(self.out, "{level3}{result_name} = {NAMESPACE}::uint3(0u);")?;
