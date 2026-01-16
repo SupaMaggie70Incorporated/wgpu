@@ -79,9 +79,9 @@ metal::uint3 _ts_main(
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
     if (__local_invocation_index == 0u) {
         if (
-            nagaGridSize.x > 256 ||
-            nagaGridSize.y > 256 ||
-            nagaGridSize.z > 256 ||
+            nagaGridSize.x > 256u ||
+            nagaGridSize.y > 256u ||
+            nagaGridSize.z > 256u ||
             metal::mulhi(nagaGridSize.x, nagaGridSize.y) != 0u ||
             metal::mulhi(nagaGridSize.x * nagaGridSize.y, nagaGridSize.z) != 0u ||
             (nagaGridSize.x * nagaGridSize.y * nagaGridSize.z) > 1024u
@@ -122,9 +122,9 @@ metal::uint3 _ts_divergent(
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
     if (__local_invocation_index == 0u) {
         if (
-            nagaGridSize_1.x > 256 ||
-            nagaGridSize_1.y > 256 ||
-            nagaGridSize_1.z > 256 ||
+            nagaGridSize_1.x > 256u ||
+            nagaGridSize_1.y > 256u ||
+            nagaGridSize_1.z > 256u ||
             metal::mulhi(nagaGridSize_1.x, nagaGridSize_1.y) != 0u ||
             metal::mulhi(nagaGridSize_1.x * nagaGridSize_1.y, nagaGridSize_1.z) != 0u ||
             (nagaGridSize_1.x * nagaGridSize_1.y * nagaGridSize_1.z) > 1024u

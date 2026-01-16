@@ -276,9 +276,9 @@ impl<W: core::fmt::Write> super::Writer<W> {
                     let max_total = limits.max_mesh_workgroups_total;
                     writeln!(self.out, "{level2}if (")?;
 
-                    writeln!(self.out, "{level3}{result_name}.x > {max_per_dim} ||")?;
-                    writeln!(self.out, "{level3}{result_name}.y > {max_per_dim} ||")?;
-                    writeln!(self.out, "{level3}{result_name}.z > {max_per_dim} ||")?;
+                    writeln!(self.out, "{level3}{result_name}.x > {max_per_dim}u ||")?;
+                    writeln!(self.out, "{level3}{result_name}.y > {max_per_dim}u ||")?;
+                    writeln!(self.out, "{level3}{result_name}.z > {max_per_dim}u ||")?;
                     writeln!(
                         self.out,
                         "{level3}{NAMESPACE}::mulhi({result_name}.x, {result_name}.y) != 0u ||"
