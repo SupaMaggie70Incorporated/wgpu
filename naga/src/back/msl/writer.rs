@@ -21,7 +21,7 @@ use crate::{
     arena::{Handle, HandleSet},
     back::{
         self, get_entry_points,
-        msl::{mesh::NestedFunctionInfo, BackendResult, EntryPointArgument},
+        msl::{mesh_shader::NestedFunctionInfo, BackendResult, EntryPointArgument},
         Baked,
     },
     common,
