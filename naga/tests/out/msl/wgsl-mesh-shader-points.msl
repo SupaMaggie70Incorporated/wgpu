@@ -27,37 +27,53 @@ struct MeshOutput {
     char _pad4[4];
 };
 
-[[object]] void ts_main(
-  uint __local_invocation_index [[thread_index_in_threadgroup]]
-, object_data TaskPayload& taskPayload [[payload]]
-, metal::mesh_grid_properties nagaMeshGrid
+metal::uint3 _ts_main(
+  uint __local_invocation_index
+, object_data TaskPayload& taskPayload
 ) {
     if (__local_invocation_index == 0u) {
         taskPayload = {};
     }
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    return metal::uint3(1u, 1u, 1u);
+}
+
+[[object]] void ts_main(
+  metal::mesh_grid_properties nagaMeshGrid
+, uint __local_invocation_index [[thread_index_in_threadgroup]]
+, object_data TaskPayload& taskPayload [[payload]]
+) {
+    uint3 nagaGridSize = _ts_main(__local_invocation_index, taskPayload);
+    metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
     if (__local_invocation_index == 0u) {
-        nagaMeshGrid.set_threadgroups_per_grid(metal::uint3(1u, 1u, 1u));
+        nagaMeshGrid.set_threadgroups_per_grid(nagaGridSize);
     }
     return;
 }
-
 
 struct ms_mainVertexOutput {
     metal::float4 position [[position]];
 };
 struct ms_mainPrimitiveOutput {
 };
-[[mesh]] void ms_main(
-  uint __local_invocation_index [[thread_index_in_threadgroup]]
-, object_data TaskPayload const& taskPayload [[payload]]
-, metal::mesh<ms_mainVertexOutput, ms_mainPrimitiveOutput, 1, 1, metal::topology::point> meshOutput
+void _ms_main(
+  uint __local_invocation_index
+, object_data TaskPayload const& taskPayload
+, threadgroup MeshOutput& mesh_output
 ) {
-    threadgroup MeshOutput mesh_output;
     if (__local_invocation_index == 0u) {
         mesh_output = {};
     }
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    return;
+}
+[[mesh]] void ms_main(
+  metal::mesh<ms_mainVertexOutput, ms_mainPrimitiveOutput, 1, 1, metal::topology::point> meshOutput
+, uint __local_invocation_index [[thread_index_in_threadgroup]]
+, object_data TaskPayload const& taskPayload [[payload]]
+) {
+    threadgroup MeshOutput mesh_output;
+    _ms_main(__local_invocation_index, taskPayload, mesh_output);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
     for(uint vertexIndex = __local_invocation_index; vertexIndex < mesh_output.vertex_count; vertexIndex += 64) {
         ms_mainVertexOutput vertex_;
@@ -72,5 +88,4 @@ struct ms_mainPrimitiveOutput {
     if (__local_invocation_index == 0u) {
         meshOutput.set_primitive_count(mesh_output.primitive_count);
     }
-    return;
 }

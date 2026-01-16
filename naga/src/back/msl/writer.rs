@@ -13,10 +13,17 @@ use num_traits::real::Real as _;
 
 use half::f16;
 
-use super::{sampler as sm, Error, LocationMode, Options, PipelineOptions, TranslationInfo};
+use super::{
+    sampler as sm, Error, LocationMode, Options, PipelineOptions, TranslationInfo, NAMESPACE,
+    WRAPPED_ARRAY_FIELD,
+};
 use crate::{
     arena::{Handle, HandleSet},
-    back::{self, get_entry_points, Baked},
+    back::{
+        self, get_entry_points,
+        msl::{mesh::NestedFunctionInfo, BackendResult, EntryPointArgument},
+        Baked,
+    },
     common,
     proc::{
         self, concrete_int_scalars,
@@ -29,14 +36,6 @@ use crate::{
 #[cfg(test)]
 use core::ptr;
 
-/// Shorthand result used internally by the backend
-type BackendResult = Result<(), Error>;
-
-const NAMESPACE: &str = "metal";
-// The name of the array member of the Metal struct types we generate to
-// represent Naga `Array` types. See the comments in `Writer::write_type_defs`
-// for details.
-const WRAPPED_ARRAY_FIELD: &str = "inner";
 // This is a hack: we need to pass a pointer to an atomic,
 // but generally the backend isn't putting "&" in front of every pointer.
 // Some more general handling of pointers is needed to be implemented here.
@@ -388,16 +387,16 @@ impl Display for TypeContext<'_> {
     }
 }
 
-struct TypedGlobalVariable<'a> {
-    module: &'a crate::Module,
-    names: &'a FastHashMap<NameKey, String>,
-    handle: Handle<crate::GlobalVariable>,
-    usage: valid::GlobalUse,
-    reference: bool,
+pub(super) struct TypedGlobalVariable<'a> {
+    pub(super) module: &'a crate::Module,
+    pub(super) names: &'a FastHashMap<NameKey, String>,
+    pub(super) handle: Handle<crate::GlobalVariable>,
+    pub(super) usage: valid::GlobalUse,
+    pub(super) reference: bool,
 }
 
 impl TypedGlobalVariable<'_> {
-    fn try_fmt<W: Write>(&self, out: &mut W) -> BackendResult {
+    fn to_parts(&self) -> Result<(String, String), Error> {
         let var = &self.module.global_variables[self.handle];
         let name = &self.names[&NameKey::GlobalVariable(self.handle)];
 
@@ -443,22 +442,27 @@ impl TypedGlobalVariable<'_> {
             _ => ("", "", ""),
         };
 
-        Ok(write!(
-            out,
-            "{}{}{}{}{}{} {}",
+        let ty = format!(
+            "{}{}{}{}{}{}",
             space,
             if space.is_empty() { "" } else { " " },
             ty_name,
             if access.is_empty() { "" } else { " " },
             access,
             reference,
-            name,
-        )?)
+        );
+
+        Ok((ty, name.clone()))
+    }
+    pub(super) fn try_fmt<W: Write>(&self, out: &mut W) -> BackendResult {
+        let parts = self.to_parts()?;
+
+        Ok(write!(out, "{} {}", parts.0, parts.1,)?)
     }
 }
 
 #[derive(Eq, PartialEq, Hash)]
-enum WrappedFunction {
+pub(super) enum WrappedFunction {
     UnaryOp {
         op: crate::UnaryOperator,
         ty: (Option<crate::VectorSize>, crate::Scalar),
@@ -503,20 +507,20 @@ enum WrappedFunction {
 }
 
 pub struct Writer<W> {
-    out: W,
-    names: FastHashMap<NameKey, String>,
-    named_expressions: crate::NamedExpressions,
+    pub(super) out: W,
+    pub(super) names: FastHashMap<NameKey, String>,
+    pub(super) named_expressions: crate::NamedExpressions,
     /// Set of expressions that need to be baked to avoid unnecessary repetition in output
-    need_bake_expressions: back::NeedBakeExpressions,
-    namer: proc::Namer,
-    wrapped_functions: FastHashSet<WrappedFunction>,
+    pub(super) need_bake_expressions: back::NeedBakeExpressions,
+    pub(super) namer: proc::Namer,
+    pub(super) wrapped_functions: FastHashSet<WrappedFunction>,
     #[cfg(test)]
-    put_expression_stack_pointers: FastHashSet<*const ()>,
+    pub(super) put_expression_stack_pointers: FastHashSet<*const ()>,
     #[cfg(test)]
-    put_block_stack_pointers: FastHashSet<*const ()>,
+    pub(super) put_block_stack_pointers: FastHashSet<*const ()>,
     /// Set of (struct type, struct field index) denoting which fields require
     /// padding inserted **before** them (i.e. between fields at index - 1 and index)
-    struct_member_pads: FastHashSet<(Handle<crate::Type>, u32)>,
+    pub(super) struct_member_pads: FastHashSet<(Handle<crate::Type>, u32)>,
 }
 
 impl crate::Scalar {
@@ -747,7 +751,7 @@ struct TexelAddress {
     level: Option<LevelOfDetail>,
 }
 
-struct ExpressionContext<'a> {
+pub(super) struct ExpressionContext<'a> {
     function: &'a crate::Function,
     origin: FunctionOrigin,
     info: &'a valid::FunctionInfo,
@@ -840,26 +844,9 @@ impl<'a> ExpressionContext<'a> {
     }
 }
 
-struct MeshShaderContext<'a> {
-    mesh_variable_name: &'a str,
-    mesh_out_name: &'a str,
-    vertex_type_name: &'a str,
-    primitive_type_name: &'a str,
-    vertex_member_names: &'a [Option<String>],
-    primitive_member_names: &'a [Option<String>],
-    workgroup_size: [u32; 3],
-    vert_type: Handle<crate::Type>,
-    prim_type: Handle<crate::Type>,
-    out_type: Handle<crate::Type>,
-    topology: crate::MeshOutputTopology,
-}
-
 struct StatementContext<'a> {
     expression: ExpressionContext<'a>,
     result_struct: Option<&'a str>,
-    task_grid_name: Option<&'a str>,
-    mesh: Option<MeshShaderContext<'a>>,
-    local_invocation_index_name: Option<&'a NameKey>,
 }
 
 impl<W: Write> Writer<W> {
@@ -1705,7 +1692,7 @@ impl<W: Write> Writer<W> {
         Ok(())
     }
 
-    fn put_const_expression(
+    pub(super) fn put_const_expression(
         &mut self,
         expr_handle: Handle<crate::Expression>,
         module: &crate::Module,
@@ -1907,7 +1894,7 @@ impl<W: Write> Writer<W> {
     ///
     /// - Pass `false` if it is an operand of a `?:` operator, a `[]`, or really
     ///   almost anything else.
-    fn put_expression(
+    pub(super) fn put_expression(
         &mut self,
         expr_handle: Handle<crate::Expression>,
         context: &ExpressionContext,
@@ -3841,164 +3828,14 @@ impl<W: Write> Writer<W> {
                 crate::Statement::Return {
                     value: Some(expr_handle),
                 } => {
-                    if let Some(grid_name) = context.task_grid_name {
-                        writeln!(
-                            self.out,
-                            "{}if ({} == 0u) {{",
-                            level,
-                            context
-                                .local_invocation_index_name
-                                .map(|name_key| self.names[name_key].as_str())
-                                .unwrap_or("__local_invocation_index"),
-                        )?;
-                        {
-                            let level = level.next();
-                            write!(self.out, "{level}{grid_name}.set_threadgroups_per_grid(")?;
-                            self.put_expression(expr_handle, &context.expression, true)?;
-                            writeln!(self.out, ");")?;
-                        }
-                        writeln!(self.out, "{level}}}")?;
-                        writeln!(self.out, "{level}return;")?;
-                    } else {
-                        self.put_return_value(
-                            level,
-                            expr_handle,
-                            context.result_struct,
-                            &context.expression,
-                        )?;
-                    }
+                    self.put_return_value(
+                        level,
+                        expr_handle,
+                        context.result_struct,
+                        &context.expression,
+                    )?;
                 }
                 crate::Statement::Return { value: None } => {
-                    if let Some(ref ctx) = context.mesh {
-                        self.write_barrier(crate::Barrier::WORK_GROUP, level)?;
-                        let local_invocation_index = context
-                            .local_invocation_index_name
-                            .map(|name_key| self.names[name_key].as_str())
-                            .unwrap_or("__local_invocation_index");
-                        let crate::TypeInner::Struct { ref members, .. } =
-                            context.expression.module.types[ctx.out_type].inner
-                        else {
-                            unreachable!();
-                        };
-                        let get_out_value = |bi| {
-                            let member_idx = members
-                                .iter()
-                                .position(|a| a.binding == Some(crate::Binding::BuiltIn(bi)))
-                                .unwrap() as u32;
-                            format!(
-                                "{}.{}",
-                                ctx.mesh_variable_name,
-                                self.names[&NameKey::StructMember(ctx.out_type, member_idx)]
-                            )
-                        };
-                        let vert_count = get_out_value(crate::BuiltIn::VertexCount);
-                        let prim_count = get_out_value(crate::BuiltIn::PrimitiveCount);
-                        let workgroup_size: u32 = ctx.workgroup_size.iter().product();
-                        {
-                            let vert_index = self.namer.call("vertexIndex");
-                            let in_array = get_out_value(crate::BuiltIn::Vertices);
-                            writeln!(
-                                self.out,
-                                "{level}for(uint {vert_index} = {local_invocation_index}; {vert_index} < {vert_count}; {vert_index} += {workgroup_size}) {{"
-                            )?;
-                            let out_vert = self.namer.call("vertex");
-                            writeln!(
-                                self.out,
-                                "{level}{}{} {out_vert};",
-                                back::INDENT,
-                                ctx.vertex_type_name
-                            )?;
-                            for (member_idx, new_name) in ctx.vertex_member_names.iter().enumerate()
-                            {
-                                let in_value = format!(
-                                    "{in_array}.{WRAPPED_ARRAY_FIELD}[{vert_index}].{}",
-                                    self.names
-                                        [&NameKey::StructMember(ctx.vert_type, member_idx as u32)]
-                                );
-                                let out_value =
-                                    format!("{out_vert}.{}", new_name.as_deref().unwrap());
-                                writeln!(
-                                    self.out,
-                                    "{level}{}{out_value} = {in_value};",
-                                    back::INDENT
-                                )?;
-                            }
-                            writeln!(
-                                self.out,
-                                "{level}{}{}.set_vertex({vert_index}, {out_vert});",
-                                back::INDENT,
-                                ctx.mesh_out_name
-                            )?;
-                            writeln!(self.out, "{level}}}")?;
-                        }
-                        {
-                            let prim_index = self.namer.call("primitiveIndex");
-                            let in_array = get_out_value(crate::BuiltIn::Primitives);
-                            writeln!(
-                                self.out,
-                                "{level}for(uint {prim_index} = {local_invocation_index}; {prim_index} < {prim_count}; {prim_index} += {workgroup_size}) {{"
-                            )?;
-                            let out_prim = self.namer.call("primitive");
-                            writeln!(
-                                self.out,
-                                "{level}{}{} {out_prim};",
-                                back::INDENT,
-                                ctx.primitive_type_name
-                            )?;
-                            for (member_idx, new_name) in
-                                ctx.primitive_member_names.iter().enumerate()
-                            {
-                                let in_value = format!(
-                                    "{in_array}.{WRAPPED_ARRAY_FIELD}[{prim_index}].{}",
-                                    self.names
-                                        [&NameKey::StructMember(ctx.prim_type, member_idx as u32)]
-                                );
-                                if let Some(new_name) = new_name.as_deref() {
-                                    let out_value = format!("{out_prim}.{new_name}");
-                                    writeln!(
-                                        self.out,
-                                        "{level}{}{out_value} = {in_value};",
-                                        back::INDENT
-                                    )?;
-                                } else {
-                                    let num_indices = match ctx.topology {
-                                        crate::MeshOutputTopology::Points => 1,
-                                        crate::MeshOutputTopology::Lines => 2,
-                                        crate::MeshOutputTopology::Triangles => 3,
-                                    };
-                                    for i in 0..num_indices {
-                                        let component = if num_indices == 1 {
-                                            "".to_string()
-                                        } else {
-                                            format!(".{}", back::COMPONENTS[i])
-                                        };
-                                        writeln!(
-                                            self.out,
-                                            "{level}{}{}.set_index({prim_index} * {num_indices} + {i}, {in_value}{component});",
-                                            back::INDENT,
-                                            ctx.mesh_out_name,
-                                        )?;
-                                    }
-                                }
-                            }
-                            writeln!(
-                                self.out,
-                                "{level}{}{}.set_primitive({prim_index}, {out_prim});",
-                                back::INDENT,
-                                ctx.mesh_out_name
-                            )?;
-                            writeln!(self.out, "{level}}}")?;
-                        }
-
-                        writeln!(self.out, "{level}if ({local_invocation_index} == 0u) {{")?;
-                        writeln!(
-                            self.out,
-                            "{level}{}{}.set_primitive_count({prim_count});",
-                            back::INDENT,
-                            ctx.mesh_out_name,
-                        )?;
-                        writeln!(self.out, "{level}}}")?;
-                    }
                     writeln!(self.out, "{level}return;")?;
                 }
                 crate::Statement::Kill => {
@@ -6985,9 +6822,6 @@ template <typename A>
                     force_loop_bounding: options.force_loop_bounding,
                 },
                 result_struct: None,
-                mesh: None,
-                task_grid_name: None,
-                local_invocation_index_name: None,
             };
 
             self.put_locals(&context.expression)?;
@@ -7033,35 +6867,29 @@ template <typename A>
 
             let (em_str, in_mode, out_mode, can_vertex_pull) = match ep.stage {
                 crate::ShaderStage::Vertex => (
-                    "vertex",
+                    Some("vertex"),
                     LocationMode::VertexInput,
                     LocationMode::VertexOutput,
                     true,
                 ),
                 crate::ShaderStage::Fragment => (
-                    "fragment",
+                    Some("fragment"),
                     LocationMode::FragmentInput,
                     LocationMode::FragmentOutput,
                     false,
                 ),
                 crate::ShaderStage::Compute => (
-                    "kernel",
+                    Some("kernel"),
                     LocationMode::Uniform,
                     LocationMode::Uniform,
                     false,
                 ),
-                crate::ShaderStage::Task => (
-                    "[[object]]",
-                    LocationMode::Uniform,
-                    LocationMode::Uniform,
-                    false,
-                ),
-                crate::ShaderStage::Mesh => (
-                    "[[mesh]]",
-                    LocationMode::Uniform,
-                    LocationMode::MeshOutput,
-                    false,
-                ),
+                crate::ShaderStage::Task => {
+                    (None, LocationMode::Uniform, LocationMode::Uniform, false)
+                }
+                crate::ShaderStage::Mesh => {
+                    (None, LocationMode::Uniform, LocationMode::MeshOutput, false)
+                }
             };
 
             // Should this entry point be modified to do vertex pulling?
@@ -7325,6 +7153,17 @@ template <typename A>
                     writeln!(self.out, "}};")?;
                     &stage_out_name
                 }
+                Some(ref result) if ep.stage == crate::ShaderStage::Task => {
+                    assert_eq!(
+                        module.types[result.ty].inner,
+                        crate::TypeInner::Vector {
+                            size: crate::VectorSize::Tri,
+                            scalar: crate::Scalar::U32
+                        }
+                    );
+
+                    "metal::uint3"
+                }
                 _ => "void",
             };
 
@@ -7452,27 +7291,34 @@ template <typename A>
                 }
             }
 
-            // Write the entry point function's name, and begin its argument list.
-            writeln!(self.out, "{em_str} {result_type_name} {fun_name}(")?;
-
-            let mut is_first_argument = true;
-            let mut separator = || {
-                if is_first_argument {
-                    is_first_argument = false;
-                    ' '
-                } else {
-                    ','
-                }
+            let is_wrapped = matches!(
+                ep.stage,
+                crate::ShaderStage::Task | crate::ShaderStage::Mesh
+            );
+            let fun_name = fun_name.clone();
+            let nested_fun_name = if is_wrapped {
+                self.namer.call(&format!("_{fun_name}"))
+            } else {
+                fun_name.clone()
             };
+
+            // Write the entry point function's name, and begin its argument list.
+            if let Some(em_str) = em_str {
+                write!(self.out, "{em_str} ")?;
+            }
+            writeln!(self.out, "{result_type_name} {nested_fun_name}(")?;
+
+            let mut args = Vec::new();
 
             // If we have produced a struct holding the `EntryPoint`'s
             // `Function`'s arguments' varyings, pass that struct first.
             if has_varyings {
-                writeln!(
-                    self.out,
-                    "{} {stage_in_name} {varyings_member_name} [[stage_in]]",
-                    separator()
-                )?;
+                args.push(EntryPointArgument {
+                    ty_name: stage_in_name,
+                    name: varyings_member_name.clone(),
+                    binding: " [[stage_in]]".to_string(),
+                    init: None,
+                });
             }
 
             let mut local_invocation_index = None;
@@ -7512,24 +7358,31 @@ template <typename A>
                 };
 
                 let resolved = options.resolve_local_binding(binding, in_mode)?;
-                write!(self.out, "{} {ty_name} {name}", separator())?;
-                resolved.try_fmt(&mut self.out)?;
-                writeln!(self.out)?;
+                let mut binding = String::new();
+                resolved.try_fmt(&mut binding)?;
+
+                args.push(EntryPointArgument {
+                    ty_name: format!("{ty_name}"),
+                    name: name.clone(),
+                    binding,
+                    init: None,
+                });
             }
 
             let need_workgroup_variables_initialization =
                 self.need_workgroup_variables_initialization(options, ep, module, fun_info);
 
-            if (need_workgroup_variables_initialization
-                || ep.stage == crate::ShaderStage::Task
-                || ep.stage == crate::ShaderStage::Mesh)
-                && local_invocation_index.is_none()
+            if local_invocation_index.is_none()
+                && (need_workgroup_variables_initialization
+                    || ep.stage == crate::ShaderStage::Task
+                    || ep.stage == crate::ShaderStage::Mesh)
             {
-                writeln!(
-                    self.out,
-                    "{} uint __local_invocation_index [[thread_index_in_threadgroup]]",
-                    separator()
-                )?;
+                args.push(EntryPointArgument {
+                    ty_name: "uint".to_string(),
+                    name: "__local_invocation_index".to_string(),
+                    binding: " [[thread_index_in_threadgroup]]".to_string(),
+                    init: None,
+                });
             }
 
             // Those global variables used by this entry point and its callees
@@ -7694,20 +7547,25 @@ template <typename A>
                         };
 
                         for i in 0..3 {
-                            write!(self.out, "{} ", separator())?;
-
                             let plane_name = &self.names[&NameKey::ExternalTextureGlobalVariable(
                                 handle,
                                 ExternalTextureNameKey::Plane(i),
                             )];
-                            write!(
-                              self.out,
-                              "{NAMESPACE}::texture2d<float, {NAMESPACE}::access::sample> {plane_name}"
-                            )?;
-                            if let Some(ref target) = target {
-                                write!(self.out, " [[texture({})]]", target.planes[i])?;
-                            }
-                            writeln!(self.out)?;
+                            let ty_name = format!(
+                                "{NAMESPACE}::texture2d<float, {NAMESPACE}::access::sample>"
+                            );
+                            let name = plane_name.clone();
+                            let binding = if let Some(ref target) = target {
+                                format!(" [[texture({})]]", target.planes[i])
+                            } else {
+                                String::new()
+                            };
+                            args.push(EntryPointArgument {
+                                ty_name,
+                                name,
+                                binding,
+                                init: None,
+                            });
                         }
                         let params_ty_name = &self.names
                             [&NameKey::Type(module.special_types.external_texture_params.unwrap())];
@@ -7715,11 +7573,18 @@ template <typename A>
                             handle,
                             ExternalTextureNameKey::Params,
                         )];
-                        write!(self.out, "{} ", separator())?;
-                        write!(self.out, "constant {params_ty_name}& {params_name}")?;
-                        if let Some(ref target) = target {
-                            write!(self.out, " [[buffer({})]]", target.params)?;
-                        }
+                        let binding = if let Some(ref target) = target {
+                            format!(" [[buffer({})]]", target.params)
+                        } else {
+                            String::new()
+                        };
+
+                        args.push(EntryPointArgument {
+                            ty_name: format!("constant {params_ty_name}&"),
+                            name: params_name.clone(),
+                            binding,
+                            init: None,
+                        });
                     }
                     _ => {
                         if var.space == crate::AddressSpace::WorkGroup
@@ -7734,64 +7599,39 @@ template <typename A>
                             usage,
                             reference: true,
                         };
-                        write!(self.out, "{} ", separator())?;
-                        tyvar.try_fmt(&mut self.out)?;
+                        let (ty_name, name) = tyvar.to_parts()?;
+                        let mut binding = String::new();
                         if let Some(resolved) = resolved {
-                            resolved.try_fmt(&mut self.out)?;
+                            resolved.try_fmt(&mut binding)?;
                         }
-                        if let Some(value) = var.init {
-                            write!(self.out, " = ")?;
-                            self.put_const_expression(
-                                value,
-                                module,
-                                mod_info,
-                                &module.global_expressions,
-                            )?;
-                        }
+                        args.push(EntryPointArgument {
+                            ty_name,
+                            name,
+                            binding,
+                            init: var.init,
+                        });
                     }
                 }
-                writeln!(self.out)?;
-            }
-
-            let mut mesh_out_name = None;
-            let mut task_grid_name = None;
-            let mut mesh_variable_name = None;
-            if let Some(ref info) = ep.mesh_info {
-                let mesh_name = self.namer.call("meshOutput");
-                let topology_name = match info.topology {
-                    crate::MeshOutputTopology::Points => "point",
-                    crate::MeshOutputTopology::Lines => "line",
-                    crate::MeshOutputTopology::Triangles => "triangle",
-                };
-                let vert_type = out_vertex_name.as_deref().unwrap();
-                let prim_type = out_primitive_name.as_deref().unwrap();
-                let num_verts = info.max_vertices;
-                let num_prims = info.max_primitives;
-                writeln!(self.out, "{} {NAMESPACE}::mesh<{vert_type}, {prim_type}, {num_verts}, {num_prims}, metal::topology::{topology_name}> {mesh_name}", separator())?;
-                mesh_out_name = Some(mesh_name);
-                mesh_variable_name = Some(
-                    self.names
-                        [&NameKey::GlobalVariable(ep.mesh_info.as_ref().unwrap().output_variable)]
-                        .clone(),
-                );
-            } else if ep.stage == crate::ShaderStage::Task {
-                let grid_name = self.namer.call("nagaMeshGrid");
-                writeln!(
-                    self.out,
-                    "{} {NAMESPACE}::mesh_grid_properties {grid_name}",
-                    separator()
-                )?;
-                task_grid_name = Some(grid_name);
             }
 
             if do_vertex_pulling {
                 if needs_vertex_id && v_existing_id.is_none() {
                     // Write the [[vertex_id]] argument.
-                    writeln!(self.out, "{} uint {v_id} [[vertex_id]]", separator())?;
+                    args.push(EntryPointArgument {
+                        ty_name: "uint".to_string(),
+                        name: v_id.clone(),
+                        binding: " [[vertex_id]]".to_string(),
+                        init: None,
+                    });
                 }
 
                 if needs_instance_id && i_existing_id.is_none() {
-                    writeln!(self.out, "{} uint {i_id} [[instance_id]]", separator())?;
+                    args.push(EntryPointArgument {
+                        ty_name: "uint".to_string(),
+                        name: i_id.clone(),
+                        binding: " [[instance_id]]".to_string(),
+                        init: None,
+                    });
                 }
 
                 // Iterate vbm_resolved, output one argument for every vertex buffer,
@@ -7800,11 +7640,12 @@ template <typename A>
                     let id = &vbm.id;
                     let ty_name = &vbm.ty_name;
                     let param_name = &vbm.param_name;
-                    writeln!(
-                        self.out,
-                        "{} const device {ty_name}* {param_name} [[buffer({id})]]",
-                        separator()
-                    )?;
+                    args.push(EntryPointArgument {
+                        ty_name: format!("const device {ty_name}*"),
+                        name: param_name.clone(),
+                        binding: format!(" [[buffer({id})]]"),
+                        init: None,
+                    });
                 }
             }
 
@@ -7813,13 +7654,62 @@ template <typename A>
             if needs_buffer_sizes {
                 // this is checked earlier
                 let resolved = options.resolve_sizes_buffer(ep).unwrap();
-                write!(
-                    self.out,
-                    "{} constant _mslBufferSizes& _buffer_sizes",
-                    separator()
-                )?;
-                resolved.try_fmt(&mut self.out)?;
+                let mut binding = String::new();
+                resolved.try_fmt(&mut binding)?;
+                args.push(EntryPointArgument {
+                    ty_name: "constant _mslBufferSizes&".to_string(),
+                    name: "_buffer_sizes".to_string(),
+                    binding,
+                    init: None,
+                });
+            }
+
+            let mut is_first_arg = true;
+            for arg in &args {
+                if is_first_arg {
+                    write!(self.out, "  ")?;
+                } else {
+                    write!(self.out, ", ")?;
+                }
+                is_first_arg = false;
+                write!(self.out, "{} {}", arg.ty_name, arg.name)?;
+                if !is_wrapped {
+                    write!(self.out, "{}", arg.binding)?;
+                    if let Some(init) = arg.init {
+                        write!(self.out, " = ")?;
+                        self.put_const_expression(
+                            init,
+                            module,
+                            mod_info,
+                            &module.global_expressions,
+                        )?;
+                    }
+                }
                 writeln!(self.out)?;
+            }
+            if ep.stage == crate::ShaderStage::Mesh {
+                for (handle, var) in module.global_variables.iter() {
+                    if var.space != crate::AddressSpace::WorkGroup || fun_info[handle].is_empty() {
+                        continue;
+                    }
+                    if is_first_arg {
+                        write!(self.out, "  ")?;
+                    } else {
+                        write!(self.out, ", ")?;
+                    }
+                    let ty_context = TypeContext {
+                        handle: module.global_variables[handle].ty,
+                        gctx: module.to_ctx(),
+                        names: &self.names,
+                        access: crate::StorageAccess::empty(),
+                        first_time: false,
+                    };
+                    writeln!(
+                        self.out,
+                        "threadgroup {ty_context}& {}",
+                        self.names[&NameKey::GlobalVariable(handle)]
+                    )?;
+                }
             }
 
             // end of the entry point argument list
@@ -8050,19 +7940,6 @@ template <typename A>
                         writeln!(self.out, "{l2}.params = {params_name},")?;
                         writeln!(self.out, "{l1}}};")?;
                     }
-                } else if var.space == crate::AddressSpace::WorkGroup
-                    && ep.stage == crate::ShaderStage::Mesh
-                {
-                    let tyvar = TypedGlobalVariable {
-                        module,
-                        names: &self.names,
-                        handle,
-                        usage,
-                        reference: false,
-                    };
-                    write!(self.out, "{}", back::INDENT)?;
-                    tyvar.try_fmt(&mut self.out)?;
-                    writeln!(self.out, ";")?;
                 }
             }
 
@@ -8154,28 +8031,11 @@ template <typename A>
                     pipeline_options,
                     force_loop_bounding: options.force_loop_bounding,
                 },
-                result_struct: Some(&stage_out_name),
-                mesh: if mesh_out_name.is_some() {
-                    Some(MeshShaderContext {
-                        mesh_variable_name: mesh_variable_name.as_deref().unwrap(),
-                        mesh_out_name: mesh_out_name.as_deref().unwrap(),
-                        vertex_type_name: out_vertex_name.as_deref().unwrap(),
-                        primitive_type_name: out_primitive_name.as_deref().unwrap(),
-                        vertex_member_names: &vertex_member_names,
-                        primitive_member_names: &primitive_member_names,
-                        workgroup_size: ep.workgroup_size,
-                        vert_type: ep.mesh_info.as_ref().unwrap().vertex_output_type,
-                        prim_type: ep.mesh_info.as_ref().unwrap().primitive_output_type,
-                        out_type: module.global_variables
-                            [ep.mesh_info.as_ref().unwrap().output_variable]
-                            .ty,
-                        topology: ep.mesh_info.as_ref().unwrap().topology,
-                    })
-                } else {
+                result_struct: if ep.stage == crate::ShaderStage::Task {
                     None
+                } else {
+                    Some(&stage_out_name)
                 },
-                task_grid_name: task_grid_name.as_deref(),
-                local_invocation_index_name: local_invocation_index,
             };
 
             // Finally, declare all the local variables that we need
@@ -8188,12 +8048,33 @@ template <typename A>
                 writeln!(self.out)?;
             }
             self.named_expressions.clear();
+
+            if is_wrapped {
+                self.write_wrapper_function(NestedFunctionInfo {
+                    ep,
+                    module,
+                    mod_info,
+                    fun_info,
+                    args,
+                    local_invocation_index,
+                    nested_name: &nested_fun_name,
+                    outer_name: &fun_name,
+                    out_vertex_ty_name: out_vertex_name.as_deref(),
+                    out_primitive_ty_name: out_primitive_name.as_deref(),
+                    out_vertex_member_names: &vertex_member_names,
+                    out_primitive_member_names: &primitive_member_names,
+                })?;
+            }
         }
 
         Ok(info)
     }
 
-    fn write_barrier(&mut self, flags: crate::Barrier, level: back::Level) -> BackendResult {
+    pub(super) fn write_barrier(
+        &mut self,
+        flags: crate::Barrier,
+        level: back::Level,
+    ) -> BackendResult {
         // Note: OR-ring bitflags requires `__HAVE_MEMFLAG_OPERATORS__`,
         // so we try to avoid it here.
         if flags.is_empty() {
@@ -8321,7 +8202,7 @@ mod workgroup_mem_init {
                 })
         }
 
-        pub(super) fn write_workgroup_variables_initialization(
+        pub(in super::super) fn write_workgroup_variables_initialization(
             &mut self,
             module: &crate::Module,
             module_info: &valid::ModuleInfo,

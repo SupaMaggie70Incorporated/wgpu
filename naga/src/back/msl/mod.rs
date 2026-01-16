@@ -823,6 +823,23 @@ impl ResolvedInterpolation {
     }
 }
 
+struct EntryPointArgument {
+    ty_name: String,
+    name: String,
+    binding: String,
+    init: Option<Handle<crate::Expression>>,
+}
+
+/// Shorthand result used internally by the backend
+type BackendResult = Result<(), Error>;
+
+const NAMESPACE: &str = "metal";
+
+// The name of the array member of the Metal struct types we generate to
+// represent Naga `Array` types. See the comments in `Writer::write_type_defs`
+// for details.
+const WRAPPED_ARRAY_FIELD: &str = "inner";
+
 /// Information about a translated module that is required
 /// for the use of the result.
 pub struct TranslationInfo {
