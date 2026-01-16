@@ -16,6 +16,7 @@ use crate::{
 };
 
 pub(super) struct NestedFunctionInfo<'a> {
+    pub(super) options: &'a super::Options,
     pub(super) ep: &'a crate::EntryPoint,
     pub(super) module: &'a crate::Module,
     pub(super) mod_info: &'a crate::valid::ModuleInfo,
@@ -32,8 +33,8 @@ pub(super) struct NestedFunctionInfo<'a> {
 
 impl<W: core::fmt::Write> super::Writer<W> {
     pub(super) fn write_wrapper_function(&mut self, info: NestedFunctionInfo<'_>) -> BackendResult {
-        // TODO: fix workgroup memory writing
         let NestedFunctionInfo {
+            options,
             ep,
             module,
             mod_info,
@@ -157,19 +158,33 @@ impl<W: core::fmt::Write> super::Writer<W> {
 
         if let Some(grid_name) = task_grid_name {
             let result_name = result_name.unwrap();
-            // TODO: validate this size
             writeln!(self.out, "{indent}if ({local_invocation_index} == 0u) {{")?;
             {
-                let level = back::Level(2);
+                let level2 = back::Level(2);
+                if let Some(limits) = options.task_runtime_limits {
+                    let level3 = back::Level(3);
+                    let max_per_dim = limits.max_mesh_workgroups_per_dim;
+                    let max_total = limits.max_mesh_workgroups_total;
+                    let u64_name = format!("{NAMESPACE}::uint64_t");
+                    writeln!(self.out, "{level2}if (")?;
+
+                    writeln!(self.out, "{level3}{result_name}.x > {max_per_dim} ||")?;
+                    writeln!(self.out, "{level3}{result_name}.y > {max_per_dim} ||")?;
+                    writeln!(self.out, "{level3}{result_name}.z > {max_per_dim} ||")?;
+                    writeln!(self.out, "{level3}(({u64_name}){result_name}.x * ({u64_name}){result_name}.y * ({u64_name}){result_name}.z) > {max_total}ull")?;
+
+                    writeln!(self.out, "{level2}) {{")?;
+                    writeln!(self.out, "{level3}{result_name} = {NAMESPACE}::uint3(0u);")?;
+                    writeln!(self.out, "{level2}}}")?;
+                }
                 writeln!(
                     self.out,
-                    "{level}{grid_name}.set_threadgroups_per_grid({result_name});"
+                    "{level2}{grid_name}.set_threadgroups_per_grid({result_name});"
                 )?;
             }
             writeln!(self.out, "{indent}}}")?;
             writeln!(self.out, "{indent}return;")?;
         } else if let Some(ref info) = ep.mesh_info {
-            // TODO: min this with the limits
             let out_ty = module.global_variables[info.output_variable].ty;
             let mesh_out_name = mesh_out_name.unwrap();
             let mesh_variable_name = mesh_variable_name.unwrap();
@@ -189,8 +204,16 @@ impl<W: core::fmt::Write> super::Writer<W> {
                     self.names[&NameKey::StructMember(out_ty, member_idx)]
                 )
             };
-            let vert_count = get_out_value(crate::BuiltIn::VertexCount);
-            let prim_count = get_out_value(crate::BuiltIn::PrimitiveCount);
+            let vert_count = format!(
+                "{NAMESPACE}::min({}, {}u)",
+                get_out_value(crate::BuiltIn::VertexCount),
+                info.max_vertices
+            );
+            let prim_count = format!(
+                "{NAMESPACE}::min({}, {}u)",
+                get_out_value(crate::BuiltIn::PrimitiveCount),
+                info.max_primitives
+            );
             let workgroup_size: u32 = ep.workgroup_size.iter().product();
             {
                 let vert_index = self.namer.call("vertexIndex");

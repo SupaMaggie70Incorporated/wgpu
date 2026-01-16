@@ -8051,6 +8051,7 @@ template <typename A>
 
             if is_wrapped {
                 self.write_wrapper_function(NestedFunctionInfo {
+                    options,
                     ep,
                     module,
                     mod_info,

@@ -78,6 +78,14 @@ metal::uint3 _ts_main(
     uint3 nagaGridSize = _ts_main(__local_invocation_index, taskPayload, workgroupData);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
     if (__local_invocation_index == 0u) {
+        if (
+            nagaGridSize.x > 256 ||
+            nagaGridSize.y > 256 ||
+            nagaGridSize.z > 256 ||
+            ((metal::uint64_t)nagaGridSize.x * (metal::uint64_t)nagaGridSize.y * (metal::uint64_t)nagaGridSize.z) > 1024ull
+        ) {
+            nagaGridSize = metal::uint3(0u);
+        }
         nagaMeshGrid.set_threadgroups_per_grid(nagaGridSize);
     }
     return;
@@ -111,6 +119,14 @@ metal::uint3 _ts_divergent(
     uint3 nagaGridSize_1 = _ts_divergent(thread_id, __local_invocation_index, taskPayload);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
     if (__local_invocation_index == 0u) {
+        if (
+            nagaGridSize_1.x > 256 ||
+            nagaGridSize_1.y > 256 ||
+            nagaGridSize_1.z > 256 ||
+            ((metal::uint64_t)nagaGridSize_1.x * (metal::uint64_t)nagaGridSize_1.y * (metal::uint64_t)nagaGridSize_1.z) > 1024ull
+        ) {
+            nagaGridSize_1 = metal::uint3(0u);
+        }
         nagaMeshGrid_1.set_threadgroups_per_grid(nagaGridSize_1);
     }
     return;
@@ -163,13 +179,13 @@ void _ms_main(
     threadgroup MeshOutput mesh_output;
     _ms_main(__local_invocation_index, taskPayload, workgroupData, mesh_output);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
-    for(uint vertexIndex = __local_invocation_index; vertexIndex < mesh_output.vertex_count; vertexIndex += 1) {
+    for(uint vertexIndex = __local_invocation_index; vertexIndex < metal::min(mesh_output.vertex_count, 3u); vertexIndex += 1) {
         ms_mainVertexOutput vertex_1;
         vertex_1.position = mesh_output.vertices.inner[vertexIndex].position;
         vertex_1.color = mesh_output.vertices.inner[vertexIndex].color;
         meshOutput.set_vertex(vertexIndex, vertex_1);
     }
-    for(uint primitiveIndex = __local_invocation_index; primitiveIndex < mesh_output.primitive_count; primitiveIndex += 1) {
+    for(uint primitiveIndex = __local_invocation_index; primitiveIndex < metal::min(mesh_output.primitive_count, 1u); primitiveIndex += 1) {
         ms_mainPrimitiveOutput primitive_1;
         meshOutput.set_index(primitiveIndex * 3 + 0, mesh_output.primitives.inner[primitiveIndex].indices.x);
         meshOutput.set_index(primitiveIndex * 3 + 1, mesh_output.primitives.inner[primitiveIndex].indices.y);
@@ -179,7 +195,7 @@ void _ms_main(
         meshOutput.set_primitive(primitiveIndex, primitive_1);
     }
     if (__local_invocation_index == 0u) {
-        meshOutput.set_primitive_count(mesh_output.primitive_count);
+        meshOutput.set_primitive_count(metal::min(mesh_output.primitive_count, 1u));
     }
 }
 
@@ -224,13 +240,13 @@ void _ms_no_ts(
     threadgroup MeshOutput mesh_output;
     _ms_no_ts(__local_invocation_index, workgroupData, mesh_output);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
-    for(uint vertexIndex_1 = __local_invocation_index; vertexIndex_1 < mesh_output.vertex_count; vertexIndex_1 += 1) {
+    for(uint vertexIndex_1 = __local_invocation_index; vertexIndex_1 < metal::min(mesh_output.vertex_count, 3u); vertexIndex_1 += 1) {
         ms_no_tsVertexOutput vertex_2;
         vertex_2.position = mesh_output.vertices.inner[vertexIndex_1].position;
         vertex_2.color = mesh_output.vertices.inner[vertexIndex_1].color;
         meshOutput_1.set_vertex(vertexIndex_1, vertex_2);
     }
-    for(uint primitiveIndex_1 = __local_invocation_index; primitiveIndex_1 < mesh_output.primitive_count; primitiveIndex_1 += 1) {
+    for(uint primitiveIndex_1 = __local_invocation_index; primitiveIndex_1 < metal::min(mesh_output.primitive_count, 1u); primitiveIndex_1 += 1) {
         ms_no_tsPrimitiveOutput primitive_2;
         meshOutput_1.set_index(primitiveIndex_1 * 3 + 0, mesh_output.primitives.inner[primitiveIndex_1].indices.x);
         meshOutput_1.set_index(primitiveIndex_1 * 3 + 1, mesh_output.primitives.inner[primitiveIndex_1].indices.y);
@@ -240,7 +256,7 @@ void _ms_no_ts(
         meshOutput_1.set_primitive(primitiveIndex_1, primitive_2);
     }
     if (__local_invocation_index == 0u) {
-        meshOutput_1.set_primitive_count(mesh_output.primitive_count);
+        meshOutput_1.set_primitive_count(metal::min(mesh_output.primitive_count, 1u));
     }
 }
 
@@ -293,13 +309,13 @@ void _ms_divergent(
     threadgroup MeshOutput mesh_output;
     _ms_divergent(thread_id_1, __local_invocation_index, workgroupData, mesh_output);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
-    for(uint vertexIndex_2 = __local_invocation_index; vertexIndex_2 < mesh_output.vertex_count; vertexIndex_2 += 2) {
+    for(uint vertexIndex_2 = __local_invocation_index; vertexIndex_2 < metal::min(mesh_output.vertex_count, 3u); vertexIndex_2 += 2) {
         ms_divergentVertexOutput vertex_3;
         vertex_3.position = mesh_output.vertices.inner[vertexIndex_2].position;
         vertex_3.color = mesh_output.vertices.inner[vertexIndex_2].color;
         meshOutput_2.set_vertex(vertexIndex_2, vertex_3);
     }
-    for(uint primitiveIndex_2 = __local_invocation_index; primitiveIndex_2 < mesh_output.primitive_count; primitiveIndex_2 += 2) {
+    for(uint primitiveIndex_2 = __local_invocation_index; primitiveIndex_2 < metal::min(mesh_output.primitive_count, 1u); primitiveIndex_2 += 2) {
         ms_divergentPrimitiveOutput primitive_3;
         meshOutput_2.set_index(primitiveIndex_2 * 3 + 0, mesh_output.primitives.inner[primitiveIndex_2].indices.x);
         meshOutput_2.set_index(primitiveIndex_2 * 3 + 1, mesh_output.primitives.inner[primitiveIndex_2].indices.y);
@@ -309,7 +325,7 @@ void _ms_divergent(
         meshOutput_2.set_primitive(primitiveIndex_2, primitive_3);
     }
     if (__local_invocation_index == 0u) {
-        meshOutput_2.set_primitive_count(mesh_output.primitive_count);
+        meshOutput_2.set_primitive_count(metal::min(mesh_output.primitive_count, 1u));
     }
 }
 
