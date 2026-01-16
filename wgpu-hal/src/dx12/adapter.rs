@@ -849,8 +849,11 @@ impl super::Adapter {
                     max_non_sampler_bindings: 1_000_000,
 
                     // Source: https://microsoft.github.io/DirectX-Specs/d3d/MeshShader.html#dispatchmesh-api
+                    // That gives a value of 2<<22. However, our HLSL checks using 64 bit integers.
+                    // It would be possible to choose a value around 2<22 for each dim, and then it would overflow
+                    // the u64 that is used for checking, bypassing our total size validation
                     max_task_mesh_workgroup_total_count: if mesh_shader_supported {
-                        2u32.pow(22)
+                        2u32.pow(21)
                     } else {
                         0
                     },
