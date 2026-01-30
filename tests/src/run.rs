@@ -13,6 +13,7 @@ use crate::{
 };
 
 /// Parameters and resources handed to the test function.
+#[derive(Hash)]
 pub struct TestingContext {
     pub instance: Instance,
     pub adapter: Adapter,
