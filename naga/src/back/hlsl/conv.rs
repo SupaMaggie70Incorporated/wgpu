@@ -161,7 +161,7 @@ impl crate::BuiltIn {
             Self::FragDepth => "SV_Depth",
             Self::FrontFacing => "SV_IsFrontFace",
             Self::PrimitiveIndex => "SV_PrimitiveID",
-            Self::Barycentric => "SV_Barycentrics",
+            Self::Barycentric { .. } => "SV_Barycentrics",
             Self::SampleIndex => "SV_SampleIndex",
             Self::SampleMask => "SV_Coverage",
             // compute
@@ -194,6 +194,19 @@ impl crate::BuiltIn {
             | Self::PointIndex
             | Self::LineIndices
             | Self::TriangleIndices => return Ok(None),
+            Self::RayInvocationId
+            | Self::NumRayInvocations
+            | Self::InstanceCustomData
+            | Self::GeometryIndex
+            | Self::WorldRayOrigin
+            | Self::WorldRayDirection
+            | Self::ObjectRayOrigin
+            | Self::ObjectRayDirection
+            | Self::RayTmin
+            | Self::RayTCurrentMax
+            | Self::ObjectToWorld
+            | Self::WorldToObject
+            | Self::HitKind => unreachable!(),
         }))
     }
 }
@@ -207,6 +220,7 @@ impl crate::Interpolation {
             Self::Perspective => None,
             Self::Linear => Some("noperspective"),
             Self::Flat => Some("nointerpolation"),
+            Self::PerVertex => unreachable!(),
         }
     }
 }

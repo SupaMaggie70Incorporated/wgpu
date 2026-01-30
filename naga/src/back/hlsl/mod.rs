@@ -246,7 +246,6 @@ where
 pub type BindingMap = alloc::collections::BTreeMap<crate::ResourceBinding, BindTarget>;
 
 /// A HLSL shader model version.
-#[allow(non_snake_case, non_camel_case_types)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
@@ -288,6 +287,7 @@ impl crate::ShaderStage {
             Self::Compute => "cs",
             Self::Task => "as",
             Self::Mesh => "ms",
+            Self::RayGeneration | Self::AnyHit | Self::ClosestHit | Self::Miss => "lib",
         }
     }
 }
@@ -545,6 +545,9 @@ pub struct Options {
     pub force_loop_bounding: bool,
 
     pub task_runtime_limits: Option<TaskRuntimeLimits>,
+    /// if set, ray queries will get a variable to track their state to prevent
+    /// misuse.
+    pub ray_query_initialization_tracking: bool,
 }
 
 impl Default for Options {
@@ -563,6 +566,7 @@ impl Default for Options {
             restrict_indexing: true,
             force_loop_bounding: true,
             task_runtime_limits: None,
+            ray_query_initialization_tracking: true,
         }
     }
 }
