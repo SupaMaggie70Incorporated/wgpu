@@ -1603,10 +1603,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             write!(self.out, "{header}")?;
         }
 
-        if func.result.is_none() {
-            write!(self.out, "void")?;
-        } else {
-            let result = func.result.as_ref().unwrap();
+        if let Some(ref result) = func.result {
             // Write typedef if return type is an array
             let array_return_type = match module.types[result.ty].inner {
                 TypeInner::Array { base, size, .. } => {
@@ -1648,6 +1645,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     }
                 }
             }
+        } else {
+            write!(self.out, "void")?;
         }
 
         let nested_name = if nested {
