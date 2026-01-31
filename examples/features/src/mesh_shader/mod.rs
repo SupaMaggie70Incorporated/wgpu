@@ -35,12 +35,47 @@ fn compile_hlsl(device: &wgpu::Device, entry: &str, stage_str: &str) -> wgpu::Sh
     std::fs::remove_file(out_path).unwrap();
     unsafe {
         device.create_shader_module_passthrough(wgpu::ShaderModuleDescriptorPassthrough {
-            entry_point: entry.to_owned(),
             label: None,
             num_workgroups: (1, 1, 1),
             dxil: Some(std::borrow::Cow::Owned(file)),
             ..Default::default()
         })
+    }
+}
+
+struct Shaders {
+    ts: wgpu::ShaderModule,
+    ms: wgpu::ShaderModule,
+    fs: wgpu::ShaderModule,
+    ts_name: &'static str,
+    ms_name: &'static str,
+    fs_name: &'static str,
+}
+
+fn get_shaders(device: &wgpu::Device, backend: wgpu::Backend) -> Shaders {
+    // In the case that the platform does support mesh shaders, the dummy
+    // shader is used to avoid requiring EXPERIMENTAL_PASSTHROUGH_SHADERS.
+    match backend {
+        wgpu::Backend::Vulkan | wgpu::Backend::Metal => {
+            let compiled = compile_wgsl(device);
+            Shaders {
+                ts: compiled.clone(),
+                ms: compiled.clone(),
+                fs: compiled.clone(),
+                ts_name: "ts_main",
+                ms_name: "ms_main",
+                fs_name: "fs_main",
+            }
+        }
+        wgpu::Backend::Dx12 => Shaders {
+            ts: compile_hlsl(device, "Task", "as"),
+            ms: compile_hlsl(device, "Mesh", "ms"),
+            fs: compile_hlsl(device, "Frag", "ps"),
+            ts_name: "main",
+            ms_name: "main",
+            fs_name: "main",
+        },
+        _ => unreachable!(),
     }
 }
 
@@ -54,25 +89,14 @@ impl crate::framework::Example for Example {
         device: &wgpu::Device,
         _queue: &wgpu::Queue,
     ) -> Self {
-        let (ts, ms, fs, ts_name, ms_name, fs_name) = match adapter.get_info().backend {
-            wgpu::Backend::Vulkan | wgpu::Backend::Metal => (
-                compile_wgsl(device),
-                compile_wgsl(device),
-                compile_wgsl(device),
-                "ts_main",
-                "ms_main",
-                "fs_main",
-            ),
-            wgpu::Backend::Dx12 => (
-                compile_hlsl(device, "Task", "as"),
-                compile_hlsl(device, "Mesh", "ms"),
-                compile_hlsl(device, "Frag", "ps"),
-                "main",
-                "main",
-                "main",
-            ),
-            _ => panic!("Example can currently only run on vulkan, dx12 or metal"),
-        };
+        let Shaders {
+            ts,
+            ms,
+            fs,
+            ts_name,
+            ms_name,
+            fs_name,
+        } = get_shaders(device, adapter.get_info().backend);
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[],
