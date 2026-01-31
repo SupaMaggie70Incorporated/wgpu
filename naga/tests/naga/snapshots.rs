@@ -161,6 +161,7 @@ fn check_targets(input: &Input, module: &mut naga::Module, source_code: Option<&
             &params.hlsl,
             &params.pipeline_constants,
             frag_ep,
+            &shared_info,
         );
     }
 
@@ -310,6 +311,7 @@ fn write_output_hlsl(
     options: &naga::back::hlsl::Options,
     pipeline_constants: &naga::back::PipelineConstants,
     frag_ep: Option<naga::back::hlsl::FragmentEntryPoint>,
+    shared_info: &WriterSharedOptions,
 ) {
     use naga::back::hlsl;
 
@@ -319,9 +321,13 @@ fn write_output_hlsl(
         naga::back::pipeline_constants::process_overrides(module, info, None, pipeline_constants)
             .expect("override evaluation failed");
 
+    let mut options = options.clone();
+    options.mesh_shader_primitive_indices_clamp = shared_info.mesh_output_validation;
+    options.task_runtime_limits = shared_info.task_limits;
+
     let mut buffer = String::new();
     let pipeline_options = Default::default();
-    let mut writer = hlsl::Writer::new(&mut buffer, options, &pipeline_options);
+    let mut writer = hlsl::Writer::new(&mut buffer, &options, &pipeline_options);
     let reflection_info = writer
         .write(&module, &info, frag_ep.as_ref())
         .expect("HLSL write failed");

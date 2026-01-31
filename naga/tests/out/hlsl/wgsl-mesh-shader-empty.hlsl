@@ -39,6 +39,15 @@ void ts_main(uint __local_invocation_index : SV_GroupIndex) {
     GroupMemoryBarrierWithGroupSync();
     uint3 gridSize = _ts_main();
     GroupMemoryBarrierWithGroupSync();
+    if (
+        gridSize.x > 256 ||
+        gridSize.y > 256 ||
+        gridSize.z > 256 ||
+        ((uint64_t)gridSize.x) * ((uint64_t)gridSize.y) > 0xffffffffull ||
+        ((uint64_t)gridSize.x) * ((uint64_t)gridSize.y) * ((uint64_t)gridSize.z) > 1024
+    ) {
+        gridSize = uint3(0, 0, 0);
+    }
     DispatchMesh(gridSize.x, gridSize.y, gridSize.z, taskPayload);
 }
 
