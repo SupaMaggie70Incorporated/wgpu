@@ -1512,6 +1512,7 @@ impl crate::Device for super::Device {
                     max_mesh_workgroups_per_dim: self.limits.max_task_mesh_workgroups_per_dimension,
                     max_mesh_workgroups_total: self.limits.max_task_mesh_workgroup_total_count,
                 }),
+                mesh_shader_primitive_indices_clamp: true,
                 ray_query_initialization_tracking: true,
             },
         })
