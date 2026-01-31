@@ -208,6 +208,10 @@ impl super::Device {
                                 .limits
                                 .max_task_mesh_workgroup_total_count,
                         }),
+                    mesh_shader_primitive_indices_clamp: stage
+                        .module
+                        .runtime_checks
+                        .mesh_shader_primitive_indices_clamp,
                 };
 
                 let pipeline_options = naga::back::msl::PipelineOptions {

@@ -313,6 +313,8 @@ pub struct Options {
     /// Whether and how checks in the task shader should verify the dispatched
     /// mesh grid size.
     pub task_runtime_limits: Option<TaskRuntimeLimits>,
+    /// Whether to validate the output of a mesh shader workgroup.
+    pub mesh_shader_primitive_indices_clamp: bool,
 }
 
 impl Default for Options {
@@ -327,6 +329,7 @@ impl Default for Options {
             zero_initialize_workgroup_memory: true,
             force_loop_bounding: true,
             task_runtime_limits: None,
+            mesh_shader_primitive_indices_clamp: true,
         }
     }
 }
