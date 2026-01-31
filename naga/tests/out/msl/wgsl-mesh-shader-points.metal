@@ -46,6 +46,16 @@ metal::uint3 _ts_main(
     uint3 nagaGridSize = _ts_main(__local_invocation_index, taskPayload);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
     if (__local_invocation_index == 0u) {
+        if (
+            nagaGridSize.x > 256u ||
+            nagaGridSize.y > 256u ||
+            nagaGridSize.z > 256u ||
+            metal::mulhi(nagaGridSize.x, nagaGridSize.y) != 0u ||
+            metal::mulhi(nagaGridSize.x * nagaGridSize.y, nagaGridSize.z) != 0u ||
+            (nagaGridSize.x * nagaGridSize.y * nagaGridSize.z) > 1024u
+        ) {
+            nagaGridSize = metal::uint3(0u);
+        }
         nagaMeshGrid.set_threadgroups_per_grid(nagaGridSize);
     }
     return;
