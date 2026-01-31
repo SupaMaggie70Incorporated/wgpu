@@ -291,7 +291,8 @@ impl super::Device {
         let needs_temp_options = stage.zero_initialize_workgroup_memory
             != layout.naga_options.zero_initialize_workgroup_memory
             || stage.module.runtime_checks.bounds_checks != layout.naga_options.restrict_indexing
-            || !stage.module.runtime_checks.task_shader_dispatch_tracking
+            || !runtime_checks.task_shader_dispatch_tracking
+            || !runtime_checks.mesh_shader_primitive_indices_clamp
             || stage.module.runtime_checks.force_loop_bounding
                 != layout.naga_options.force_loop_bounding
             || stage
@@ -308,6 +309,7 @@ impl super::Device {
             if !stage.module.runtime_checks.task_shader_dispatch_tracking {
                 temp_options.task_runtime_limits = None;
             }
+            temp_options.mesh_shader_primitive_indices_clamp = mesh_shader_primitive_indices_clamp;
             temp_options.ray_query_initialization_tracking = stage
                 .module
                 .runtime_checks

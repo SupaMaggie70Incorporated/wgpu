@@ -390,7 +390,9 @@ fn convert_snapshots_wgsl() {
         // crlf will make the large split output different on different platform
         let source = source.replace('\r', "");
 
-        let params = input.read_parameters(DIR_IN);
+        let mut params = input.read_parameters(DIR_IN);
+        params.hlsl.mesh_shader_primitive_indices_clamp = params.mesh_output_validation;
+        params.hlsl.task_runtime_limits = params.task_limits;
 
         let mut frontend = naga::front::wgsl::Frontend::new_with_options((&params.wgsl_in).into());
         match frontend.parse(&source) {

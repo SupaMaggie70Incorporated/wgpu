@@ -545,6 +545,8 @@ pub struct Options {
     pub force_loop_bounding: bool,
 
     pub task_runtime_limits: Option<TaskRuntimeLimits>,
+
+    pub mesh_shader_primitive_indices_clamp: bool,
     /// if set, ray queries will get a variable to track their state to prevent
     /// misuse.
     pub ray_query_initialization_tracking: bool,
@@ -566,6 +568,7 @@ impl Default for Options {
             restrict_indexing: true,
             force_loop_bounding: true,
             task_runtime_limits: None,
+            mesh_shader_primitive_indices_clamp: true,
             ray_query_initialization_tracking: true,
         }
     }
