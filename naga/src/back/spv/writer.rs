@@ -96,7 +96,7 @@ impl Writer {
             ray_query_initialization_tracking: options.ray_query_initialization_tracking,
             use_storage_input_output_16: options.use_storage_input_output_16,
             void_type,
-            double_u32_ty_id: None,
+            tuple_of_u32s_ty_id: None,
             lookup_type: crate::FastHashMap::default(),
             lookup_function: crate::FastHashMap::default(),
             lookup_function_type: crate::FastHashMap::default(),
@@ -115,7 +115,7 @@ impl Writer {
                 options.use_storage_input_output_16,
             ),
             debug_printf: None,
-            task_runtime_limits: options.task_runtime_limits,
+            task_dispatch_limits: options.task_dispatch_limits,
             mesh_shader_primitive_indices_clamp: options.mesh_shader_primitive_indices_clamp,
         })
     }
@@ -135,7 +135,7 @@ impl Writer {
         self.binding_map = options.binding_map.clone();
         self.io_f16_polyfills =
             super::f16_polyfill::F16IoPolyfill::new(options.use_storage_input_output_16);
-        self.task_runtime_limits = options.task_runtime_limits;
+        self.task_dispatch_limits = options.task_dispatch_limits;
         self.mesh_shader_primitive_indices_clamp = options.mesh_shader_primitive_indices_clamp;
         Ok(())
     }
@@ -175,13 +175,13 @@ impl Writer {
             capabilities_available: take(&mut self.capabilities_available),
             fake_missing_bindings: self.fake_missing_bindings,
             binding_map: take(&mut self.binding_map),
-            task_runtime_limits: self.task_runtime_limits,
+            task_dispatch_limits: self.task_dispatch_limits,
             mesh_shader_primitive_indices_clamp: self.mesh_shader_primitive_indices_clamp,
 
             // Initialized afresh:
             id_gen,
             void_type,
-            double_u32_ty_id: None,
+            tuple_of_u32s_ty_id: None,
             gl450_ext_inst_id,
 
             // Reclaimed:
@@ -434,15 +434,19 @@ impl Writer {
         })
     }
 
-    pub(super) fn get_double_u32_ty_id(&mut self) -> Word {
-        if let Some(val) = self.double_u32_ty_id {
+    /// Used for "mulhi" to get the upper bits of multiplication.
+    ///
+    /// More specifically, `OpUMulExtended` multiplies 2 numbers and returns the lower and upper bits of the result
+    /// as a user-defined struct type with 2 u32s. This defines that struct.
+    pub(super) fn get_tuple_of_u32s_ty_id(&mut self) -> Word {
+        if let Some(val) = self.tuple_of_u32s_ty_id {
             val
         } else {
             let id = self.id_gen.next();
             let u32_id = self.get_u32_type_id();
             let ins = Instruction::type_struct(id, &[u32_id, u32_id]);
             ins.to_words(&mut self.logical_layout.declarations);
-            self.double_u32_ty_id = Some(id);
+            self.tuple_of_u32s_ty_id = Some(id);
             id
         }
     }
@@ -3084,12 +3088,20 @@ impl Writer {
                     Bi::InstanceIndex => BuiltIn::InstanceIndex,
                     Bi::PointSize => BuiltIn::PointSize,
                     Bi::VertexIndex => BuiltIn::VertexIndex,
-                    Bi::DrawID => BuiltIn::DrawIndex,
+                    Bi::DrawIndex => {
+                        self.use_extension("SPV_KHR_shader_draw_parameters");
+                        self.require_any(
+                            "`draw_index built-in",
+                            &[spirv::Capability::DrawParameters],
+                        )?;
+                        BuiltIn::DrawIndex
+                    }
                     // fragment
                     Bi::FragDepth => BuiltIn::FragDepth,
                     Bi::PointCoord => BuiltIn::PointCoord,
                     Bi::FrontFacing => BuiltIn::FrontFacing,
                     Bi::PrimitiveIndex => {
+                        // Geometry shader capability is required for primitive index
                         self.require_any(
                             "`primitive_index` built-in",
                             &[spirv::Capability::Geometry],

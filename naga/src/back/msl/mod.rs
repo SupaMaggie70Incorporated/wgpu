@@ -75,7 +75,7 @@ use alloc::{
 };
 use core::fmt::{Error as FmtError, Write};
 
-use crate::{arena::Handle, back::TaskRuntimeLimits, ir, proc::index, valid::ModuleInfo};
+use crate::{arena::Handle, back::TaskDispatchLimits, ir, proc::index, valid::ModuleInfo};
 
 mod keywords;
 mod mesh_shader;
@@ -312,7 +312,7 @@ pub struct Options {
     pub force_loop_bounding: bool,
     /// Whether and how checks in the task shader should verify the dispatched
     /// mesh grid size.
-    pub task_runtime_limits: Option<TaskRuntimeLimits>,
+    pub task_dispatch_limits: Option<TaskDispatchLimits>,
     /// Whether to validate the output of a mesh shader workgroup.
     pub mesh_shader_primitive_indices_clamp: bool,
 }
@@ -328,7 +328,7 @@ impl Default for Options {
             bounds_check_policies: index::BoundsCheckPolicies::default(),
             zero_initialize_workgroup_memory: true,
             force_loop_bounding: true,
-            task_runtime_limits: None,
+            task_dispatch_limits: None,
             mesh_shader_primitive_indices_clamp: true,
         }
     }
@@ -733,7 +733,7 @@ impl ResolvedBinding {
                     Bi::SubgroupId => "simdgroup_index_in_threadgroup",
                     Bi::SubgroupSize => "threads_per_simdgroup",
                     Bi::SubgroupInvocationId => "thread_index_in_simdgroup",
-                    Bi::CullDistance | Bi::DrawID => {
+                    Bi::CullDistance | Bi::DrawIndex => {
                         return Err(Error::UnsupportedBuiltIn(built_in))
                     }
                     Bi::CullPrimitive => "primitive_culled",

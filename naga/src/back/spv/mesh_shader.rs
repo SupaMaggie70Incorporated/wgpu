@@ -880,7 +880,7 @@ impl super::Writer {
                 &[],
             ));
             self.write_control_barrier(crate::Barrier::WORK_GROUP, &mut block.body);
-            let final_value = if let Some(task_limits) = self.task_runtime_limits {
+            let final_value = if let Some(task_limits) = self.task_dispatch_limits {
                 let zero_u32 = self.get_constant_scalar(crate::Literal::U32(0));
                 let max_per_dim = self.get_constant_scalar(crate::Literal::U32(
                     task_limits.max_mesh_workgroups_per_dim,
@@ -888,7 +888,7 @@ impl super::Writer {
                 let max_total = self.get_constant_scalar(crate::Literal::U32(
                     task_limits.max_mesh_workgroups_total,
                 ));
-                let combined_struct_type = self.get_double_u32_ty_id(); // TODO
+                let combined_struct_type = self.get_tuple_of_u32s_ty_id();
                 let values = [self.id_gen.next(), self.id_gen.next(), self.id_gen.next()];
                 for (i, value) in values.into_iter().enumerate() {
                     block.body.push(Instruction::composite_extract(
