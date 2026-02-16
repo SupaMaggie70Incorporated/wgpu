@@ -141,6 +141,8 @@ pub struct PhysicalDeviceFeatures {
 
     /// Features provided by `VK_KHR_vulkan_memory_model`, promoted to Vulkan 1.2
     vulkan_memory_model: Option<vk::PhysicalDeviceVulkanMemoryModelFeaturesKHR<'static>>,
+
+    shader_draw_parameters: Option<vk::PhysicalDeviceShaderDrawParametersFeatures<'static>>,
 }
 
 impl PhysicalDeviceFeatures {
@@ -224,6 +226,9 @@ impl PhysicalDeviceFeatures {
             info = info.push_next(feature);
         }
         if let Some(ref mut feature) = self.vulkan_memory_model {
+            info = info.push_next(feature);
+        }
+        if let Some(ref mut feature) = self.shader_draw_parameters {
             info = info.push_next(feature);
         }
         info
@@ -602,6 +607,14 @@ impl PhysicalDeviceFeatures {
                 Some(
                     vk::PhysicalDeviceVulkanMemoryModelFeaturesKHR::default()
                         .vulkan_memory_model(needed),
+                )
+            } else {
+                None
+            },
+            shader_draw_parameters: if device_api_version >= vk::API_VERSION_1_1 {
+                Some(
+                    vk::PhysicalDeviceShaderDrawParametersFeatures::default()
+                        .shader_draw_parameters(true),
                 )
             } else {
                 None
@@ -1006,6 +1019,13 @@ impl PhysicalDeviceFeatures {
             !caps.cooperative_matrix_properties.is_empty(),
         );
 
+        features.set(
+            F::SHADER_DRAW_INDEX,
+            self.shader_draw_parameters
+                .is_some_and(|a| a.shader_draw_parameters != 0)
+                || caps.supports_extension(c"VK_KHR_shader_draw_parameters"),
+        );
+
         (features, dl_flags)
     }
 }
@@ -1146,6 +1166,10 @@ impl PhysicalDeviceProperties {
                 // - `VK_KHR_16bit_storage` requires `VK_KHR_storage_buffer_storage_class`, however
                 //   we require that one already.
                 extensions.push(khr::_16bit_storage::NAME);
+            }
+
+            if requested_features.contains(wgt::Features::SHADER_DRAW_INDEX) {
+                extensions.push(khr::shader_draw_parameters::NAME);
             }
         }
 
@@ -1829,6 +1853,13 @@ impl super::InstanceShared {
                 features2 = features2.push_next(next);
             }
 
+            if capabilities.device_api_version >= vk::API_VERSION_1_1 {
+                let next = features
+                    .shader_draw_parameters
+                    .insert(vk::PhysicalDeviceShaderDrawParametersFeatures::default());
+                features2 = features2.push_next(next);
+            }
+
             unsafe { get_device_properties.get_physical_device_features2(phd, &mut features2) };
             features2.features
         } else {
@@ -2359,6 +2390,10 @@ impl super::Adapter {
                 capabilities.push(spv::Capability::FragmentBarycentricKHR);
             }
 
+            if features.contains(wgt::Features::SHADER_DRAW_INDEX) {
+                capabilities.push(spv::Capability::DrawParameters);
+            }
+
             let mut flags = spv::WriterFlags::empty();
             flags.set(
                 spv::WriterFlags::DEBUG,
@@ -2451,7 +2486,7 @@ impl super::Adapter {
                 // We need to build this separately for each invocation, so just default it out here
                 binding_map: BTreeMap::default(),
                 debug_info: None,
-                task_runtime_limits: Some(naga::back::TaskRuntimeLimits {
+                task_dispatch_limits: Some(naga::back::TaskDispatchLimits {
                     max_mesh_workgroups_per_dim: limits.max_task_mesh_workgroups_per_dimension,
                     max_mesh_workgroups_total: limits.max_task_mesh_workgroup_total_count,
                 }),
@@ -2805,61 +2840,63 @@ impl crate::Adapter for super::Adapter {
 }
 
 fn is_format_16bit_norm_supported(instance: &ash::Instance, phd: vk::PhysicalDevice) -> bool {
-    let tiling = vk::ImageTiling::OPTIMAL;
-    let features = vk::FormatFeatureFlags::SAMPLED_IMAGE
-        | vk::FormatFeatureFlags::STORAGE_IMAGE
-        | vk::FormatFeatureFlags::TRANSFER_SRC
-        | vk::FormatFeatureFlags::TRANSFER_DST;
-    let r16unorm = supports_format(instance, phd, vk::Format::R16_UNORM, tiling, features);
-    let r16snorm = supports_format(instance, phd, vk::Format::R16_SNORM, tiling, features);
-    let rg16unorm = supports_format(instance, phd, vk::Format::R16G16_UNORM, tiling, features);
-    let rg16snorm = supports_format(instance, phd, vk::Format::R16G16_SNORM, tiling, features);
-    let rgba16unorm = supports_format(
-        instance,
-        phd,
+    [
+        vk::Format::R16_UNORM,
+        vk::Format::R16_SNORM,
+        vk::Format::R16G16_UNORM,
+        vk::Format::R16G16_SNORM,
         vk::Format::R16G16B16A16_UNORM,
-        tiling,
-        features,
-    );
-    let rgba16snorm = supports_format(
-        instance,
-        phd,
         vk::Format::R16G16B16A16_SNORM,
-        tiling,
-        features,
-    );
-
-    r16unorm && r16snorm && rg16unorm && rg16snorm && rgba16unorm && rgba16snorm
+    ]
+    .into_iter()
+    .all(|format| {
+        supports_format(
+            instance,
+            phd,
+            format,
+            vk::ImageTiling::OPTIMAL,
+            vk::FormatFeatureFlags::SAMPLED_IMAGE
+                | vk::FormatFeatureFlags::STORAGE_IMAGE
+                | vk::FormatFeatureFlags::TRANSFER_SRC
+                | vk::FormatFeatureFlags::TRANSFER_DST,
+        )
+    })
 }
 
 fn is_float32_filterable_supported(instance: &ash::Instance, phd: vk::PhysicalDevice) -> bool {
-    let tiling = vk::ImageTiling::OPTIMAL;
-    let features = vk::FormatFeatureFlags::SAMPLED_IMAGE_FILTER_LINEAR;
-    let r_float = supports_format(instance, phd, vk::Format::R32_SFLOAT, tiling, features);
-    let rg_float = supports_format(instance, phd, vk::Format::R32G32_SFLOAT, tiling, features);
-    let rgba_float = supports_format(
-        instance,
-        phd,
+    [
+        vk::Format::R32_SFLOAT,
+        vk::Format::R32G32_SFLOAT,
         vk::Format::R32G32B32A32_SFLOAT,
-        tiling,
-        features,
-    );
-    r_float && rg_float && rgba_float
+    ]
+    .into_iter()
+    .all(|format| {
+        supports_format(
+            instance,
+            phd,
+            format,
+            vk::ImageTiling::OPTIMAL,
+            vk::FormatFeatureFlags::SAMPLED_IMAGE_FILTER_LINEAR,
+        )
+    })
 }
 
 fn is_float32_blendable_supported(instance: &ash::Instance, phd: vk::PhysicalDevice) -> bool {
-    let tiling = vk::ImageTiling::OPTIMAL;
-    let features = vk::FormatFeatureFlags::COLOR_ATTACHMENT_BLEND;
-    let r_float = supports_format(instance, phd, vk::Format::R32_SFLOAT, tiling, features);
-    let rg_float = supports_format(instance, phd, vk::Format::R32G32_SFLOAT, tiling, features);
-    let rgba_float = supports_format(
-        instance,
-        phd,
+    [
+        vk::Format::R32_SFLOAT,
+        vk::Format::R32G32_SFLOAT,
         vk::Format::R32G32B32A32_SFLOAT,
-        tiling,
-        features,
-    );
-    r_float && rg_float && rgba_float
+    ]
+    .into_iter()
+    .all(|format| {
+        supports_format(
+            instance,
+            phd,
+            format,
+            vk::ImageTiling::OPTIMAL,
+            vk::FormatFeatureFlags::COLOR_ATTACHMENT_BLEND,
+        )
+    })
 }
 
 fn supports_format(
@@ -2878,9 +2915,7 @@ fn supports_format(
 }
 
 fn supports_astc_3d(instance: &ash::Instance, phd: vk::PhysicalDevice) -> bool {
-    let mut supports = true;
-
-    let astc_formats = [
+    [
         vk::Format::ASTC_4X4_UNORM_BLOCK,
         vk::Format::ASTC_4X4_SRGB_BLOCK,
         vk::Format::ASTC_5X4_UNORM_BLOCK,
@@ -2909,10 +2944,10 @@ fn supports_astc_3d(instance: &ash::Instance, phd: vk::PhysicalDevice) -> bool {
         vk::Format::ASTC_12X10_SRGB_BLOCK,
         vk::Format::ASTC_12X12_UNORM_BLOCK,
         vk::Format::ASTC_12X12_SRGB_BLOCK,
-    ];
-
-    for &format in &astc_formats {
-        let result = unsafe {
+    ]
+    .into_iter()
+    .all(|format| {
+        unsafe {
             instance.get_physical_device_image_format_properties(
                 phd,
                 format,
@@ -2921,14 +2956,9 @@ fn supports_astc_3d(instance: &ash::Instance, phd: vk::PhysicalDevice) -> bool {
                 vk::ImageUsageFlags::SAMPLED,
                 vk::ImageCreateFlags::empty(),
             )
-        };
-        if result.is_err() {
-            supports = false;
-            break;
         }
-    }
-
-    supports
+        .is_ok()
+    })
 }
 
 fn supports_bgra8unorm_storage(
