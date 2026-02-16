@@ -310,7 +310,7 @@ impl super::Device {
             temp_options.restrict_indexing = stage.module.runtime_checks.bounds_checks;
             temp_options.force_loop_bounding = stage.module.runtime_checks.force_loop_bounding;
             if !stage.module.runtime_checks.task_shader_dispatch_tracking {
-                temp_options.task_runtime_limits = None;
+                temp_options.task_dispatch_limits = None;
             }
             temp_options.mesh_shader_primitive_indices_clamp = stage
                 .module
@@ -1508,7 +1508,7 @@ impl crate::Device for super::Device {
                 sampler_buffer_binding_map,
                 external_texture_binding_map,
                 force_loop_bounding: true,
-                task_runtime_limits: Some(naga::back::TaskRuntimeLimits {
+                task_dispatch_limits: Some(naga::back::TaskDispatchLimits {
                     max_mesh_workgroups_per_dim: self.limits.max_task_mesh_workgroups_per_dimension,
                     max_mesh_workgroups_total: self.limits.max_task_mesh_workgroup_total_count,
                 }),

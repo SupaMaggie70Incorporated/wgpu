@@ -157,7 +157,7 @@ use core::fmt::Error as FmtError;
 use thiserror::Error;
 
 use crate::{
-    back::{self, TaskRuntimeLimits},
+    back::{self, TaskDispatchLimits},
     ir, proc, Handle,
 };
 
@@ -544,7 +544,7 @@ pub struct Options {
     /// to think the number of iterations is bounded.
     pub force_loop_bounding: bool,
 
-    pub task_runtime_limits: Option<TaskRuntimeLimits>,
+    pub task_dispatch_limits: Option<TaskDispatchLimits>,
 
     pub mesh_shader_primitive_indices_clamp: bool,
     /// if set, ray queries will get a variable to track their state to prevent
@@ -567,7 +567,7 @@ impl Default for Options {
             zero_initialize_workgroup_memory: true,
             restrict_indexing: true,
             force_loop_bounding: true,
-            task_runtime_limits: None,
+            task_dispatch_limits: None,
             mesh_shader_primitive_indices_clamp: true,
             ray_query_initialization_tracking: true,
         }
