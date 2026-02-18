@@ -34,7 +34,7 @@ struct Shaders {
 
 fn get_shaders(device: &wgpu::Device, backend: wgpu::Backend) -> Shaders {
     // In the case that the platform does support mesh shaders, the dummy
-    // shader is used to avoid requiring EXPERIMENTAL_PASSTHROUGH_SHADERS.
+    // shader is used to avoid requiring PASSTHROUGH_SHADERS.
     match backend {
         wgpu::Backend::Vulkan | wgpu::Backend::Dx12 => {
             let compiled = compile_wgsl(device);
@@ -152,7 +152,7 @@ impl crate::framework::Example for Example {
         Default::default()
     }
     fn required_features() -> wgpu::Features {
-        wgpu::Features::EXPERIMENTAL_MESH_SHADER | wgpu::Features::EXPERIMENTAL_PASSTHROUGH_SHADERS
+        wgpu::Features::EXPERIMENTAL_MESH_SHADER | wgpu::Features::PASSTHROUGH_SHADERS
     }
     fn required_limits() -> wgpu::Limits {
         wgpu::Limits::defaults().using_recommended_minimum_mesh_shader_values()
@@ -183,10 +183,7 @@ pub static TEST: crate::framework::ExampleTestParams = crate::framework::Example
     height: 768,
     optional_features: wgpu::Features::default(),
     base_test_parameters: wgpu_test::TestParameters::default()
-        .features(
-            wgpu::Features::EXPERIMENTAL_MESH_SHADER
-                | wgpu::Features::EXPERIMENTAL_PASSTHROUGH_SHADERS,
-        )
+        .features(wgpu::Features::EXPERIMENTAL_MESH_SHADER | wgpu::Features::PASSTHROUGH_SHADERS)
         .instance_flags(wgpu::InstanceFlags::advanced_debugging())
         .limits(wgpu::Limits::defaults().using_recommended_minimum_mesh_shader_values())
         .skip(wgpu_test::FailureCase {
