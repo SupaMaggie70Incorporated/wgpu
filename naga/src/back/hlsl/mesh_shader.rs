@@ -32,7 +32,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         entry_point: &crate::EntryPoint,
     ) -> BackendResult {
         let mut any_args_written = false;
-        let mut separator = || {
+        let mut separator_if_needed = || {
             if any_args_written {
                 ", "
             } else {
