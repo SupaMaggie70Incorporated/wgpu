@@ -149,6 +149,8 @@ impl crate::StorageFormat {
 }
 
 impl crate::BuiltIn {
+    /// Returns `None` for "virtual" builtins, i.e. mesh shader builtins that are
+    /// used by naga but not recognized by HLSL.
     pub(super) fn to_hlsl_str(self) -> Result<Option<&'static str>, Error> {
         Ok(Some(match self {
             Self::Position { .. } => "SV_Position",

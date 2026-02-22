@@ -522,12 +522,14 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
 
             self.write_wrapped_functions(module, &ctx)?;
 
-            let mut header = String::new();
+            // Mesh/task shaders have a wrapper entry point which is declared after the "main"
+            // user-written function. We therefore cannot always just document the next function.
+            let mut attribute_string = String::new();
             if ep.stage.compute_like() {
                 // HLSL is calling workgroup size "num threads"
                 let num_threads = ep.workgroup_size;
                 writeln!(
-                    header,
+                    attribute_string,
                     "[numthreads({}, {}, {})]",
                     num_threads[0], num_threads[1], num_threads[2]
                 )?;
@@ -538,11 +540,11 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     crate::MeshOutputTopology::Lines => "line",
                     crate::MeshOutputTopology::Triangles => "triangle",
                 };
-                writeln!(header, "[outputtopology(\"{topology_str}\")]")?;
+                writeln!(attribute_string, "[outputtopology(\"{topology_str}\")]")?;
             }
 
             let name = self.names[&NameKey::EntryPoint(index as u16)].clone();
-            self.write_function(module, &name, &ep.function, &ctx, info, header)?;
+            self.write_function(module, &name, &ep.function, &ctx, info, attribute_string)?;
 
             if index < module.entry_points.len() - 1 {
                 writeln!(self.out)?;

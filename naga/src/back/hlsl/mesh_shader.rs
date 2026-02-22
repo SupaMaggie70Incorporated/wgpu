@@ -116,7 +116,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             if need_workgroup_variables_initialization {
                 writeln!(
                     self.out,
-                    "{}if (all(__local_invocation_index == 0)) {{",
+                    "{}if (__local_invocation_index == 0) {{",
                     back::INDENT
                 )?;
                 self.write_workgroup_variables_initialization(
@@ -256,7 +256,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             if need_workgroup_variables_initialization {
                 writeln!(
                     self.out,
-                    "{}if (all(__local_invocation_index == 0)) {{",
+                    "{}if (__local_invocation_index == 0) {{",
                     back::INDENT
                 )?;
                 self.write_workgroup_variables_initialization(

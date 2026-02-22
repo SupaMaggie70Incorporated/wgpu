@@ -548,8 +548,15 @@ pub struct Options {
     /// to think the number of iterations is bounded.
     pub force_loop_bounding: bool,
 
+    /// Limits to the mesh shader dispatch group a task workgroup can dispatch.
+    ///
+    /// Metal for example limits to 1024 workgroups per task shader dispatch. Dispatching more is
+    /// undefined behavior, so this would validate that to dispatch zero workgroups.
     pub task_dispatch_limits: Option<TaskDispatchLimits>,
 
+    /// If true, naga may generate checks that the primitive indices are valid in the output.
+    ///
+    /// Currently this validation is unimplemented.
     pub mesh_shader_primitive_indices_clamp: bool,
     /// if set, ray queries will get a variable to track their state to prevent
     /// misuse.
