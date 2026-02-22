@@ -596,7 +596,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         binding: &Option<crate::Binding>,
         stage: Option<(ShaderStage, Io)>,
     ) -> BackendResult {
-        let per_primitive = match *binding {
+        let is_per_primitive = match *binding {
             Some(crate::Binding::BuiltIn(builtin)) if !is_subgroup_builtin_binding(binding) => {
                 if builtin == crate::BuiltIn::ViewIndex
                     && self.options.shader_model < ShaderModel::V6_1
