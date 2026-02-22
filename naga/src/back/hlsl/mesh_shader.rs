@@ -141,12 +141,9 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
                 back::INDENT
             )?;
 
-            let back::FunctionType::EntryPoint(ep_idx) = func_ctx.ty else {
-                unreachable!()
-            };
-            let ep = &module.entry_points[ep_idx as usize];
+            let ep = &module.entry_points[ep_index as usize];
             let mesh_info = ep.mesh_info.as_ref().unwrap();
-            let io = self.entry_point_io.get(&(ep_idx as usize)).unwrap();
+            let io = self.entry_point_io.get(&(ep_index as usize)).unwrap();
 
             let var_name = &self.names[&NameKey::GlobalVariable(mesh_info.output_variable)];
             let var_type = module.global_variables[mesh_info.output_variable].ty;
