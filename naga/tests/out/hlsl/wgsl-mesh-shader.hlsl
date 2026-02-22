@@ -91,7 +91,7 @@ uint3 _ts_main()
 }
 [numthreads(1, 1, 1)]
 void ts_main(uint __local_invocation_index : SV_GroupIndex) {
-    if (all(__local_invocation_index == 0)) {
+    if (__local_invocation_index == 0) {
         taskPayload = (TaskPayload)0;
         workgroupData = (float)0;
     }
@@ -121,7 +121,7 @@ uint3 _ts_divergent(uint3 thread_id : SV_GroupThreadID)
 }
 [numthreads(2, 1, 1)]
 void ts_divergent(uint3 thread_id : SV_GroupThreadID, uint __local_invocation_index : SV_GroupIndex) {
-    if (all(__local_invocation_index == 0)) {
+    if (__local_invocation_index == 0) {
         taskPayload = (TaskPayload)0;
     }
     GroupMemoryBarrierWithGroupSync();
@@ -162,7 +162,7 @@ void _ms_main(in TaskPayload taskPayload)
 [numthreads(1, 1, 1)]
 [outputtopology("triangle")]
 void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint3 triangleIndices[1], out vertices MeshVertexOutput_ms_main vertices_[3], out primitives MeshPrimitiveOutput_ms_main primitives_[1], in payload TaskPayload taskPayload) {
-    if (all(__local_invocation_index == 0)) {
+    if (__local_invocation_index == 0) {
         workgroupData = (float)0;
         mesh_output = (MeshOutput)0;
     }
@@ -200,7 +200,7 @@ void _ms_no_ts()
 [numthreads(1, 1, 1)]
 [outputtopology("triangle")]
 void ms_no_ts(uint __local_invocation_index : SV_GroupIndex, out indices uint3 triangleIndices_1[1], out vertices MeshVertexOutput_ms_no_ts vertices_1[3], out primitives MeshPrimitiveOutput_ms_no_ts primitives_1[1]) {
-    if (all(__local_invocation_index == 0)) {
+    if (__local_invocation_index == 0) {
         workgroupData = (float)0;
         mesh_output = (MeshOutput)0;
     }
@@ -242,7 +242,7 @@ void _ms_divergent(uint3 thread_id_1 : SV_GroupThreadID)
 [numthreads(2, 1, 1)]
 [outputtopology("triangle")]
 void ms_divergent(uint3 thread_id_1 : SV_GroupThreadID, uint __local_invocation_index : SV_GroupIndex, out indices uint3 triangleIndices_2[1], out vertices MeshVertexOutput_ms_divergent vertices_2[3], out primitives MeshPrimitiveOutput_ms_divergent primitives_2[1]) {
-    if (all(__local_invocation_index == 0)) {
+    if (__local_invocation_index == 0) {
         workgroupData = (float)0;
         mesh_output = (MeshOutput)0;
     }

@@ -33,7 +33,7 @@ uint3 _ts_main()
 }
 [numthreads(64, 1, 1)]
 void ts_main(uint __local_invocation_index : SV_GroupIndex) {
-    if (all(__local_invocation_index == 0)) {
+    if (__local_invocation_index == 0) {
         taskPayload = (TaskPayload)0;
     }
     GroupMemoryBarrierWithGroupSync();
@@ -58,7 +58,7 @@ void _ms_main(in TaskPayload taskPayload)
 [numthreads(64, 1, 1)]
 [outputtopology("line")]
 void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint2 lineIndices[1], out vertices MeshVertexOutput_ms_main vertices_[2], out primitives MeshPrimitiveOutput_ms_main primitives_[1], in payload TaskPayload taskPayload) {
-    if (all(__local_invocation_index == 0)) {
+    if (__local_invocation_index == 0) {
         mesh_output = (MeshOutput)0;
     }
     GroupMemoryBarrierWithGroupSync();

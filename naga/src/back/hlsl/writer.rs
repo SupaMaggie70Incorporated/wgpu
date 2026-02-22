@@ -633,7 +633,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             }
             _ => false,
         };
-        if per_primitive {
+        if is_per_primitive {
             write!(self.out, " : primitive")?;
         }
 

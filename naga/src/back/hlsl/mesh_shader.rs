@@ -53,7 +53,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             arg_names.push(ep_input.arg_name.clone());
         } else {
             for (index, arg) in entry_point.function.arguments.iter().enumerate() {
-                write!(self.out, "{}", separator())?;
+                write!(self.out, "{}", separator_if_needed())?;
                 self.write_type(module, arg.ty)?;
 
                 let argument_name =
@@ -72,7 +72,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             write!(
                 self.out,
                 "{}uint __local_invocation_index : SV_GroupIndex",
-                separator()
+                separator_if_needed()
             )?;
         }
         if let Some(ref mesh_info) = entry_point.mesh_info {
@@ -84,7 +84,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             write!(
                 self.out,
                 "{}out indices {} {}[{}]",
-                separator(),
+                separator_if_needed(),
                 indices_info.ty_name,
                 indices_info.arg_name,
                 mesh_info.max_primitives
