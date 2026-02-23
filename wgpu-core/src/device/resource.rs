@@ -2477,7 +2477,7 @@ impl Device {
                             min_binding_size: None,
                             ..
                         } => {
-                            let rb = naga::ResourceBinding {
+                            let rb = wst::ResourceBinding {
                                 group: group_index as u32,
                                 binding: entry.binding,
                             };

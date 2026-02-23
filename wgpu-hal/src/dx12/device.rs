@@ -1041,7 +1041,7 @@ impl crate::Device for super::Device {
                         },
                     };
                     external_texture_binding_map.insert(
-                        naga::ResourceBinding {
+                        wst::ResourceBinding {
                             group: index as u32,
                             binding: entry.binding,
                         },
@@ -1102,7 +1102,7 @@ impl crate::Device for super::Device {
                     };
 
                     binding_map.insert(
-                        naga::ResourceBinding {
+                        wst::ResourceBinding {
                             group: index as u32,
                             binding: entry.binding,
                         },
@@ -1128,7 +1128,7 @@ impl crate::Device for super::Device {
             for entry in bgl.entries.iter() {
                 if let wgt::BindingType::Sampler(_) = entry.ty {
                     binding_map.insert(
-                        naga::ResourceBinding {
+                        wst::ResourceBinding {
                             group: index as u32,
                             binding: entry.binding,
                         },
@@ -1191,7 +1191,7 @@ impl crate::Device for super::Device {
                 };
 
                 binding_map.insert(
-                    naga::ResourceBinding {
+                    wst::ResourceBinding {
                         group: index as u32,
                         binding: entry.binding,
                     },

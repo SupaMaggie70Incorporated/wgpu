@@ -80,7 +80,7 @@ impl From<&BindingType> for BindingTypeName {
 struct Resource {
     #[allow(unused)]
     name: Option<String>,
-    bind: naga::ResourceBinding,
+    bind: wst::ResourceBinding,
     ty: ResourceType,
     class: naga::AddressSpace,
 }
@@ -295,11 +295,11 @@ pub enum StageError {
     #[error("Unable to find entry point '{0}'")]
     MissingEntryPoint(String),
     #[error("Shader global {0:?} is not available in the pipeline layout")]
-    Binding(naga::ResourceBinding, #[source] BindingError),
+    Binding(wst::ResourceBinding, #[source] BindingError),
     #[error("Unable to filter the texture ({texture:?}) by the sampler ({sampler:?})")]
     Filtering {
-        texture: naga::ResourceBinding,
-        sampler: naga::ResourceBinding,
+        texture: wst::ResourceBinding,
+        sampler: wst::ResourceBinding,
         #[source]
         error: FilteringError,
     },
@@ -1248,7 +1248,7 @@ impl Interface {
     pub fn check_stage(
         &self,
         layouts: &mut BindingLayoutSource<'_>,
-        shader_binding_sizes: &mut FastHashMap<naga::ResourceBinding, wgt::BufferSize>,
+        shader_binding_sizes: &mut FastHashMap<wst::ResourceBinding, wgt::BufferSize>,
         entry_point_name: &str,
         shader_stage: ShaderStageForValidation,
         inputs: StageIo,
