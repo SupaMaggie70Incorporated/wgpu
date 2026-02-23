@@ -13,36 +13,47 @@ struct Structure {
     uint num_subgroups;
     uint subgroup_size;
 };
+shared uint workgroup_var;
+
 
 void main() {
+    if (gl_LocalInvocationID == uvec3(0u)) {
+        workgroup_var = 0u;
+    }
+    memoryBarrierShared();
+    barrier();
     Structure sizes = Structure(gl_NumSubgroups, gl_SubgroupSize);
     uint subgroup_id = gl_SubgroupID;
     uint subgroup_invocation_id = gl_SubgroupInvocationID;
-    uvec4 _e7 = subgroupBallot(((subgroup_invocation_id & 1u) == 1u));
-    uvec4 _e8 = subgroupBallot(true);
-    bool _e11 = subgroupAll((subgroup_invocation_id != 0u));
-    bool _e14 = subgroupAny((subgroup_invocation_id == 0u));
-    uint _e15 = subgroupAdd(subgroup_invocation_id);
-    uint _e16 = subgroupMul(subgroup_invocation_id);
-    uint _e17 = subgroupMin(subgroup_invocation_id);
-    uint _e18 = subgroupMax(subgroup_invocation_id);
-    uint _e19 = subgroupAnd(subgroup_invocation_id);
-    uint _e20 = subgroupOr(subgroup_invocation_id);
-    uint _e21 = subgroupXor(subgroup_invocation_id);
-    uint _e22 = subgroupExclusiveAdd(subgroup_invocation_id);
-    uint _e23 = subgroupExclusiveMul(subgroup_invocation_id);
-    uint _e24 = subgroupInclusiveAdd(subgroup_invocation_id);
-    uint _e25 = subgroupInclusiveMul(subgroup_invocation_id);
-    uint _e26 = subgroupBroadcastFirst(subgroup_invocation_id);
-    uint _e28 = subgroupBroadcast(subgroup_invocation_id, 4u);
-    uint _e33 = subgroupShuffle(subgroup_invocation_id, ((sizes.subgroup_size - 1u) - subgroup_invocation_id));
-    uint _e35 = subgroupShuffleDown(subgroup_invocation_id, 1u);
-    uint _e37 = subgroupShuffleUp(subgroup_invocation_id, 1u);
-    uint _e41 = subgroupShuffleXor(subgroup_invocation_id, (sizes.subgroup_size - 1u));
-    uint _e43 = subgroupQuadBroadcast(subgroup_invocation_id, 4u);
-    uint _e44 = subgroupQuadSwapHorizontal(subgroup_invocation_id);
-    uint _e45 = subgroupQuadSwapVertical(subgroup_invocation_id);
-    uint _e46 = subgroupQuadSwapDiagonal(subgroup_invocation_id);
+    uvec3 local_invocation_id = gl_LocalInvocationID;
+    uint local_invocation_index = gl_LocalInvocationIndex;
+    uvec4 _e9 = subgroupBallot(((subgroup_invocation_id & 1u) == 1u));
+    uvec4 _e10 = subgroupBallot(true);
+    bool _e13 = subgroupAll((subgroup_invocation_id != 0u));
+    bool _e16 = subgroupAny((subgroup_invocation_id == 0u));
+    uint _e18 = subgroupAdd(subgroup_invocation_id);
+    workgroup_var = _e18;
+    uint _e20 = workgroup_var;
+    uint _e21 = subgroupMul(_e20);
+    uint _e23 = subgroupMin(local_invocation_id.x);
+    uint _e24 = subgroupMax(local_invocation_index);
+    uint _e25 = subgroupAnd(subgroup_invocation_id);
+    uint _e26 = subgroupOr(subgroup_invocation_id);
+    uint _e27 = subgroupXor(subgroup_invocation_id);
+    uint _e28 = subgroupExclusiveAdd(subgroup_invocation_id);
+    uint _e29 = subgroupExclusiveMul(subgroup_invocation_id);
+    uint _e30 = subgroupInclusiveAdd(subgroup_invocation_id);
+    uint _e31 = subgroupInclusiveMul(subgroup_invocation_id);
+    uint _e32 = subgroupBroadcastFirst(subgroup_invocation_id);
+    uint _e34 = subgroupBroadcast(subgroup_invocation_id, 4u);
+    uint _e39 = subgroupShuffle(subgroup_invocation_id, ((sizes.subgroup_size - 1u) - subgroup_invocation_id));
+    uint _e41 = subgroupShuffleDown(subgroup_invocation_id, 1u);
+    uint _e43 = subgroupShuffleUp(subgroup_invocation_id, 1u);
+    uint _e47 = subgroupShuffleXor(subgroup_invocation_id, (sizes.subgroup_size - 1u));
+    uint _e49 = subgroupQuadBroadcast(subgroup_invocation_id, 4u);
+    uint _e50 = subgroupQuadSwapHorizontal(subgroup_invocation_id);
+    uint _e51 = subgroupQuadSwapVertical(subgroup_invocation_id);
+    uint _e52 = subgroupQuadSwapDiagonal(subgroup_invocation_id);
     return;
 }
 

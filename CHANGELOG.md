@@ -121,6 +121,7 @@ By @cwfitzgerald in [#8999](https://github.com/gfx-rs/wgpu/pull/8999).
 - Renamed `EXPERIMENTAL_PASSTHROUGH_SHADERS` to `PASSTHROUGH_SHADERS` and made this no longer an experimental feature. by @inner-daemons in [#9054](https://github.com/gfx-rs/wgpu/pull/9054).
 - BREAKING: End offsets in trace and `player` commands are now represented using `offset` + `size` instead. By @ErichDonGubler in [9073](https://github.com/gfx-rs/wgpu/pull/9073).
 - Validate some uncaught cases where buffer transfer operations could overflow when computing an end offset. By @ErichDonGubler in [9073](https://github.com/gfx-rs/wgpu/pull/9073).
+- Fix various issues relating to `local_invocation_index` and `local_invocation_id` in HLSL and MSL. By @inner-daemons in [#9099](https://github.com/gfx-rs/wgpu/pull/9099).
 
 #### naga
 
