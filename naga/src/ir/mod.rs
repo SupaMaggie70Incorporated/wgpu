@@ -236,7 +236,7 @@ use crate::diagnostic_filter::DiagnosticFilterNode;
 use crate::{FastIndexMap, NamedExpressions};
 
 pub use block::Block;
-pub use wgpu_shader_types::{PrimitiveTopology, ResourceBinding, ShaderStage};
+pub use wgpu_shader_types::{BuiltIn, PrimitiveTopology, ResourceBinding, ShaderStage};
 
 /// Explicitly allows early depth/stencil tests.
 ///
@@ -360,132 +360,6 @@ pub enum AddressSpace {
     /// Each entrypoint may reference only one variable in this scope, as
     /// only one may be passed as a payload.
     IncomingRayPayload,
-}
-
-/// Built-in inputs and outputs.
-#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[cfg_attr(feature = "deserialize", derive(Deserialize))]
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-pub enum BuiltIn {
-    /// Written in vertex/mesh shaders, read in fragment shaders
-    Position { invariant: bool },
-    /// Read in task, mesh, vertex, and fragment shaders
-    ViewIndex,
-
-    /// Read in vertex shaders
-    BaseInstance,
-    /// Read in vertex shaders
-    BaseVertex,
-    /// Written in vertex & mesh shaders
-    ClipDistance,
-    /// Written in vertex & mesh shaders
-    CullDistance,
-    /// Read in vertex, any- and closest-hit shaders
-    InstanceIndex,
-    /// Written in vertex & mesh shaders
-    PointSize,
-    /// Read in vertex shaders
-    VertexIndex,
-    /// Read in vertex & task shaders, or mesh shaders in pipelines without task shaders
-    DrawIndex,
-
-    /// Written in fragment shaders
-    FragDepth,
-    /// Read in fragment shaders
-    PointCoord,
-    /// Read in fragment shaders
-    FrontFacing,
-    /// Read in fragment shaders, written in mesh shaders, read in any and closest hit shaders.
-    PrimitiveIndex,
-    /// Read in fragment shaders
-    Barycentric { perspective: bool },
-    /// Read in fragment shaders
-    SampleIndex,
-    /// Read or written in fragment shaders
-    SampleMask,
-
-    /// Read in compute, task, and mesh shaders
-    GlobalInvocationId,
-    /// Read in compute, task, and mesh shaders
-    LocalInvocationId,
-    /// Read in compute, task, and mesh shaders
-    LocalInvocationIndex,
-    /// Read in compute, task, and mesh shaders
-    WorkGroupId,
-    /// Read in compute, task, and mesh shaders
-    WorkGroupSize,
-    /// Read in compute, task, and mesh shaders
-    NumWorkGroups,
-
-    /// Read in compute, task, and mesh shaders
-    NumSubgroups,
-    /// Read in compute, task, and mesh shaders
-    SubgroupId,
-    /// Read in compute, fragment, task, and mesh shaders
-    SubgroupSize,
-    /// Read in compute, fragment, task, and mesh shaders
-    SubgroupInvocationId,
-
-    /// Written in task shaders
-    MeshTaskSize,
-    /// Written in mesh shaders
-    CullPrimitive,
-    /// Written in mesh shaders
-    PointIndex,
-    /// Written in mesh shaders
-    LineIndices,
-    /// Written in mesh shaders
-    TriangleIndices,
-
-    /// Written to a workgroup variable in mesh shaders
-    VertexCount,
-    /// Written to a workgroup variable in mesh shaders
-    Vertices,
-    /// Written to a workgroup variable in mesh shaders
-    PrimitiveCount,
-    /// Written to a workgroup variable in mesh shaders
-    Primitives,
-
-    /// Read in all ray tracing pipeline shaders, the id within the number of
-    /// rays that this current ray is.
-    RayInvocationId,
-    /// Read in all ray tracing pipeline shaders, the number of rays created.
-    NumRayInvocations,
-    /// Read in closest hit and any hit shaders, the custom data in the tlas
-    /// instance
-    InstanceCustomData,
-    /// Read in closest hit and any hit shaders, the index of the geometry in
-    /// the blas.
-    GeometryIndex,
-    /// Read in closest hit, any hit, and miss shaders, the origin of the ray.
-    WorldRayOrigin,
-    /// Read in closest hit, any hit, and miss shaders, the direction of the
-    /// ray.
-    WorldRayDirection,
-    /// Read in closest hit and any hit shaders, the direction of the ray in
-    /// object space.
-    ObjectRayOrigin,
-    /// Read in closest hit and any hit shaders, the direction of the ray in
-    /// object space.
-    ObjectRayDirection,
-    /// Read in closest hit, any hit, and miss shaders, the t min provided by
-    /// in the ray desc.
-    RayTmin,
-    /// Read in closest hit, any hit, and miss shaders, the final bounds at which
-    /// a hit is accepted (the closest committed hit if there is one otherwise, t
-    /// max provided in the ray desc).
-    RayTCurrentMax,
-    /// Read in closest hit and any hit shaders, the matrix for converting from
-    /// object space to world space
-    ObjectToWorld,
-    /// Read in closest hit and any hit shaders, the matrix for converting from
-    /// world space to object space
-    WorldToObject,
-    /// Read in closest hit and any hit shaders, the type of hit as provided by
-    /// the intersection function if any, otherwise this is 254 (0xFE) for a
-    /// front facing triangle and 255 (0xFF) for a back facing triangle
-    HitKind,
 }
 
 /// Number of bytes per scalar.

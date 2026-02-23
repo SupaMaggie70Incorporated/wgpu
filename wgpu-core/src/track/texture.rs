@@ -30,7 +30,7 @@ use crate::{
 use hal::TextureBarrier;
 
 use arrayvec::ArrayVec;
-use naga::FastHashMap;
+use wst::FastHashMap;
 
 use wgt::{strict_assert, strict_assert_eq, TextureSelector, TextureUses};
 

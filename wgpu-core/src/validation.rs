@@ -186,7 +186,7 @@ struct EntryPoint {
 pub struct Interface {
     limits: wgt::Limits,
     resources: naga::Arena<Resource>,
-    entry_points: FastHashMap<(naga::ShaderStage, String), EntryPoint>,
+    entry_points: FastHashMap<(wst::ShaderStage, String), EntryPoint>,
 }
 
 #[derive(Clone, Debug, Error)]
@@ -1224,7 +1224,7 @@ impl Interface {
 
     pub fn finalize_entry_point_name(
         &self,
-        stage: naga::ShaderStage,
+        stage: wst::ShaderStage,
         entry_point_name: Option<&str>,
     ) -> Result<String, StageError> {
         entry_point_name
@@ -1392,7 +1392,7 @@ impl Interface {
                 per_dimension_limit,
                 total_limit,
             ) = match shader_stage.to_naga() {
-                naga::ShaderStage::Compute => (
+                wst::ShaderStage::Compute => (
                     [
                         self.limits.max_compute_workgroup_size_x,
                         self.limits.max_compute_workgroup_size_y,
@@ -1402,7 +1402,7 @@ impl Interface {
                     "max_compute_workgroup_size_*",
                     "max_compute_invocations_per_workgroup",
                 ),
-                naga::ShaderStage::Task => (
+                wst::ShaderStage::Task => (
                     [
                         self.limits.max_task_invocations_per_dimension,
                         self.limits.max_task_invocations_per_dimension,
@@ -1412,7 +1412,7 @@ impl Interface {
                     "max_task_invocations_per_dimension",
                     "max_task_invocations_per_workgroup",
                 ),
-                naga::ShaderStage::Mesh => (
+                wst::ShaderStage::Mesh => (
                     [
                         self.limits.max_mesh_invocations_per_dimension,
                         self.limits.max_mesh_invocations_per_dimension,
@@ -1458,13 +1458,13 @@ impl Interface {
                             let (compatible, per_primitive_correct) = match shader_stage.to_naga() {
                                 // For vertex attributes, there are defaults filled out
                                 // by the driver if data is not provided.
-                                naga::ShaderStage::Vertex => {
+                                wst::ShaderStage::Vertex => {
                                     let is_compatible =
                                         iv.ty.scalar.kind == provided.ty.scalar.kind;
                                     // vertex inputs don't count towards inter-stage
                                     (is_compatible, !iv.per_primitive)
                                 }
-                                naga::ShaderStage::Fragment => {
+                                wst::ShaderStage::Fragment => {
                                     if iv.interpolation != provided.interpolation {
                                         return Err(InputError::InterpolationMismatch(
                                             provided.interpolation,
@@ -1481,13 +1481,13 @@ impl Interface {
                                     )
                                 }
                                 // These can't have varying inputs
-                                naga::ShaderStage::Compute
-                                | naga::ShaderStage::Task
-                                | naga::ShaderStage::Mesh => (false, false),
-                                naga::ShaderStage::RayGeneration
-                                | naga::ShaderStage::AnyHit
-                                | naga::ShaderStage::ClosestHit
-                                | naga::ShaderStage::Miss => {
+                                wst::ShaderStage::Compute
+                                | wst::ShaderStage::Task
+                                | wst::ShaderStage::Mesh => (false, false),
+                                wst::ShaderStage::RayGeneration
+                                | wst::ShaderStage::AnyHit
+                                | wst::ShaderStage::ClosestHit
+                                | wst::ShaderStage::Miss => {
                                     unreachable!()
                                 }
                             };
@@ -1719,7 +1719,7 @@ impl Interface {
                 });
             }
         }
-        if shader_stage.to_naga() == naga::ShaderStage::Mesh
+        if shader_stage.to_naga() == wst::ShaderStage::Mesh
             && entry_point.task_payload_size != inputs.task_payload_size
         {
             return Err(StageError::TaskPayloadMustMatch {
@@ -1729,18 +1729,18 @@ impl Interface {
         }
 
         // Fragment shader primitive index is treated like a varying
-        if shader_stage.to_naga() == naga::ShaderStage::Fragment
+        if shader_stage.to_naga() == wst::ShaderStage::Fragment
             && this_stage_primitive_index
             && inputs.primitive_index == Some(false)
         {
             return Err(StageError::InvalidPrimitiveIndex);
-        } else if shader_stage.to_naga() == naga::ShaderStage::Fragment
+        } else if shader_stage.to_naga() == wst::ShaderStage::Fragment
             && !this_stage_primitive_index
             && inputs.primitive_index == Some(true)
         {
             return Err(StageError::MissingPrimitiveIndex);
         }
-        if shader_stage.to_naga() == naga::ShaderStage::Mesh
+        if shader_stage.to_naga() == wst::ShaderStage::Mesh
             && inputs.task_payload_size.is_some()
             && has_draw_id
         {
@@ -1759,7 +1759,7 @@ impl Interface {
         Ok(StageIo {
             task_payload_size: entry_point.task_payload_size,
             varyings: outputs,
-            primitive_index: if shader_stage.to_naga() == naga::ShaderStage::Mesh {
+            primitive_index: if shader_stage.to_naga() == wst::ShaderStage::Mesh {
                 Some(this_stage_primitive_index)
             } else {
                 None
@@ -1771,7 +1771,7 @@ impl Interface {
         &self,
         entry_point_name: &str,
     ) -> Result<bool, StageError> {
-        let pair = (naga::ShaderStage::Fragment, entry_point_name.to_string());
+        let pair = (wst::ShaderStage::Fragment, entry_point_name.to_string());
         self.entry_points
             .get(&pair)
             .ok_or(StageError::MissingEntryPoint(pair.1))
@@ -1824,13 +1824,13 @@ pub enum ShaderStageForValidation {
 }
 
 impl ShaderStageForValidation {
-    pub fn to_naga(&self) -> naga::ShaderStage {
+    pub fn to_naga(&self) -> wst::ShaderStage {
         match self {
-            Self::Vertex { .. } => naga::ShaderStage::Vertex,
-            Self::Mesh => naga::ShaderStage::Mesh,
-            Self::Fragment { .. } => naga::ShaderStage::Fragment,
-            Self::Compute => naga::ShaderStage::Compute,
-            Self::Task => naga::ShaderStage::Task,
+            Self::Vertex { .. } => wst::ShaderStage::Vertex,
+            Self::Mesh => wst::ShaderStage::Mesh,
+            Self::Fragment { .. } => wst::ShaderStage::Fragment,
+            Self::Compute => wst::ShaderStage::Compute,
+            Self::Task => wst::ShaderStage::Task,
         }
     }
 

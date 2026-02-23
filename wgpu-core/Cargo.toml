@@ -80,22 +80,22 @@ serde = [
 ]
 
 ## Enable API tracing.
-trace = ["serde", "std", "dep:ron", "naga/serialize", "wgpu-types/trace"]
+trace = ["serde", "std", "dep:ron", "wgpu-shaders/serde", "wgpu-types/trace"]
 
 ## Enable API replaying
-replay = ["serde", "naga/deserialize"]
+replay = ["serde", "wgpu-shaders/ir-in"]
 
 #! ### Shading Language Support
 # --------------------------------------------------------------------
 
 ## Enable `ShaderModuleSource::Wgsl`
-wgsl = ["naga/wgsl-in"]
+wgsl = ["wgpu-shaders/wgsl-in"]
 
 ## Enable `ShaderModuleSource::Glsl`
-glsl = ["naga/glsl-in"]
+glsl = ["wgpu-shaders/glsl-in"]
 
 ## Enable `ShaderModuleSource::SpirV`
-spirv = ["naga/spv-in"]
+spirv = ["wgpu-shaders/spv-in"]
 
 #! ### Other
 # --------------------------------------------------------------------
@@ -167,10 +167,10 @@ wgpu-core-deps-wasm = { workspace = true, optional = true }
 wgpu-core-deps-windows-linux-android = { workspace = true, optional = true }
 
 [dependencies]
-naga.workspace = true
+wgpu-shaders = { workspace = true, features = ["naga-dep"] }
+wgpu-shader-types.workspace = true
 wgpu-hal.workspace = true
 wgpu-types.workspace = true
-wgpu-shaders = { workspace = true, features = ["naga-dep"] }
 
 arrayvec.workspace = true
 bit-vec.workspace = true

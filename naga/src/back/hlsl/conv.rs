@@ -148,65 +148,61 @@ impl crate::StorageFormat {
     }
 }
 
-impl crate::BuiltIn {
-    pub(super) fn to_hlsl_str(self) -> Result<&'static str, Error> {
-        Ok(match self {
-            Self::Position { .. } => "SV_Position",
-            // vertex
-            Self::ClipDistance => "SV_ClipDistance",
-            Self::CullDistance => "SV_CullDistance",
-            Self::InstanceIndex => "SV_InstanceID",
-            Self::VertexIndex => "SV_VertexID",
-            // fragment
-            Self::FragDepth => "SV_Depth",
-            Self::FrontFacing => "SV_IsFrontFace",
-            Self::PrimitiveIndex => "SV_PrimitiveID",
-            Self::Barycentric { .. } => "SV_Barycentrics",
-            Self::SampleIndex => "SV_SampleIndex",
-            Self::SampleMask => "SV_Coverage",
-            // compute
-            Self::GlobalInvocationId => "SV_DispatchThreadID",
-            Self::LocalInvocationId => "SV_GroupThreadID",
-            Self::LocalInvocationIndex => "SV_GroupIndex",
-            Self::WorkGroupId => "SV_GroupID",
-            // The specific semantic we use here doesn't matter, because references
-            // to this field will get replaced with references to `SPECIAL_CBUF_VAR`
-            // in `Writer::write_expr`.
-            Self::NumWorkGroups => "SV_GroupID",
-            Self::ViewIndex => "SV_ViewID",
-            // These builtins map to functions
-            Self::SubgroupSize
-            | Self::SubgroupInvocationId
-            | Self::NumSubgroups
-            | Self::SubgroupId => unreachable!(),
-            Self::BaseInstance | Self::BaseVertex | Self::WorkGroupSize => {
-                return Err(Error::Unimplemented(format!("builtin {self:?}")))
-            }
-            Self::PointSize | Self::PointCoord | Self::DrawIndex => {
-                return Err(Error::Custom(format!("Unsupported builtin {self:?}")))
-            }
-            Self::CullPrimitive => "SV_CullPrimitive",
-            Self::PointIndex | Self::LineIndices | Self::TriangleIndices => unimplemented!(),
-            Self::MeshTaskSize
-            | Self::VertexCount
-            | Self::PrimitiveCount
-            | Self::Vertices
-            | Self::Primitives => unreachable!(),
-            Self::RayInvocationId
-            | Self::NumRayInvocations
-            | Self::InstanceCustomData
-            | Self::GeometryIndex
-            | Self::WorldRayOrigin
-            | Self::WorldRayDirection
-            | Self::ObjectRayOrigin
-            | Self::ObjectRayDirection
-            | Self::RayTmin
-            | Self::RayTCurrentMax
-            | Self::ObjectToWorld
-            | Self::WorldToObject
-            | Self::HitKind => unreachable!(),
-        })
-    }
+pub(super) fn builtin_to_hlsl_str(bi: crate::BuiltIn) -> Result<&'static str, Error> {
+    use crate::BuiltIn as Bi;
+    Ok(match bi {
+        Bi::Position { .. } => "SV_Position",
+        // vertex
+        Bi::ClipDistance => "SV_ClipDistance",
+        Bi::CullDistance => "SV_CullDistance",
+        Bi::InstanceIndex => "SV_InstanceID",
+        Bi::VertexIndex => "SV_VertexID",
+        // fragment
+        Bi::FragDepth => "SV_Depth",
+        Bi::FrontFacing => "SV_IsFrontFace",
+        Bi::PrimitiveIndex => "SV_PrimitiveID",
+        Bi::Barycentric { .. } => "SV_Barycentrics",
+        Bi::SampleIndex => "SV_SampleIndex",
+        Bi::SampleMask => "SV_Coverage",
+        // compute
+        Bi::GlobalInvocationId => "SV_DispatchThreadID",
+        Bi::LocalInvocationId => "SV_GroupThreadID",
+        Bi::LocalInvocationIndex => "SV_GroupIndex",
+        Bi::WorkGroupId => "SV_GroupID",
+        // The specific semantic we use here doesn't matter, because references
+        // to this field will get replaced with references to `SPECIAL_CBUF_VAR`
+        // in `Writer::write_expr`.
+        Bi::NumWorkGroups => "SV_GroupID",
+        Bi::ViewIndex => "SV_ViewID",
+        // These builtins map to functions
+        Bi::SubgroupSize | Bi::SubgroupInvocationId | Bi::NumSubgroups | Bi::SubgroupId => {
+            unreachable!()
+        }
+        Bi::BaseInstance | Bi::BaseVertex | Bi::WorkGroupSize => {
+            return Err(Error::Unimplemented(format!("builtin {bi:?}")))
+        }
+        Bi::PointSize | Bi::PointCoord | Bi::DrawIndex => {
+            return Err(Error::Custom(format!("Unsupported builtin {bi:?}")))
+        }
+        Bi::CullPrimitive => "SV_CullPrimitive",
+        Bi::PointIndex | Bi::LineIndices | Bi::TriangleIndices => unimplemented!(),
+        Bi::MeshTaskSize | Bi::VertexCount | Bi::PrimitiveCount | Bi::Vertices | Bi::Primitives => {
+            unreachable!()
+        }
+        Bi::RayInvocationId
+        | Bi::NumRayInvocations
+        | Bi::InstanceCustomData
+        | Bi::GeometryIndex
+        | Bi::WorldRayOrigin
+        | Bi::WorldRayDirection
+        | Bi::ObjectRayOrigin
+        | Bi::ObjectRayDirection
+        | Bi::RayTmin
+        | Bi::RayTCurrentMax
+        | Bi::ObjectToWorld
+        | Bi::WorldToObject
+        | Bi::HitKind => unreachable!(),
+    })
 }
 
 impl crate::Interpolation {

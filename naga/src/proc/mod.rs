@@ -920,16 +920,6 @@ impl crate::Module {
     }
 }
 
-impl From<crate::PrimitiveTopology> for crate::BuiltIn {
-    fn from(value: crate::PrimitiveTopology) -> Self {
-        match value {
-            wst::PrimitiveTopology::Points => Self::PointIndex,
-            wst::PrimitiveTopology::Lines => Self::LineIndices,
-            wst::PrimitiveTopology::Triangles => Self::TriangleIndices,
-        }
-    }
-}
-
 impl crate::AddressSpace {
     pub const fn is_workgroup_like(self) -> bool {
         matches!(self, Self::WorkGroup | Self::TaskPayload)

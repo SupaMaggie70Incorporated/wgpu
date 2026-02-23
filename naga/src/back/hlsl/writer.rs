@@ -584,7 +584,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         ShaderModel::V6_1,
                     ));
                 }
-                let builtin_str = builtin.to_hlsl_str()?;
+                let builtin_str = super::conv::builtin_to_hlsl_str(builtin)?;
                 write!(self.out, " : {builtin_str}")?;
             }
             Some(crate::Binding::Location {
