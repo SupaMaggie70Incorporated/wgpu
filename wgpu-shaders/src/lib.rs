@@ -4,8 +4,45 @@ extern crate wgpu_shader_types as wst;
 extern crate wgpu_types as wgt;
 
 pub mod out;
+#[cfg(feature = "naga-dep")]
+pub mod parse;
+#[cfg(feature = "naga-dep")]
+pub mod validation;
 
 pub use wgpu_shader_types::ShaderStage;
+
+// Re-export specific naga IR types that wgpu-core's shader validation system
+// needs, without re-exporting the entire naga crate as a module.
+// These are only available when the naga-dep feature is enabled (i.e., when at
+// least one shader input format such as wgsl-in, glsl-in, or spv-in is active).
+#[cfg(feature = "naga-dep")]
+pub use naga::{
+    Arena, UniqueArena, Handle,
+    ImageDimension, ImageClass,
+    AddressSpace, StorageAccess,
+    VectorSize, Scalar, ScalarKind,
+    Interpolation, Sampling,
+    WithSpan,
+    Module,
+    Type, TypeInner,
+    Binding,
+};
+#[cfg(feature = "naga-dep")]
+pub use naga::valid::{ModuleInfo, ValidationFlags, ValidationError};
+#[cfg(feature = "naga-dep")]
+pub use naga::error::ShaderError;
+
+/// Re-export of the naga WGSL frontend module, for use in shader compilation.
+#[cfg(feature = "wgsl-in")]
+pub use naga::front::wgsl;
+
+/// Re-export of the naga GLSL frontend module, for use in shader compilation.
+#[cfg(feature = "glsl-in")]
+pub use naga::front::glsl;
+
+/// Re-export of the naga SPIR-V frontend module, for use in shader compilation.
+#[cfg(feature = "spv-in")]
+pub use naga::front::spv;
 
 use alloc::borrow::Cow;
 use core::fmt;

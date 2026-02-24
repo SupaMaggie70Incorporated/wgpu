@@ -7,6 +7,12 @@ use crate::{
 use alloc::{boxed::Box, format, string::ToString as _};
 use core::num::NonZeroU64;
 
+// Access naga types through wgpu-shaders rather than depending on naga directly.
+#[cfg(feature = "naga-dep")]
+use wgpu_shaders::{ShaderError, ValidationFlags};
+#[cfg(feature = "wgsl")]
+use wgpu_shaders::wgsl;
+
 /// This machinery requires the following limits:
 ///
 /// - max_bind_groups: 2,
@@ -81,8 +87,8 @@ impl Dispatch {
         const DST_BUFFER_SIZE: NonZeroU64 = NonZeroU64::new(SRC_BUFFER_SIZE.get() * 2).unwrap();
 
         #[cfg(feature = "wgsl")]
-        let module = naga::front::wgsl::parse_str(&src).map_err(|inner| {
-            CreateShaderModuleError::Parsing(naga::error::ShaderError {
+        let module = wgsl::parse_str(&src).map_err(|inner| {
+            CreateShaderModuleError::Parsing(ShaderError {
                 source: src.clone(),
                 label: None,
                 inner: Box::new(inner),
@@ -95,11 +101,11 @@ impl Dispatch {
         let info = crate::device::create_validator(
             wgt::Features::IMMEDIATES,
             wgt::DownlevelFlags::empty(),
-            naga::valid::ValidationFlags::all(),
+            ValidationFlags::all(),
         )
         .validate(&module)
         .map_err(|inner| {
-            CreateShaderModuleError::Validation(naga::error::ShaderError {
+            CreateShaderModuleError::Validation(ShaderError {
                 source: src,
                 label: None,
                 inner: Box::new(inner),

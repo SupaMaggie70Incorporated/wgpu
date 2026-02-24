@@ -64,7 +64,6 @@ extern crate alloc;
 extern crate std;
 extern crate wgpu_hal as hal;
 extern crate wgpu_shader_types as wst;
-extern crate wgpu_shaders as wgs;
 extern crate wgpu_types as wgt;
 
 mod as_hal;
@@ -101,7 +100,7 @@ mod weak_vec;
 mod scratch;
 pub mod validation;
 
-pub use validation::{map_storage_format_from_naga, map_storage_format_to_naga};
+pub use wgpu_shaders::validation::{map_storage_format_from_naga, map_storage_format_to_naga};
 
 pub use hal::{api, MAX_BIND_GROUPS, MAX_COLOR_ATTACHMENTS, MAX_VERTEX_BUFFERS};
 

@@ -83,19 +83,23 @@ serde = [
 trace = ["serde", "std", "dep:ron", "wgpu-shaders/serde", "wgpu-types/trace"]
 
 ## Enable API replaying
-replay = ["serde", "wgpu-shaders/ir-in"]
+replay = ["serde", "wgpu-shaders/ir-in", "naga-dep"]
 
 #! ### Shading Language Support
 # --------------------------------------------------------------------
 
+## Enable naga as a transitive dependency via wgpu-shaders.
+## Enabled automatically by wgsl, glsl, spirv, and replay features.
+naga-dep = ["wgpu-shaders/naga-dep"]
+
 ## Enable `ShaderModuleSource::Wgsl`
-wgsl = ["wgpu-shaders/wgsl-in"]
+wgsl = ["wgpu-shaders/wgsl-in", "naga-dep"]
 
 ## Enable `ShaderModuleSource::Glsl`
-glsl = ["wgpu-shaders/glsl-in"]
+glsl = ["wgpu-shaders/glsl-in", "naga-dep"]
 
 ## Enable `ShaderModuleSource::SpirV`
-spirv = ["wgpu-shaders/spv-in"]
+spirv = ["wgpu-shaders/spv-in", "naga-dep"]
 
 #! ### Other
 # --------------------------------------------------------------------
@@ -167,7 +171,7 @@ wgpu-core-deps-wasm = { workspace = true, optional = true }
 wgpu-core-deps-windows-linux-android = { workspace = true, optional = true }
 
 [dependencies]
-wgpu-shaders = { workspace = true, features = ["naga-dep"] }
+wgpu-shaders = { workspace = true }
 wgpu-shader-types.workspace = true
 wgpu-hal.workspace = true
 wgpu-types.workspace = true

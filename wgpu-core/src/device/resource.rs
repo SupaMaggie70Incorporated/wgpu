@@ -21,6 +21,16 @@ use wgt::{
     TextureViewDimension,
 };
 
+// Access naga types through wgpu-shaders rather than depending on naga directly.
+#[cfg(feature = "naga-dep")]
+use wgpu_shaders::{ShaderError, ValidationFlags};
+#[cfg(feature = "wgsl")]
+use wgpu_shaders::wgsl;
+#[cfg(feature = "glsl")]
+use wgpu_shaders::glsl;
+#[cfg(feature = "spirv")]
+use wgpu_shaders::spv;
+
 #[cfg(feature = "trace")]
 use crate::device::trace;
 use crate::{
@@ -2228,11 +2238,11 @@ impl Device {
                 profiling::scope!("naga::front::wgsl::parse");
                 let capabilities =
                     features_to_naga_capabilities(self.features, self.downlevel.flags);
-                let mut options = naga::front::wgsl::Options::new();
+                let mut options = wgsl::Options::new();
                 options.capabilities = capabilities;
-                let mut frontend = naga::front::wgsl::Frontend::new_with_options(options);
+                let mut frontend = wgsl::Frontend::new_with_options(options);
                 let module = frontend.parse(&code).map_err(|inner| {
-                    pipeline::CreateShaderModuleError::Parsing(naga::error::ShaderError {
+                    pipeline::CreateShaderModuleError::Parsing(ShaderError {
                         source: code.to_string(),
                         label: desc.label.as_ref().map(|l| l.to_string()),
                         inner: Box::new(inner),
@@ -2241,11 +2251,11 @@ impl Device {
                 (Cow::Owned(module), code.into_owned())
             }
             #[cfg(feature = "spirv")]
-            pipeline::ShaderModuleSource::SpirV(spv, options) => {
-                let parser = naga::front::spv::Frontend::new(spv.iter().cloned(), &options);
+            pipeline::ShaderModuleSource::SpirV(spv_data, options) => {
+                let parser = spv::Frontend::new(spv_data.iter().cloned(), &options);
                 profiling::scope!("naga::front::spv::Frontend");
                 let module = parser.parse().map_err(|inner| {
-                    pipeline::CreateShaderModuleError::ParsingSpirV(naga::error::ShaderError {
+                    pipeline::CreateShaderModuleError::ParsingSpirV(ShaderError {
                         source: String::new(),
                         label: desc.label.as_ref().map(|l| l.to_string()),
                         inner: Box::new(inner),
@@ -2255,10 +2265,10 @@ impl Device {
             }
             #[cfg(feature = "glsl")]
             pipeline::ShaderModuleSource::Glsl(code, options) => {
-                let mut parser = naga::front::glsl::Frontend::default();
+                let mut parser = glsl::Frontend::default();
                 profiling::scope!("naga::front::glsl::Frontend.parse");
                 let module = parser.parse(&options, &code).map_err(|inner| {
-                    pipeline::CreateShaderModuleError::ParsingGlsl(naga::error::ShaderError {
+                    pipeline::CreateShaderModuleError::ParsingGlsl(ShaderError {
                         source: code.to_string(),
                         label: desc.label.as_ref().map(|l| l.to_string()),
                         inner: Box::new(inner),
@@ -2266,6 +2276,7 @@ impl Device {
                 })?;
                 (Cow::Owned(module), code.into_owned())
             }
+            #[cfg(feature = "naga-dep")]
             pipeline::ShaderModuleSource::Naga(module) => (module, String::new()),
             pipeline::ShaderModuleSource::Dummy(_) => panic!("found `ShaderModuleSource::Dummy`"),
         };
@@ -2300,11 +2311,11 @@ impl Device {
         let info = create_validator(
             self.features,
             self.downlevel.flags,
-            naga::valid::ValidationFlags::all(),
+            ValidationFlags::all(),
         )
         .validate(&module)
         .map_err(|inner| {
-            pipeline::CreateShaderModuleError::Validation(naga::error::ShaderError {
+            pipeline::CreateShaderModuleError::Validation(ShaderError {
                 source,
                 label: desc.label.as_ref().map(|l| l.to_string()),
                 inner: Box::new(inner),

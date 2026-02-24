@@ -19,6 +19,21 @@ use crate::{
     validation::shader_io_deductions::MaxFragmentShaderInputDeduction, FastHashMap, FastHashSet,
 };
 
+// Access naga IR types through wgpu-shaders rather than depending on naga directly.
+// These are only available when the naga-dep feature is active.
+use wgpu_shaders::{
+    Arena, UniqueArena, Handle,
+    ImageDimension, ImageClass,
+    AddressSpace, StorageAccess,
+    VectorSize, Scalar, ScalarKind,
+    Interpolation, Sampling,
+    Module, ModuleInfo,
+    Type, TypeInner,
+    Binding,
+};
+use wgpu_shader_types::BuiltIn;
+use wgpu_shaders::validation::{map_storage_format_from_naga, map_storage_format_to_naga};
+
 pub mod shader_io_deductions;
 
 #[derive(Debug)]
@@ -27,9 +42,9 @@ enum ResourceType {
         size: wgt::BufferSize,
     },
     Texture {
-        dim: naga::ImageDimension,
+        dim: ImageDimension,
         arrayed: bool,
-        class: naga::ImageClass,
+        class: ImageClass,
     },
     Sampler {
         comparison: bool,
@@ -53,7 +68,7 @@ impl From<&ResourceType> for BindingTypeName {
         match ty {
             ResourceType::Buffer { .. } => BindingTypeName::Buffer,
             ResourceType::Texture {
-                class: naga::ImageClass::External,
+                class: ImageClass::External,
                 ..
             } => BindingTypeName::ExternalTexture,
             ResourceType::Texture { .. } => BindingTypeName::Texture,
@@ -82,14 +97,14 @@ struct Resource {
     name: Option<String>,
     bind: wst::ResourceBinding,
     ty: ResourceType,
-    class: naga::AddressSpace,
+    class: AddressSpace,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum NumericDimension {
     Scalar,
-    Vector(naga::VectorSize),
-    Matrix(naga::VectorSize, naga::VectorSize),
+    Vector(VectorSize),
+    Matrix(VectorSize, VectorSize),
 }
 
 impl fmt::Display for NumericDimension {
@@ -105,7 +120,7 @@ impl fmt::Display for NumericDimension {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct NumericType {
     dim: NumericDimension,
-    scalar: naga::Scalar,
+    scalar: Scalar
 }
 
 impl fmt::Display for NumericType {
@@ -123,8 +138,8 @@ impl fmt::Display for NumericType {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InterfaceVar {
     pub ty: NumericType,
-    interpolation: Option<naga::Interpolation>,
-    sampling: Option<naga::Sampling>,
+    interpolation: Option<Interpolation>,
+    sampling: Option<Sampling>,
     per_primitive: bool,
 }
 
@@ -152,7 +167,7 @@ impl fmt::Display for InterfaceVar {
 #[derive(Debug, Eq, PartialEq)]
 enum Varying {
     Local { location: u32, iv: InterfaceVar },
-    BuiltIn(naga::BuiltIn),
+    BuiltIn(BuiltIn),
 }
 
 #[allow(unused)]
@@ -172,10 +187,10 @@ struct EntryPointMeshInfo {
 struct EntryPoint {
     inputs: Vec<Varying>,
     outputs: Vec<Varying>,
-    resources: Vec<naga::Handle<Resource>>,
+    resources: Vec<Handle<Resource>>,
     #[allow(unused)]
     spec_constants: Vec<SpecializationConstant>,
-    sampling_pairs: FastHashSet<(naga::Handle<Resource>, naga::Handle<Resource>)>,
+    sampling_pairs: FastHashSet<(Handle<Resource>, Handle<Resource>)>,
     workgroup_size: [u32; 3],
     dual_source_blending: bool,
     task_payload_size: Option<u32>,
@@ -185,7 +200,7 @@ struct EntryPoint {
 #[derive(Debug)]
 pub struct Interface {
     limits: wgt::Limits,
-    resources: naga::Arena<Resource>,
+    resources: Arena<Resource>,
     entry_points: FastHashMap<(wst::ShaderStage, String), EntryPoint>,
 }
 
@@ -205,11 +220,11 @@ pub enum BindingError {
     },
     #[error("Storage class {binding:?} doesn't match the shader {shader:?}")]
     WrongAddressSpace {
-        binding: naga::AddressSpace,
-        shader: naga::AddressSpace,
+        binding: AddressSpace,
+        shader: AddressSpace,
     },
     #[error("Address space {space:?} is not a valid Buffer address space")]
-    WrongBufferAddressSpace { space: naga::AddressSpace },
+    WrongBufferAddressSpace { space: AddressSpace },
     #[error("Buffer structure size {buffer_size}, added to one element of an unbound array, if it's the last field, ended up greater than the given `min_binding_size`, which is {min_binding_size}")]
     WrongBufferSize {
         buffer_size: wgt::BufferSize,
@@ -217,14 +232,14 @@ pub enum BindingError {
     },
     #[error("View dimension {dim:?} (is array: {is_array}) doesn't match the binding {binding:?}")]
     WrongTextureViewDimension {
-        dim: naga::ImageDimension,
+        dim: ImageDimension,
         is_array: bool,
         binding: BindingType,
     },
     #[error("Texture class {binding:?} doesn't match the shader {shader:?}")]
     WrongTextureClass {
-        binding: naga::ImageClass,
-        shader: naga::ImageClass,
+        binding: ImageClass,
+        shader: ImageClass,
     },
     #[error("Comparison flag doesn't match the shader")]
     WrongSamplerComparison,
@@ -263,9 +278,9 @@ pub enum InputError {
     #[error("Input type is not compatible with the provided {0}")]
     WrongType(NumericType),
     #[error("Input interpolation doesn't match provided {0:?}")]
-    InterpolationMismatch(Option<naga::Interpolation>),
+    InterpolationMismatch(Option<Interpolation>),
     #[error("Input sampling doesn't match provided {0:?}")]
-    SamplingMismatch(Option<naga::Sampling>),
+    SamplingMismatch(Option<Sampling>),
     #[error("Pipeline input has per_primitive={pipeline_input}, but shader expects per_primitive={shader}")]
     WrongPerPrimitive { pipeline_input: bool, shader: bool },
 }
@@ -440,117 +455,6 @@ impl WebGpuError for StageError {
     }
 }
 
-pub fn map_storage_format_to_naga(format: wgt::TextureFormat) -> Option<naga::StorageFormat> {
-    use naga::StorageFormat as Sf;
-    use wgt::TextureFormat as Tf;
-
-    Some(match format {
-        Tf::R8Unorm => Sf::R8Unorm,
-        Tf::R8Snorm => Sf::R8Snorm,
-        Tf::R8Uint => Sf::R8Uint,
-        Tf::R8Sint => Sf::R8Sint,
-
-        Tf::R16Uint => Sf::R16Uint,
-        Tf::R16Sint => Sf::R16Sint,
-        Tf::R16Float => Sf::R16Float,
-        Tf::Rg8Unorm => Sf::Rg8Unorm,
-        Tf::Rg8Snorm => Sf::Rg8Snorm,
-        Tf::Rg8Uint => Sf::Rg8Uint,
-        Tf::Rg8Sint => Sf::Rg8Sint,
-
-        Tf::R32Uint => Sf::R32Uint,
-        Tf::R32Sint => Sf::R32Sint,
-        Tf::R32Float => Sf::R32Float,
-        Tf::Rg16Uint => Sf::Rg16Uint,
-        Tf::Rg16Sint => Sf::Rg16Sint,
-        Tf::Rg16Float => Sf::Rg16Float,
-        Tf::Rgba8Unorm => Sf::Rgba8Unorm,
-        Tf::Rgba8Snorm => Sf::Rgba8Snorm,
-        Tf::Rgba8Uint => Sf::Rgba8Uint,
-        Tf::Rgba8Sint => Sf::Rgba8Sint,
-        Tf::Bgra8Unorm => Sf::Bgra8Unorm,
-
-        Tf::Rgb10a2Uint => Sf::Rgb10a2Uint,
-        Tf::Rgb10a2Unorm => Sf::Rgb10a2Unorm,
-        Tf::Rg11b10Ufloat => Sf::Rg11b10Ufloat,
-
-        Tf::R64Uint => Sf::R64Uint,
-        Tf::Rg32Uint => Sf::Rg32Uint,
-        Tf::Rg32Sint => Sf::Rg32Sint,
-        Tf::Rg32Float => Sf::Rg32Float,
-        Tf::Rgba16Uint => Sf::Rgba16Uint,
-        Tf::Rgba16Sint => Sf::Rgba16Sint,
-        Tf::Rgba16Float => Sf::Rgba16Float,
-
-        Tf::Rgba32Uint => Sf::Rgba32Uint,
-        Tf::Rgba32Sint => Sf::Rgba32Sint,
-        Tf::Rgba32Float => Sf::Rgba32Float,
-
-        Tf::R16Unorm => Sf::R16Unorm,
-        Tf::R16Snorm => Sf::R16Snorm,
-        Tf::Rg16Unorm => Sf::Rg16Unorm,
-        Tf::Rg16Snorm => Sf::Rg16Snorm,
-        Tf::Rgba16Unorm => Sf::Rgba16Unorm,
-        Tf::Rgba16Snorm => Sf::Rgba16Snorm,
-
-        _ => return None,
-    })
-}
-
-pub fn map_storage_format_from_naga(format: naga::StorageFormat) -> wgt::TextureFormat {
-    use naga::StorageFormat as Sf;
-    use wgt::TextureFormat as Tf;
-
-    match format {
-        Sf::R8Unorm => Tf::R8Unorm,
-        Sf::R8Snorm => Tf::R8Snorm,
-        Sf::R8Uint => Tf::R8Uint,
-        Sf::R8Sint => Tf::R8Sint,
-
-        Sf::R16Uint => Tf::R16Uint,
-        Sf::R16Sint => Tf::R16Sint,
-        Sf::R16Float => Tf::R16Float,
-        Sf::Rg8Unorm => Tf::Rg8Unorm,
-        Sf::Rg8Snorm => Tf::Rg8Snorm,
-        Sf::Rg8Uint => Tf::Rg8Uint,
-        Sf::Rg8Sint => Tf::Rg8Sint,
-
-        Sf::R32Uint => Tf::R32Uint,
-        Sf::R32Sint => Tf::R32Sint,
-        Sf::R32Float => Tf::R32Float,
-        Sf::Rg16Uint => Tf::Rg16Uint,
-        Sf::Rg16Sint => Tf::Rg16Sint,
-        Sf::Rg16Float => Tf::Rg16Float,
-        Sf::Rgba8Unorm => Tf::Rgba8Unorm,
-        Sf::Rgba8Snorm => Tf::Rgba8Snorm,
-        Sf::Rgba8Uint => Tf::Rgba8Uint,
-        Sf::Rgba8Sint => Tf::Rgba8Sint,
-        Sf::Bgra8Unorm => Tf::Bgra8Unorm,
-
-        Sf::Rgb10a2Uint => Tf::Rgb10a2Uint,
-        Sf::Rgb10a2Unorm => Tf::Rgb10a2Unorm,
-        Sf::Rg11b10Ufloat => Tf::Rg11b10Ufloat,
-
-        Sf::R64Uint => Tf::R64Uint,
-        Sf::Rg32Uint => Tf::Rg32Uint,
-        Sf::Rg32Sint => Tf::Rg32Sint,
-        Sf::Rg32Float => Tf::Rg32Float,
-        Sf::Rgba16Uint => Tf::Rgba16Uint,
-        Sf::Rgba16Sint => Tf::Rgba16Sint,
-        Sf::Rgba16Float => Tf::Rgba16Float,
-
-        Sf::Rgba32Uint => Tf::Rgba32Uint,
-        Sf::Rgba32Sint => Tf::Rgba32Sint,
-        Sf::Rgba32Float => Tf::Rgba32Float,
-
-        Sf::R16Unorm => Tf::R16Unorm,
-        Sf::R16Snorm => Tf::R16Snorm,
-        Sf::Rg16Unorm => Tf::Rg16Unorm,
-        Sf::Rg16Snorm => Tf::Rg16Snorm,
-        Sf::Rgba16Unorm => Tf::Rgba16Unorm,
-        Sf::Rgba16Snorm => Tf::Rgba16Snorm,
-    }
-}
 
 impl Resource {
     fn check_binding_use(&self, entry: &BindGroupLayoutEntry) -> Result<(), BindingError> {
@@ -563,11 +467,11 @@ impl Resource {
                         min_binding_size,
                     } => {
                         let class = match ty {
-                            wgt::BufferBindingType::Uniform => naga::AddressSpace::Uniform,
+                            wgt::BufferBindingType::Uniform => AddressSpace::Uniform,
                             wgt::BufferBindingType::Storage { read_only } => {
-                                let mut naga_access = naga::StorageAccess::LOAD;
-                                naga_access.set(naga::StorageAccess::STORE, !read_only);
-                                naga::AddressSpace::Storage {
+                                let mut naga_access = StorageAccess::LOAD;
+                                naga_access.set(StorageAccess::STORE, !read_only);
+                                AddressSpace::Storage {
                                     access: naga_access,
                                 }
                             }
@@ -629,8 +533,8 @@ impl Resource {
                 };
                 if arrayed {
                     match (dim, view_dimension) {
-                        (naga::ImageDimension::D2, wgt::TextureViewDimension::D2Array) => (),
-                        (naga::ImageDimension::Cube, wgt::TextureViewDimension::CubeArray) => (),
+                        (ImageDimension::D2, wgt::TextureViewDimension::D2Array) => (),
+                        (ImageDimension::Cube, wgt::TextureViewDimension::CubeArray) => (),
                         _ => {
                             return Err(BindingError::WrongTextureViewDimension {
                                 dim,
@@ -641,10 +545,10 @@ impl Resource {
                     }
                 } else {
                     match (dim, view_dimension) {
-                        (naga::ImageDimension::D1, wgt::TextureViewDimension::D1) => (),
-                        (naga::ImageDimension::D2, wgt::TextureViewDimension::D2) => (),
-                        (naga::ImageDimension::D3, wgt::TextureViewDimension::D3) => (),
-                        (naga::ImageDimension::Cube, wgt::TextureViewDimension::Cube) => (),
+                        (ImageDimension::D1, wgt::TextureViewDimension::D1) => (),
+                        (ImageDimension::D2, wgt::TextureViewDimension::D2) => (),
+                        (ImageDimension::D3, wgt::TextureViewDimension::D3) => (),
+                        (ImageDimension::Cube, wgt::TextureViewDimension::Cube) => (),
                         _ => {
                             return Err(BindingError::WrongTextureViewDimension {
                                 dim,
@@ -661,19 +565,19 @@ impl Resource {
                         multisampled: multi,
                     } => {
                         let binding_class = match sample_type {
-                            wgt::TextureSampleType::Float { .. } => naga::ImageClass::Sampled {
-                                kind: naga::ScalarKind::Float,
+                            wgt::TextureSampleType::Float { .. } => ImageClass::Sampled {
+                                kind: ScalarKind::Float,
                                 multi,
                             },
-                            wgt::TextureSampleType::Sint => naga::ImageClass::Sampled {
-                                kind: naga::ScalarKind::Sint,
+                            wgt::TextureSampleType::Sint => ImageClass::Sampled {
+                                kind: ScalarKind::Sint,
                                 multi,
                             },
-                            wgt::TextureSampleType::Uint => naga::ImageClass::Sampled {
-                                kind: naga::ScalarKind::Uint,
+                            wgt::TextureSampleType::Uint => ImageClass::Sampled {
+                                kind: ScalarKind::Uint,
                                 multi,
                             },
-                            wgt::TextureSampleType::Depth => naga::ImageClass::Depth { multi },
+                            wgt::TextureSampleType::Depth => ImageClass::Depth { multi },
                         };
                         if shader_class == binding_class {
                             Ok(())
@@ -686,39 +590,39 @@ impl Resource {
                         format: wgt_binding_format,
                         view_dimension: _,
                     } => {
-                        const LOAD_STORE: naga::StorageAccess =
-                            naga::StorageAccess::LOAD.union(naga::StorageAccess::STORE);
+                        const LOAD_STORE: StorageAccess =
+                            StorageAccess::LOAD.union(StorageAccess::STORE);
                         let binding_format = map_storage_format_to_naga(wgt_binding_format)
                             .ok_or(BindingError::BadStorageFormat(wgt_binding_format))?;
                         let binding_access = match wgt_binding_access {
-                            wgt::StorageTextureAccess::ReadOnly => naga::StorageAccess::LOAD,
-                            wgt::StorageTextureAccess::WriteOnly => naga::StorageAccess::STORE,
+                            wgt::StorageTextureAccess::ReadOnly => StorageAccess::LOAD,
+                            wgt::StorageTextureAccess::WriteOnly => StorageAccess::STORE,
                             wgt::StorageTextureAccess::ReadWrite => LOAD_STORE,
                             wgt::StorageTextureAccess::Atomic => {
-                                naga::StorageAccess::ATOMIC | LOAD_STORE
+                                StorageAccess::ATOMIC | LOAD_STORE
                             }
                         };
                         match shader_class {
                             // Formats must match exactly. A write-only shader (but not a
                             // read-only shader) is compatible with a read-write binding.
-                            naga::ImageClass::Storage {
+                            ImageClass::Storage {
                                 format: shader_format,
                                 access: shader_access,
                             } if shader_format == binding_format
                                 && (shader_access == binding_access
-                                    || shader_access == naga::StorageAccess::STORE
+                                    || shader_access == StorageAccess::STORE
                                         && binding_access == LOAD_STORE) =>
                             {
                                 Ok(())
                             }
-                            _ => Err(naga::ImageClass::Storage {
+                            _ => Err(ImageClass::Storage {
                                 format: binding_format,
                                 access: binding_access,
                             }),
                         }
                     }
                     BindingType::ExternalTexture => {
-                        let binding_class = naga::ImageClass::External;
+                        let binding_class = ImageClass::External;
                         if shader_class == binding_class {
                             Ok(())
                         } else {
@@ -760,9 +664,9 @@ impl Resource {
         Ok(match self.ty {
             ResourceType::Buffer { size } => BindingType::Buffer {
                 ty: match self.class {
-                    naga::AddressSpace::Uniform => wgt::BufferBindingType::Uniform,
-                    naga::AddressSpace::Storage { access } => wgt::BufferBindingType::Storage {
-                        read_only: access == naga::StorageAccess::LOAD,
+                    AddressSpace::Uniform => wgt::BufferBindingType::Uniform,
+                    AddressSpace::Storage { access } => wgt::BufferBindingType::Storage {
+                        read_only: access == StorageAccess::LOAD,
                     },
                     _ => return Err(BindingError::WrongBufferAddressSpace { space: self.class }),
                 },
@@ -780,42 +684,42 @@ impl Resource {
                 class,
             } => {
                 let view_dimension = match dim {
-                    naga::ImageDimension::D1 => wgt::TextureViewDimension::D1,
-                    naga::ImageDimension::D2 if arrayed => wgt::TextureViewDimension::D2Array,
-                    naga::ImageDimension::D2 => wgt::TextureViewDimension::D2,
-                    naga::ImageDimension::D3 => wgt::TextureViewDimension::D3,
-                    naga::ImageDimension::Cube if arrayed => wgt::TextureViewDimension::CubeArray,
-                    naga::ImageDimension::Cube => wgt::TextureViewDimension::Cube,
+                    ImageDimension::D1 => wgt::TextureViewDimension::D1,
+                    ImageDimension::D2 if arrayed => wgt::TextureViewDimension::D2Array,
+                    ImageDimension::D2 => wgt::TextureViewDimension::D2,
+                    ImageDimension::D3 => wgt::TextureViewDimension::D3,
+                    ImageDimension::Cube if arrayed => wgt::TextureViewDimension::CubeArray,
+                    ImageDimension::Cube => wgt::TextureViewDimension::Cube,
                 };
                 match class {
-                    naga::ImageClass::Sampled { multi, kind } => BindingType::Texture {
+                    ImageClass::Sampled { multi, kind } => BindingType::Texture {
                         sample_type: match kind {
-                            naga::ScalarKind::Float => wgt::TextureSampleType::Float {
+                            ScalarKind::Float => wgt::TextureSampleType::Float {
                                 filterable: is_reffed_by_sampler_in_entrypoint,
                             },
-                            naga::ScalarKind::Sint => wgt::TextureSampleType::Sint,
-                            naga::ScalarKind::Uint => wgt::TextureSampleType::Uint,
-                            naga::ScalarKind::AbstractInt
-                            | naga::ScalarKind::AbstractFloat
-                            | naga::ScalarKind::Bool => unreachable!(),
+                            ScalarKind::Sint => wgt::TextureSampleType::Sint,
+                            ScalarKind::Uint => wgt::TextureSampleType::Uint,
+                            ScalarKind::AbstractInt
+                            | ScalarKind::AbstractFloat
+                            | ScalarKind::Bool => unreachable!(),
                         },
                         view_dimension,
                         multisampled: multi,
                     },
-                    naga::ImageClass::Depth { multi } => BindingType::Texture {
+                    ImageClass::Depth { multi } => BindingType::Texture {
                         sample_type: wgt::TextureSampleType::Depth,
                         view_dimension,
                         multisampled: multi,
                     },
-                    naga::ImageClass::Storage { format, access } => BindingType::StorageTexture {
+                    ImageClass::Storage { format, access } => BindingType::StorageTexture {
                         access: {
-                            const LOAD_STORE: naga::StorageAccess =
-                                naga::StorageAccess::LOAD.union(naga::StorageAccess::STORE);
+                            const LOAD_STORE: StorageAccess =
+                                StorageAccess::LOAD.union(StorageAccess::STORE);
                             match access {
-                                naga::StorageAccess::LOAD => wgt::StorageTextureAccess::ReadOnly,
-                                naga::StorageAccess::STORE => wgt::StorageTextureAccess::WriteOnly,
+                                StorageAccess::LOAD => wgt::StorageTextureAccess::ReadOnly,
+                                StorageAccess::STORE => wgt::StorageTextureAccess::WriteOnly,
                                 LOAD_STORE => wgt::StorageTextureAccess::ReadWrite,
-                                _ if access.contains(naga::StorageAccess::ATOMIC) => {
+                                _ if access.contains(StorageAccess::ATOMIC) => {
                                     wgt::StorageTextureAccess::Atomic
                                 }
                                 _ => unreachable!(),
@@ -830,7 +734,7 @@ impl Resource {
                             f
                         },
                     },
-                    naga::ImageClass::External => BindingType::ExternalTexture,
+                    ImageClass::External => BindingType::ExternalTexture,
                 }
             }
             ResourceType::AccelerationStructure { vertex_return } => {
@@ -842,25 +746,24 @@ impl Resource {
 
 impl NumericType {
     fn from_vertex_format(format: wgt::VertexFormat) -> Self {
-        use naga::{Scalar, VectorSize as Vs};
         use wgt::VertexFormat as Vf;
 
         let (dim, scalar) = match format {
             Vf::Uint8 | Vf::Uint16 | Vf::Uint32 => (NumericDimension::Scalar, Scalar::U32),
             Vf::Uint8x2 | Vf::Uint16x2 | Vf::Uint32x2 => {
-                (NumericDimension::Vector(Vs::Bi), Scalar::U32)
+                (NumericDimension::Vector(VectorSize::Bi), Scalar::U32)
             }
-            Vf::Uint32x3 => (NumericDimension::Vector(Vs::Tri), Scalar::U32),
+            Vf::Uint32x3 => (NumericDimension::Vector(VectorSize::Tri), Scalar::U32),
             Vf::Uint8x4 | Vf::Uint16x4 | Vf::Uint32x4 => {
-                (NumericDimension::Vector(Vs::Quad), Scalar::U32)
+                (NumericDimension::Vector(VectorSize::Quad), Scalar::U32)
             }
             Vf::Sint8 | Vf::Sint16 | Vf::Sint32 => (NumericDimension::Scalar, Scalar::I32),
             Vf::Sint8x2 | Vf::Sint16x2 | Vf::Sint32x2 => {
-                (NumericDimension::Vector(Vs::Bi), Scalar::I32)
+                (NumericDimension::Vector(VectorSize::Bi), Scalar::I32)
             }
-            Vf::Sint32x3 => (NumericDimension::Vector(Vs::Tri), Scalar::I32),
+            Vf::Sint32x3 => (NumericDimension::Vector(VectorSize::Tri), Scalar::I32),
             Vf::Sint8x4 | Vf::Sint16x4 | Vf::Sint32x4 => {
-                (NumericDimension::Vector(Vs::Quad), Scalar::I32)
+                (NumericDimension::Vector(VectorSize::Quad), Scalar::I32)
             }
             Vf::Unorm8 | Vf::Unorm16 | Vf::Snorm8 | Vf::Snorm16 | Vf::Float16 | Vf::Float32 => {
                 (NumericDimension::Scalar, Scalar::F32)
@@ -870,8 +773,8 @@ impl NumericType {
             | Vf::Unorm16x2
             | Vf::Snorm16x2
             | Vf::Float16x2
-            | Vf::Float32x2 => (NumericDimension::Vector(Vs::Bi), Scalar::F32),
-            Vf::Float32x3 => (NumericDimension::Vector(Vs::Tri), Scalar::F32),
+            | Vf::Float32x2 => (NumericDimension::Vector(VectorSize::Bi), Scalar::F32),
+            Vf::Float32x3 => (NumericDimension::Vector(VectorSize::Tri), Scalar::F32),
             Vf::Unorm8x4
             | Vf::Snorm8x4
             | Vf::Unorm16x4
@@ -879,11 +782,11 @@ impl NumericType {
             | Vf::Float16x4
             | Vf::Float32x4
             | Vf::Unorm10_10_10_2
-            | Vf::Unorm8x4Bgra => (NumericDimension::Vector(Vs::Quad), Scalar::F32),
+            | Vf::Unorm8x4Bgra => (NumericDimension::Vector(VectorSize::Quad), Scalar::F32),
             Vf::Float64 => (NumericDimension::Scalar, Scalar::F64),
-            Vf::Float64x2 => (NumericDimension::Vector(Vs::Bi), Scalar::F64),
-            Vf::Float64x3 => (NumericDimension::Vector(Vs::Tri), Scalar::F64),
-            Vf::Float64x4 => (NumericDimension::Vector(Vs::Quad), Scalar::F64),
+            Vf::Float64x2 => (NumericDimension::Vector(VectorSize::Bi), Scalar::F64),
+            Vf::Float64x3 => (NumericDimension::Vector(VectorSize::Tri), Scalar::F64),
+            Vf::Float64x4 => (NumericDimension::Vector(VectorSize::Quad), Scalar::F64),
         };
 
         NumericType {
@@ -895,7 +798,6 @@ impl NumericType {
     }
 
     fn from_texture_format(format: wgt::TextureFormat) -> Self {
-        use naga::{Scalar, VectorSize as Vs};
         use wgt::TextureFormat as Tf;
 
         let (dim, scalar) = match format {
@@ -905,18 +807,18 @@ impl NumericType {
             Tf::R8Uint | Tf::R16Uint | Tf::R32Uint => (NumericDimension::Scalar, Scalar::U32),
             Tf::R8Sint | Tf::R16Sint | Tf::R32Sint => (NumericDimension::Scalar, Scalar::I32),
             Tf::Rg8Unorm | Tf::Rg8Snorm | Tf::Rg16Float | Tf::Rg32Float => {
-                (NumericDimension::Vector(Vs::Bi), Scalar::F32)
+                (NumericDimension::Vector(VectorSize::Bi), Scalar::F32)
             }
             Tf::R64Uint => (NumericDimension::Scalar, Scalar::U64),
             Tf::Rg8Uint | Tf::Rg16Uint | Tf::Rg32Uint => {
-                (NumericDimension::Vector(Vs::Bi), Scalar::U32)
+                (NumericDimension::Vector(VectorSize::Bi), Scalar::U32)
             }
             Tf::Rg8Sint | Tf::Rg16Sint | Tf::Rg32Sint => {
-                (NumericDimension::Vector(Vs::Bi), Scalar::I32)
+                (NumericDimension::Vector(VectorSize::Bi), Scalar::I32)
             }
             Tf::R16Snorm | Tf::R16Unorm => (NumericDimension::Scalar, Scalar::F32),
-            Tf::Rg16Snorm | Tf::Rg16Unorm => (NumericDimension::Vector(Vs::Bi), Scalar::F32),
-            Tf::Rgba16Snorm | Tf::Rgba16Unorm => (NumericDimension::Vector(Vs::Quad), Scalar::F32),
+            Tf::Rg16Snorm | Tf::Rg16Unorm => (NumericDimension::Vector(VectorSize::Bi), Scalar::F32),
+            Tf::Rgba16Snorm | Tf::Rgba16Unorm => (NumericDimension::Vector(VectorSize::Quad), Scalar::F32),
             Tf::Rgba8Unorm
             | Tf::Rgba8UnormSrgb
             | Tf::Rgba8Snorm
@@ -924,14 +826,14 @@ impl NumericType {
             | Tf::Bgra8UnormSrgb
             | Tf::Rgb10a2Unorm
             | Tf::Rgba16Float
-            | Tf::Rgba32Float => (NumericDimension::Vector(Vs::Quad), Scalar::F32),
+            | Tf::Rgba32Float => (NumericDimension::Vector(VectorSize::Quad), Scalar::F32),
             Tf::Rgba8Uint | Tf::Rgba16Uint | Tf::Rgba32Uint | Tf::Rgb10a2Uint => {
-                (NumericDimension::Vector(Vs::Quad), Scalar::U32)
+                (NumericDimension::Vector(VectorSize::Quad), Scalar::U32)
             }
             Tf::Rgba8Sint | Tf::Rgba16Sint | Tf::Rgba32Sint => {
-                (NumericDimension::Vector(Vs::Quad), Scalar::I32)
+                (NumericDimension::Vector(VectorSize::Quad), Scalar::I32)
             }
-            Tf::Rg11b10Ufloat => (NumericDimension::Vector(Vs::Tri), Scalar::F32),
+            Tf::Rg11b10Ufloat => (NumericDimension::Vector(VectorSize::Tri), Scalar::F32),
             Tf::Stencil8
             | Tf::Depth16Unorm
             | Tf::Depth32Float
@@ -942,7 +844,7 @@ impl NumericType {
             }
             Tf::NV12 => panic!("Unexpected nv12 format"),
             Tf::P010 => panic!("Unexpected p010 format"),
-            Tf::Rgb9e5Ufloat => (NumericDimension::Vector(Vs::Tri), Scalar::F32),
+            Tf::Rgb9e5Ufloat => (NumericDimension::Vector(VectorSize::Tri), Scalar::F32),
             Tf::Bc1RgbaUnorm
             | Tf::Bc1RgbaUnormSrgb
             | Tf::Bc2RgbaUnorm
@@ -954,20 +856,20 @@ impl NumericType {
             | Tf::Etc2Rgb8A1Unorm
             | Tf::Etc2Rgb8A1UnormSrgb
             | Tf::Etc2Rgba8Unorm
-            | Tf::Etc2Rgba8UnormSrgb => (NumericDimension::Vector(Vs::Quad), Scalar::F32),
+            | Tf::Etc2Rgba8UnormSrgb => (NumericDimension::Vector(VectorSize::Quad), Scalar::F32),
             Tf::Bc4RUnorm | Tf::Bc4RSnorm | Tf::EacR11Unorm | Tf::EacR11Snorm => {
                 (NumericDimension::Scalar, Scalar::F32)
             }
             Tf::Bc5RgUnorm | Tf::Bc5RgSnorm | Tf::EacRg11Unorm | Tf::EacRg11Snorm => {
-                (NumericDimension::Vector(Vs::Bi), Scalar::F32)
+                (NumericDimension::Vector(VectorSize::Bi), Scalar::F32)
             }
             Tf::Bc6hRgbUfloat | Tf::Bc6hRgbFloat | Tf::Etc2Rgb8Unorm | Tf::Etc2Rgb8UnormSrgb => {
-                (NumericDimension::Vector(Vs::Tri), Scalar::F32)
+                (NumericDimension::Vector(VectorSize::Tri), Scalar::F32)
             }
             Tf::Astc {
                 block: _,
                 channel: _,
-            } => (NumericDimension::Vector(Vs::Quad), Scalar::F32),
+            } => (NumericDimension::Vector(VectorSize::Quad), Scalar::F32),
         };
 
         NumericType {
@@ -1047,20 +949,20 @@ pub struct StageIo {
 impl Interface {
     fn populate(
         list: &mut Vec<Varying>,
-        binding: Option<&naga::Binding>,
-        ty: naga::Handle<naga::Type>,
-        arena: &naga::UniqueArena<naga::Type>,
+        binding: Option<&Binding>,
+        ty: Handle<Type>,
+        arena: &UniqueArena<Type>,
     ) {
         let numeric_ty = match arena[ty].inner {
-            naga::TypeInner::Scalar(scalar) => NumericType {
+            TypeInner::Scalar(scalar) => NumericType {
                 dim: NumericDimension::Scalar,
                 scalar,
             },
-            naga::TypeInner::Vector { size, scalar } => NumericType {
+            TypeInner::Vector { size, scalar } => NumericType {
                 dim: NumericDimension::Vector(size),
                 scalar,
             },
-            naga::TypeInner::Matrix {
+            TypeInner::Matrix {
                 columns,
                 rows,
                 scalar,
@@ -1068,7 +970,7 @@ impl Interface {
                 dim: NumericDimension::Matrix(columns, rows),
                 scalar,
             },
-            naga::TypeInner::Struct { ref members, .. } => {
+            TypeInner::Struct { ref members, .. } => {
                 for member in members {
                     Self::populate(list, member.binding.as_ref(), member.ty, arena);
                 }
@@ -1086,7 +988,7 @@ impl Interface {
         };
 
         let varying = match binding {
-            Some(&naga::Binding::Location {
+            Some(&Binding::Location {
                 location,
                 interpolation,
                 sampling,
@@ -1101,7 +1003,7 @@ impl Interface {
                     per_primitive,
                 },
             },
-            Some(&naga::Binding::BuiltIn(built_in)) => Varying::BuiltIn(built_in),
+            Some(&Binding::BuiltIn(built_in)) => Varying::BuiltIn(built_in),
             None => {
                 log::error!("Missing binding for a varying");
                 return;
@@ -1110,8 +1012,8 @@ impl Interface {
         list.push(varying);
     }
 
-    pub fn new(module: &naga::Module, info: &naga::valid::ModuleInfo, limits: wgt::Limits) -> Self {
-        let mut resources = naga::Arena::new();
+    pub fn new(module: &Module, info: &ModuleInfo, limits: wgt::Limits) -> Self {
+        let mut resources = Arena::new();
         let mut resource_mapping = FastHashMap::default();
         for (var_handle, var) in module.global_variables.iter() {
             let bind = match var.binding {
@@ -1121,12 +1023,12 @@ impl Interface {
             let naga_ty = &module.types[var.ty].inner;
 
             let inner_ty = match *naga_ty {
-                naga::TypeInner::BindingArray { base, .. } => &module.types[base].inner,
+                TypeInner::BindingArray { base, .. } => &module.types[base].inner,
                 ref ty => ty,
             };
 
             let ty = match *inner_ty {
-                naga::TypeInner::Image {
+                TypeInner::Image {
                     dim,
                     arrayed,
                     class,
@@ -1135,8 +1037,8 @@ impl Interface {
                     arrayed,
                     class,
                 },
-                naga::TypeInner::Sampler { comparison } => ResourceType::Sampler { comparison },
-                naga::TypeInner::AccelerationStructure { vertex_return } => {
+                TypeInner::Sampler { comparison } => ResourceType::Sampler { comparison },
+                TypeInner::AccelerationStructure { vertex_return } => {
                     ResourceType::AccelerationStructure { vertex_return }
                 }
                 ref other => ResourceType::Buffer {
@@ -1510,10 +1412,10 @@ impl Interface {
                         });
                     }
                 }
-                Varying::BuiltIn(naga::BuiltIn::PrimitiveIndex) => {
+                Varying::BuiltIn(BuiltIn::PrimitiveIndex) => {
                     this_stage_primitive_index = true;
                 }
-                Varying::BuiltIn(naga::BuiltIn::DrawIndex) => {
+                Varying::BuiltIn(BuiltIn::DrawIndex) => {
                     has_draw_id = true;
                 }
                 Varying::BuiltIn(_) => {}
@@ -1570,7 +1472,7 @@ impl Interface {
                         cmp @ wgt::CompareFunction::Equal | cmp @ wgt::CompareFunction::NotEqual,
                     ) = compare_function
                     {
-                        if let Varying::BuiltIn(naga::BuiltIn::Position { invariant: false }) =
+                        if let Varying::BuiltIn(BuiltIn::Position { invariant: false }) =
                             *output
                         {
                             log::warn!(
@@ -1681,7 +1583,7 @@ impl Interface {
 
                 if entry_point
                     .outputs
-                    .contains(&Varying::BuiltIn(naga::BuiltIn::FragDepth))
+                    .contains(&Varying::BuiltIn(BuiltIn::FragDepth))
                     && !has_depth_attachment
                 {
                     return Err(StageError::MissingFragDepthAttachment);
@@ -1689,7 +1591,7 @@ impl Interface {
             }
             ShaderStageForValidation::Mesh => {
                 for output in &entry_point.outputs {
-                    if matches!(output, Varying::BuiltIn(naga::BuiltIn::PrimitiveIndex)) {
+                    if matches!(output, Varying::BuiltIn(BuiltIn::PrimitiveIndex)) {
                         this_stage_primitive_index = true;
                     }
                 }

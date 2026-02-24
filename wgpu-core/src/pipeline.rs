@@ -8,9 +8,18 @@ use alloc::{
 use core::{marker::PhantomData, mem::ManuallyDrop, num::NonZeroU32};
 
 use arrayvec::ArrayVec;
-use naga::error::ShaderError;
 use thiserror::Error;
 use wgt::error::{ErrorType, WebGpuError};
+
+// Access naga types through wgpu-shaders rather than depending on naga directly.
+#[cfg(feature = "naga-dep")]
+use wgpu_shaders::{Module, ShaderError, WithSpan, ValidationError};
+#[cfg(feature = "wgsl")]
+use wgpu_shaders::wgsl;
+#[cfg(feature = "glsl")]
+use wgpu_shaders::glsl;
+#[cfg(feature = "spirv")]
+use wgpu_shaders::spv;
 
 pub use crate::pipeline_cache::PipelineCacheValidationError;
 use crate::{
@@ -39,10 +48,11 @@ pub enum ShaderModuleSource<'a> {
     #[cfg(feature = "wgsl")]
     Wgsl(Cow<'a, str>),
     #[cfg(feature = "glsl")]
-    Glsl(Cow<'a, str>, naga::front::glsl::Options),
+    Glsl(Cow<'a, str>, glsl::Options),
     #[cfg(feature = "spirv")]
-    SpirV(Cow<'a, [u32]>, naga::front::spv::Options),
-    Naga(Cow<'static, naga::Module>),
+    SpirV(Cow<'a, [u32]>, spv::Options),
+    #[cfg(feature = "naga-dep")]
+    Naga(Cow<'static, Module>),
     /// Dummy variant because `Naga` doesn't have a lifetime and without enough active features it
     /// could be the last one active.
     #[doc(hidden)]
@@ -92,7 +102,7 @@ impl ShaderModule {
 
     pub(crate) fn finalize_entry_point_name(
         &self,
-        stage: naga::ShaderStage,
+        stage: wst::ShaderStage,
         entry_point: Option<&str>,
     ) -> Result<String, validation::StageError> {
         match &self.interface {
@@ -110,19 +120,20 @@ impl ShaderModule {
 pub enum CreateShaderModuleError {
     #[cfg(feature = "wgsl")]
     #[error(transparent)]
-    Parsing(#[from] ShaderError<naga::front::wgsl::ParseError>),
+    Parsing(#[from] ShaderError<wgsl::ParseError>),
     #[cfg(feature = "glsl")]
     #[error(transparent)]
-    ParsingGlsl(#[from] ShaderError<naga::front::glsl::ParseErrors>),
+    ParsingGlsl(#[from] ShaderError<glsl::ParseErrors>),
     #[cfg(feature = "spirv")]
     #[error(transparent)]
-    ParsingSpirV(#[from] ShaderError<naga::front::spv::Error>),
+    ParsingSpirV(#[from] ShaderError<spv::Error>),
     #[error("Failed to generate the backend-specific code")]
     Generation,
     #[error(transparent)]
     Device(#[from] DeviceError),
+    #[cfg(feature = "naga-dep")]
     #[error(transparent)]
-    Validation(#[from] ShaderError<naga::WithSpan<naga::valid::ValidationError>>),
+    Validation(#[from] ShaderError<WithSpan<ValidationError>>),
     #[error(transparent)]
     MissingFeatures(#[from] MissingFeatures),
     #[error(
@@ -178,7 +189,7 @@ pub struct ProgrammableStageDescriptor<'a, SM = ShaderModuleId> {
     /// the key must be the constant's identifier name.
     ///
     /// The value may represent any of WGSL's concrete scalar types.
-    pub constants: naga::back::PipelineConstants,
+    pub constants: wst::PipelineConstants,
     /// Whether workgroup scoped memory will be initialized with zero values for this stage.
     ///
     /// This is required by the WebGPU spec, but may have overhead which can be avoided

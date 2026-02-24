@@ -1,5 +1,9 @@
 use core::fmt::{self, Debug, Display, Formatter};
 
+// naga::BuiltIn is defined in wgpu-shader-types and re-exported from naga;
+// we import it here directly to avoid a direct naga dependency.
+use wgpu_shader_types::BuiltIn;
+
 #[cfg(doc)]
 #[expect(unused_imports)]
 use crate::validation::StageError;
@@ -54,9 +58,7 @@ impl MaxFragmentShaderInputDeduction {
         }
     }
 
-    pub fn from_inter_stage_builtin(builtin: naga::BuiltIn) -> Option<Self> {
-        use naga::BuiltIn;
-
+    pub fn from_inter_stage_builtin(builtin: BuiltIn) -> Option<Self> {
         Some(Self::InterStageBuiltIn(match builtin {
             BuiltIn::Position { .. } => InterStageBuiltIn::Position,
             BuiltIn::FrontFacing => InterStageBuiltIn::FrontFacing,
@@ -111,7 +113,7 @@ impl MaxFragmentShaderInputDeduction {
     }
 }
 
-/// A [`naga::BuiltIn`] that counts towards
+/// A [`wgpu_shader_types::BuiltIn`] that counts towards
 /// a [`MaxFragmentShaderInputDeduction::InterStageBuiltIn`].
 ///
 /// See also <https://www.w3.org/TR/webgpu/#inter-stage-builtins>.

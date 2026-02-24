@@ -18,6 +18,12 @@ use core::{
     mem::{size_of, size_of_val},
     num::NonZeroU64,
 };
+
+// Access naga types through wgpu-shaders rather than depending on naga directly.
+#[cfg(feature = "naga-dep")]
+use wgpu_shaders::{ShaderError, ValidationFlags};
+#[cfg(feature = "wgsl")]
+use wgpu_shaders::wgsl;
 use wgt::Limits;
 
 /// Note: This needs to be under:

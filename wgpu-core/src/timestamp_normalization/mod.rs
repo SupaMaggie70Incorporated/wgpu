@@ -42,6 +42,9 @@ use crate::{
     track::BufferTracker,
 };
 
+// Access naga types through wgpu-shaders rather than depending on naga directly.
+use wgpu_shaders::naga;
+
 pub const TIMESTAMP_NORMALIZATION_BUFFER_USES: wgt::BufferUses =
     wgt::BufferUses::STORAGE_READ_WRITE;
 
