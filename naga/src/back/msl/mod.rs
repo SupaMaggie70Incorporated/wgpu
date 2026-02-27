@@ -912,8 +912,8 @@ pub fn supported_capabilities() -> crate::valid::Capabilities {
         | Caps::TEXTURE_EXTERNAL
         | Caps::SHADER_FLOAT16_IN_FLOAT32
         | Caps::SHADER_BARYCENTRICS
-        // No MESH_SHADER
-        // No MESH_SHADER_POINT_TOPOLOGY
+        | Caps::MESH_SHADER
+        | Caps::MESH_SHADER_POINT_TOPOLOGY
         | Caps::TEXTURE_AND_SAMPLER_BINDING_ARRAY_NON_UNIFORM_INDEXING
         // No BUFFER_BINDING_ARRAY_NON_UNIFORM_INDEXING
         | Caps::STORAGE_TEXTURE_BINDING_ARRAY_NON_UNIFORM_INDEXING

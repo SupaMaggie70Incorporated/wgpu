@@ -1346,7 +1346,7 @@ impl PhysicalDeviceProperties {
         let max_compute_workgroups_per_dimension = limits.max_compute_work_group_count[0]
             .min(limits.max_compute_work_group_count[1])
             .min(limits.max_compute_work_group_count[2]);
-        // Default is only implemented for tuples up to a cetain size.
+        // Default is only implemented for tuples up to a certain size.
         let (
             mut max_task_workgroup_total_count,
             mut max_task_workgroups_per_dimension,
