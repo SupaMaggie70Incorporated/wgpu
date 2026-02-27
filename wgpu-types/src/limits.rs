@@ -58,8 +58,10 @@ macro_rules! with_limits {
         $macro_name!(max_immediate_size, Ordering::Less);
         $macro_name!(max_non_sampler_bindings, Ordering::Less);
 
-        $macro_name!(max_task_mesh_workgroup_total_count, Ordering::Less);
-        $macro_name!(max_task_mesh_workgroups_per_dimension, Ordering::Less);
+        $macro_name!(max_task_workgroup_total_count, Ordering::Less);
+        $macro_name!(max_task_workgroups_per_dimension, Ordering::Less);
+        $macro_name!(max_mesh_workgroup_total_count, Ordering::Less);
+        $macro_name!(max_mesh_workgroups_per_dimension, Ordering::Less);
         $macro_name!(max_task_invocations_per_workgroup, Ordering::Less);
         $macro_name!(max_task_invocations_per_dimension, Ordering::Less);
         $macro_name!(max_mesh_invocations_per_workgroup, Ordering::Less);
@@ -240,12 +242,18 @@ pub struct Limits {
     /// to create many bind groups at the cost of a large up-front allocation at device creation.
     pub max_non_sampler_bindings: u32,
 
+    /// The maximum total value for a `RenderPass::draw_mesh_tasks(x, y, z)` call on a mesh pipeline with a task shader.
+    /// Higher is "better".
+    pub max_task_workgroup_total_count: u32,
+    /// The maximum value for each dimension of a `RenderPass::draw_mesh_tasks(x, y, z)` call on a mesh pipeline with a task shader.
+    /// Higher is "better".
+    pub max_task_workgroups_per_dimension: u32,
     /// The maximum total value for a `RenderPass::draw_mesh_tasks(x, y, z)` operation or the
     /// `@builtin(mesh_task_size)` returned from a task shader.  Higher is "better".
-    pub max_task_mesh_workgroup_total_count: u32,
+    pub max_mesh_workgroup_total_count: u32,
     /// The maximum value for each dimension of a `RenderPass::draw_mesh_tasks(x, y, z)` operation.
     /// Also for task shader outputs. Higher is "better".
-    pub max_task_mesh_workgroups_per_dimension: u32,
+    pub max_mesh_workgroups_per_dimension: u32,
     // These are fundamentally different. It is very common for limits on mesh shaders to be much lower.
     /// Maximum total number of invocations, or threads, per task shader workgroup. Higher is "better".
     pub max_task_invocations_per_workgroup: u32,
@@ -338,8 +346,10 @@ impl Limits {
     ///     max_compute_workgroups_per_dimension: 65535,
     ///     max_immediate_size: 0,
     ///     max_non_sampler_bindings: 1_000_000,
-    ///     max_task_mesh_workgroup_total_count: 0,
-    ///     max_task_mesh_workgroups_per_dimension: 0,
+    ///     max_task_workgroup_total_count: 0,
+    ///     max_task_workgroups_per_dimension: 0,
+    ///     max_mesh_workgroup_total_count: 0,
+    ///     max_mesh_workgroups_per_dimension: 0,
     ///     max_task_invocations_per_workgroup: 0,
     ///     max_task_invocations_per_dimension: 0,
     ///     max_mesh_invocations_per_workgroup: 0,
@@ -397,8 +407,10 @@ impl Limits {
             max_immediate_size: 0,
             max_non_sampler_bindings: 1_000_000,
 
-            max_task_mesh_workgroup_total_count: 0,
-            max_task_mesh_workgroups_per_dimension: 0,
+            max_task_workgroup_total_count: 0,
+            max_task_workgroups_per_dimension: 0,
+            max_mesh_workgroup_total_count: 0,
+            max_mesh_workgroups_per_dimension: 0,
             max_task_invocations_per_workgroup: 0,
             max_task_invocations_per_dimension: 0,
             max_mesh_invocations_per_workgroup: 0,
@@ -459,8 +471,10 @@ impl Limits {
     ///     max_buffer_size: 256 << 20, // (256 MiB)
     ///     max_non_sampler_bindings: 1_000_000,
     ///
-    ///     max_task_mesh_workgroup_total_count: 0,
-    ///     max_task_mesh_workgroups_per_dimension: 0,
+    ///     max_task_workgroup_total_count: 0,
+    ///     max_task_workgroups_per_dimension: 0,
+    ///     max_mesh_workgroup_total_count: 0,
+    ///     max_mesh_workgroups_per_dimension: 0,
     ///     max_task_invocations_per_workgroup: 0,
     ///     max_task_invocations_per_dimension: 0,
     ///     max_mesh_invocations_per_workgroup: 0,
@@ -537,8 +551,10 @@ impl Limits {
     ///     max_buffer_size: 256 << 20, // (256 MiB),
     ///     max_non_sampler_bindings: 1_000_000,
     ///
-    ///     max_task_mesh_workgroup_total_count: 0,
-    ///     max_task_mesh_workgroups_per_dimension: 0,
+    ///     max_task_workgroup_total_count: 0,
+    ///     max_task_workgroups_per_dimension: 0,
+    ///     max_mesh_workgroup_total_count: 0,
+    ///     max_mesh_workgroups_per_dimension: 0,
     ///     max_task_invocations_per_workgroup: 0,
     ///     max_task_invocations_per_dimension: 0,
     ///     max_mesh_invocations_per_workgroup: 0,
@@ -641,10 +657,18 @@ impl Limits {
     #[must_use]
     pub const fn using_recommended_minimum_mesh_shader_values(self) -> Self {
         Self {
-            // This limitation comes from metal
-            max_task_mesh_workgroup_total_count: 1024,
-            // This is a DirectX limitation
-            max_task_mesh_workgroups_per_dimension: 256,
+            // These are DirectX limitations
+            // Note that Mac2 (newest intel macs) support up to 1024, but this is ridiculously low,
+            // not even high enough for most somewhat-detailed models to fit in a single draw call.
+            // We therefore ignore metal's limit here.
+            // There is no limit for any A-series or M-series chip.
+            max_task_workgroup_total_count: 2u32.pow(22),
+            max_task_workgroups_per_dimension: 65535,
+            // These are metal limitations
+            // M3 would up both of these to 1M
+            // New chips in the apple10 family are expected to up this limit to 4M.
+            max_mesh_workgroup_total_count: 1024,
+            max_mesh_workgroups_per_dimension: 1024,
             // Nvidia limit on vulkan
             max_task_invocations_per_workgroup: 128,
             max_task_invocations_per_dimension: 64,
