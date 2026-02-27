@@ -146,6 +146,7 @@ depth_stencil: Some(wgpu::DepthStencilState::stencil(
         - Split the `OutOfBoundsOverrun` variant into new `OutOfBoundsStartOffsetOverrun` and `OutOfBoundsEndOffsetOverrun` variants. 
         - Removed the `NegativeRange` variant in favor of new `MapStartOffsetUnderrun` and `MapStartOffsetOverrun` variants.
     - Split the `TransferError::BufferOverrun` variant into new `BufferStartOffsetOverrun` and `BufferEndOffsetOverrun` variants.
+- Added more granular limits for mesh shaders. By @inner-daemons in #8739.
 
 #### Metal
 
