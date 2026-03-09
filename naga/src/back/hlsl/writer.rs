@@ -1596,7 +1596,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         let need_workgroup_variables_initialization =
             self.need_workgroup_variables_initialization(func_ctx, module);
 
-        let needs_local_invocation_index_name = need_workgroup_variables_initialization;
+        let needs_local_invocation_id_name = need_workgroup_variables_initialization;
         let mut local_invocation_id_name = None;
         // Write function arguments for non entry point functions
         match func_ctx.ty {
@@ -1639,7 +1639,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         self.write_semantic(&arg.binding, Some((stage, Io::Input)))?;
                     }
                 }
-                if needs_local_invocation_index_name && local_invocation_id_name.is_none() {
+                if needs_local_invocation_id_name && local_invocation_id_name.is_none() {
                     if self
                         .entry_point_io
                         .get(&(ep_index as usize))

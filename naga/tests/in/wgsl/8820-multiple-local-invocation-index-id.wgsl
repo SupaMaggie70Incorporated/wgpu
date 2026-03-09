@@ -8,7 +8,7 @@ struct Input {
 }
 
 @compute
-@workgroup_size(2)
+@workgroup_size(1)
 fn compute1(input: Input) {
     wg_var = input.local_invocation_index * 2;
     wg_var += input.local_invocation_id.x;

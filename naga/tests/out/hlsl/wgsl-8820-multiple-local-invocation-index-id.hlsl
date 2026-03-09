@@ -5,7 +5,7 @@ struct Input {
 
 groupshared uint wg_var;
 
-[numthreads(2, 1, 1)]
+[numthreads(1, 1, 1)]
 void compute1_(Input input, uint3 local_invocation_id : SV_GroupThreadID)
 {
     if (all(local_invocation_id == uint3(0u, 0u, 0u))) {
