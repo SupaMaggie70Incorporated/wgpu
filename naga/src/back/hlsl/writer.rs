@@ -1682,7 +1682,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             }
         };
 
-        let needs_local_invocation_index_name = need_workgroup_variables_initialization && !nested;
+        let needs_local_invocation_index_name = need_workgroup_variables_initialization || nested;
         let mut local_invocation_index_name = None;
         // Write function arguments for non entry point functions
         match func_ctx.ty {
@@ -1753,9 +1753,10 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     }
                 }
                 if needs_local_invocation_index_name && local_invocation_index_name.is_none() {
-                    write!(self.out, "{}uint __local_invocation_index", separator())?;
+                    let name = self.namer.call("local_invocation_index");
+                    write!(self.out, "{}uint {name}", separator())?;
                     write!(self.out, " : SV_GroupIndex")?;
-                    local_invocation_index_name = Some("__local_invocation_index".to_string());
+                    local_invocation_index_name = Some(name);
                 }
             }
         }
@@ -1863,6 +1864,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 need_workgroup_variables_initialization,
                 &nested_name,
                 ep.unwrap(),
+                // This is guaranteed to be written for nested functions
+                local_invocation_index_name.unwrap(),
             )?;
         }
 

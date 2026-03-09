@@ -27,6 +27,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         entry_point: &crate::EntryPoint,
         mut arg_names: Vec<String>,
         mut separator_if_needed: impl FnMut() -> &'static str,
+        local_invocation_index_name: String,
     ) -> BackendResult {
         let Some(ref mesh_info) = entry_point.mesh_info else {
             unreachable!()
@@ -74,8 +75,9 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         if need_workgroup_variables_initialization {
             writeln!(
                 self.out,
-                "{}if (__local_invocation_index == 0) {{",
-                back::INDENT
+                "{}if ({} == 0) {{",
+                back::INDENT,
+                local_invocation_index_name,
             )?;
             self.write_workgroup_variables_initialization(
                 func_ctx,
@@ -177,7 +179,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             let item_name = format!("{var_name}.{array_name}[{index_name}]");
             writeln!(
                     self.out,
-                    "{level}for (int {index_name} = __local_invocation_index; {index_name} < {count}; {index_name} += {}) {{",
+                    "{level}for (int {index_name} = {local_invocation_index_name}; {index_name} < {count}; {index_name} += {}) {{",
                     wg_size
                 )?;
 
@@ -215,6 +217,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         nested_name: &str,
         entry_point: &crate::EntryPoint,
         arg_names: Vec<String>,
+        local_invocation_index_name: String,
     ) -> BackendResult {
         let back::FunctionType::EntryPoint(ep_index) = func_ctx.ty else {
             unreachable!()
@@ -224,7 +227,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         if need_workgroup_variables_initialization {
             writeln!(
                 self.out,
-                "{}if (__local_invocation_index == 0) {{",
+                "{}if ({local_invocation_index_name} == 0) {{",
                 back::INDENT
             )?;
             self.write_workgroup_variables_initialization(
@@ -300,6 +303,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         need_workgroup_variables_initialization: bool,
         nested_name: &str,
         entry_point: &crate::EntryPoint,
+        local_invocation_index_name: String,
     ) -> BackendResult {
         let mut any_args_written = false;
         let mut separator_if_needed = || {
@@ -341,7 +345,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         if need_workgroup_variables_initialization || stage == ShaderStage::Mesh {
             write!(
                 self.out,
-                "{}uint __local_invocation_index : SV_GroupIndex",
+                "{}uint {local_invocation_index_name} : SV_GroupIndex",
                 separator_if_needed()
             )?;
         }
@@ -354,6 +358,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
                 entry_point,
                 arg_names,
                 separator_if_needed,
+                local_invocation_index_name,
             )?;
         } else {
             self.write_task_shader_wrapper(
@@ -363,6 +368,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
                 nested_name,
                 entry_point,
                 arg_names,
+                local_invocation_index_name,
             )?;
         }
 

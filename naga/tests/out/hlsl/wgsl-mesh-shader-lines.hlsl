@@ -27,13 +27,13 @@ struct MeshVertexOutput_ms_main {
 struct MeshPrimitiveOutput_ms_main {
 };
 
-uint3 _ts_main()
+uint3 _ts_main(uint local_invocation_index : SV_GroupIndex)
 {
     return uint3(1u, 1u, 1u);
 }
 [numthreads(64, 1, 1)]
-void ts_main(uint __local_invocation_index : SV_GroupIndex) {
-    if (__local_invocation_index == 0) {
+void ts_main(uint local_invocation_index : SV_GroupIndex) {
+    if (local_invocation_index == 0) {
         taskPayload = (TaskPayload)0;
     }
     GroupMemoryBarrierWithGroupSync();
@@ -51,24 +51,24 @@ void ts_main(uint __local_invocation_index : SV_GroupIndex) {
     DispatchMesh(gridSize.x, gridSize.y, gridSize.z, taskPayload);
 }
 
-void _ms_main(in TaskPayload taskPayload)
+void _ms_main(in TaskPayload taskPayload, uint local_invocation_index_1 : SV_GroupIndex)
 {
     return;
 }
 [numthreads(64, 1, 1)]
 [outputtopology("line")]
-void ms_main(uint __local_invocation_index : SV_GroupIndex, out indices uint2 lineIndices[1], out vertices MeshVertexOutput_ms_main vertices_[2], out primitives MeshPrimitiveOutput_ms_main primitives_[1], in payload TaskPayload taskPayload) {
-    if (__local_invocation_index == 0) {
+void ms_main(uint local_invocation_index_1 : SV_GroupIndex, out indices uint2 lineIndices[1], out vertices MeshVertexOutput_ms_main vertices_[2], out primitives MeshPrimitiveOutput_ms_main primitives_[1], in payload TaskPayload taskPayload) {
+    if (local_invocation_index_1 == 0) {
         mesh_output = (MeshOutput)0;
     }
     GroupMemoryBarrierWithGroupSync();
     _ms_main(taskPayload);
     GroupMemoryBarrierWithGroupSync();
     SetMeshOutputCounts(mesh_output.vertex_count, mesh_output.primitive_count);
-    for (int vertIndex = __local_invocation_index; vertIndex < mesh_output.vertex_count; vertIndex += 64) {
+    for (int vertIndex = local_invocation_index_1; vertIndex < mesh_output.vertex_count; vertIndex += 64) {
         vertices_[vertIndex].position = mesh_output.vertices_[vertIndex].position;
     }
-    for (int primIndex = __local_invocation_index; primIndex < mesh_output.primitive_count; primIndex += 64) {
+    for (int primIndex = local_invocation_index_1; primIndex < mesh_output.primitive_count; primIndex += 64) {
         lineIndices[primIndex] = mesh_output.primitives_[primIndex].indices_;
     }
 }
