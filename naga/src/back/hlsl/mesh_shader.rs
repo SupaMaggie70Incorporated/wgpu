@@ -40,6 +40,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         let vert_info = mesh_interface.mesh_vertices.as_ref().unwrap();
         let prim_info = mesh_interface.mesh_primitives.as_ref().unwrap();
         let indices_info = mesh_interface.mesh_indices.as_ref().unwrap();
+        // Write something of the form `out indicies uint3 indices_var[num_primitives]`
         write!(
             self.out,
             "{}out indices {} {}[{}]",
@@ -48,11 +49,13 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             indices_info.arg_name,
             mesh_info.max_primitives
         )?;
+        // Write something of the form `out vertices VertexType vertices_var[num_vertices]`
         write!(
             self.out,
             ", out vertices {} {}[{}]",
             vert_info.ty_name, vert_info.arg_name, mesh_info.max_vertices
         )?;
+        // Write something of the form `out primitives PrimitiveType} primitives_var[num_primitives]`
         write!(
             self.out,
             ", out primitives {} {}[{}]",
@@ -110,6 +113,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         let wg_size: u32 = ep.workgroup_size.iter().product();
 
         let get_var_member_name = |bi, var_type| {
+            // The mesh shader output type must be a struct with exactly 4 members.
             let TypeInner::Struct { ref members, .. } = module.types[var_type].inner else {
                 unreachable!()
             };
@@ -401,6 +405,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         };
         let struct_name = format!("Mesh{var_prefix}Output_{entry_point_name}",);
 
+        // Mesh shader output types must be structs; this is validated by naga
         let members = match module.types[in_type].inner {
             TypeInner::Struct { ref members, .. } => members,
             _ => unreachable!(),
@@ -439,6 +444,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         topology: crate::MeshOutputTopology,
     ) -> Result<EntryPointBinding, Error> {
         let (indices_name, indices_type) = match topology {
+            // Points require a capability that isn't supported in the HLSL writer
             crate::MeshOutputTopology::Points => unreachable!(),
             crate::MeshOutputTopology::Lines => (self.namer.call("lineIndices"), "uint2"),
             crate::MeshOutputTopology::Triangles => (self.namer.call("triangleIndices"), "uint3"),
