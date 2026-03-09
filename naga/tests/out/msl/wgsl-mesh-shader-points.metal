@@ -35,6 +35,7 @@ metal::uint3 _ts_main(
         taskPayload = {};
     }
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     return metal::uint3(1u, 1u, 1u);
 }
 
@@ -45,6 +46,7 @@ metal::uint3 _ts_main(
 ) {
     uint3 nagaGridSize = _ts_main(__local_invocation_index, taskPayload);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     if (__local_invocation_index == 0u) {
         if (
             nagaGridSize.x > 256u ||
@@ -75,6 +77,7 @@ void _ms_main(
         mesh_output = {};
     }
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     return;
 }
 [[mesh]] void ms_main(
@@ -85,6 +88,7 @@ void _ms_main(
     threadgroup MeshOutput mesh_output;
     _ms_main(__local_invocation_index, taskPayload, mesh_output);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     for(uint vertexIndex = __local_invocation_index; vertexIndex < metal::min(mesh_output.vertex_count, 1u); vertexIndex += 64) {
         ms_mainVertexOutput vertex_;
         vertex_.position = mesh_output.vertices.inner[vertexIndex].position;

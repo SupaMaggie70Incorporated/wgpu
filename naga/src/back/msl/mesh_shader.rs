@@ -36,11 +36,13 @@ pub(super) struct NestedFunctionInfo<'a> {
 }
 
 impl<W: core::fmt::Write> super::Writer<W> {
+    /// This writes the output vertex and primitive structs given the reflection information about them.
     pub(super) fn write_mesh_output_types(
         &mut self,
         mesh_info: &crate::MeshStageInfo,
         fun_name: &str,
         module: &crate::Module,
+        // See `PipelineOptions::allow_and_force_point_size`
         allow_and_force_point_size: bool,
         options: &super::Options,
     ) -> Result<MeshOutputInfo, Error> {
@@ -64,6 +66,7 @@ impl<W: core::fmt::Write> super::Writer<W> {
             ),
         ] {
             writeln!(self.out, "struct {out_name} {{")?;
+            // Mesh output types are guaranteed to be user defined structs. This is validated by naga.
             let crate::TypeInner::Struct { ref members, .. } = module.types[struct_ty].inner else {
                 unreachable!()
             };
@@ -263,7 +266,11 @@ impl<W: core::fmt::Write> super::Writer<W> {
             }
         }
         writeln!(self.out, ");")?;
-        self.write_barrier(crate::Barrier::WORK_GROUP, back::Level(1))?;
+        self.write_barrier(
+            crate::Barrier::WORK_GROUP,
+            back::Level(1),
+            info.options.lang_version,
+        )?;
 
         if let Some(grid_name) = task_grid_name {
             let result_name = result_name.unwrap();
@@ -305,6 +312,7 @@ impl<W: core::fmt::Write> super::Writer<W> {
             let out_ty = module.global_variables[info.output_variable].ty;
             let mesh_out_name = mesh_out_name.unwrap();
             let mesh_variable_name = mesh_variable_name.unwrap();
+            // The output type is guaranteed to be a struct with exactly 4 members
             let crate::TypeInner::Struct { ref members, .. } = module.types[out_ty].inner else {
                 unreachable!();
             };
@@ -424,6 +432,7 @@ impl<W: core::fmt::Write> super::Writer<W> {
             )?;
             writeln!(self.out, "{indent}}}")?;
         } else {
+            // Must either have task output grid (task shader) or mesh output info (mesh shader)
             unreachable!()
         }
 

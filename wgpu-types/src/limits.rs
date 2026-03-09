@@ -248,10 +248,12 @@ pub struct Limits {
     /// The maximum value for each dimension of a `RenderPass::draw_mesh_tasks(x, y, z)` call on a mesh pipeline with a task shader.
     /// Higher is "better".
     pub max_task_workgroups_per_dimension: u32,
-    /// The maximum total value for a `RenderPass::draw_mesh_tasks(x, y, z)` operation or the
-    /// `@builtin(mesh_task_size)` returned from a task shader.  Higher is "better".
+    /// The maximum product of arguments of a `RenderPass::draw_mesh_tasks(x, y, z)` operation on a mesh shader pipeline
+    /// without task shaders.
+    /// Also for task shader outputs. Higher is "better".
     pub max_mesh_workgroup_total_count: u32,
-    /// The maximum value for each dimension of a `RenderPass::draw_mesh_tasks(x, y, z)` operation.
+    /// The maximum value for each dimension of a `RenderPass::draw_mesh_tasks(x, y, z)` operation on a mesh shader pipeline
+    /// without task shaders.
     /// Also for task shader outputs. Higher is "better".
     pub max_mesh_workgroups_per_dimension: u32,
     // These are fundamentally different. It is very common for limits on mesh shaders to be much lower.
@@ -657,16 +659,15 @@ impl Limits {
     #[must_use]
     pub const fn using_recommended_minimum_mesh_shader_values(self) -> Self {
         Self {
-            // These are DirectX limitations
-            // Note that Mac2 (newest intel macs) support up to 1024, but this is ridiculously low,
-            // not even high enough for most somewhat-detailed models to fit in a single draw call.
-            // We therefore ignore metal's limit here.
-            // There is no limit for any A-series or M-series chip.
+            // These are DirectX limitations (both nvidia and AMD match these exactly on vulkan)
+            // Note that Mac2 (newest intel macs) support up to 1024, but this is low enough,
+            // to make use of mesh shaders nonviable in most cases.
+            // We therefore, don't expose mesh shading on these devices.
+            // In contrast, here is no limit for any A-series or M-series chip.
             max_task_workgroup_total_count: 2u32.pow(22),
             max_task_workgroups_per_dimension: 65535,
             // These are metal limitations
-            // M3 would up both of these to 1M
-            // New chips in the apple10 family are expected to up this limit to 4M.
+            // M3 ups both of these to 1M
             max_mesh_workgroup_total_count: 1024,
             max_mesh_workgroups_per_dimension: 1024,
             // Nvidia limit on vulkan

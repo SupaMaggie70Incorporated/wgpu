@@ -498,7 +498,7 @@ pub struct PipelineOptions {
     /// Metal doesn't like this for non-point primitive topologies and requires it for
     /// point primitive topologies.
     ///
-    /// Enable this for vertex shaders with point primitive topologies.
+    /// Enable this for vertex/mesh shaders with point primitive topologies.
     pub allow_and_force_point_size: bool,
 
     /// If set, when generating the Metal vertex shader, transform it

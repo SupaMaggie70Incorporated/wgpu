@@ -61,6 +61,7 @@ metal::uint3 _ts_main(
         workgroupData = {};
     }
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     workgroupData = 1.0;
     taskPayload.colorMask = metal::float4(1.0, 1.0, 0.0, 1.0);
     helper_writer(true, taskPayload);
@@ -77,6 +78,7 @@ metal::uint3 _ts_main(
 ) {
     uint3 nagaGridSize = _ts_main(__local_invocation_index, taskPayload, workgroupData);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     if (__local_invocation_index == 0u) {
         if (
             nagaGridSize.x > 256u ||
@@ -104,6 +106,7 @@ metal::uint3 _ts_divergent(
         taskPayload = {};
     }
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     if (thread_id.x == 0u) {
         taskPayload.colorMask = metal::float4(1.0, 1.0, 0.0, 1.0);
         taskPayload.visible = true;
@@ -120,6 +123,7 @@ metal::uint3 _ts_divergent(
 ) {
     uint3 nagaGridSize_1 = _ts_divergent(thread_id, __local_invocation_index, taskPayload);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     if (__local_invocation_index == 0u) {
         if (
             nagaGridSize_1.x > 256u ||
@@ -155,6 +159,7 @@ void _ms_main(
         mesh_output = {};
     }
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     mesh_output.vertex_count = 3u;
     mesh_output.primitive_count = 1u;
     workgroupData = 2.0;
@@ -183,6 +188,7 @@ void _ms_main(
     threadgroup MeshOutput mesh_output;
     _ms_main(__local_invocation_index, taskPayload, workgroupData, mesh_output);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     for(uint vertexIndex = __local_invocation_index; vertexIndex < metal::min(mesh_output.vertex_count, 3u); vertexIndex += 1) {
         ms_mainVertexOutput vertex_1;
         vertex_1.position = mesh_output.vertices.inner[vertexIndex].position;
@@ -221,6 +227,7 @@ void _ms_no_ts(
         mesh_output = {};
     }
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     mesh_output.vertex_count = 3u;
     mesh_output.primitive_count = 1u;
     workgroupData = 2.0;
@@ -244,6 +251,7 @@ void _ms_no_ts(
     threadgroup MeshOutput mesh_output;
     _ms_no_ts(__local_invocation_index, workgroupData, mesh_output);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     for(uint vertexIndex_1 = __local_invocation_index; vertexIndex_1 < metal::min(mesh_output.vertex_count, 3u); vertexIndex_1 += 1) {
         ms_no_tsVertexOutput vertex_2;
         vertex_2.position = mesh_output.vertices.inner[vertexIndex_1].position;
@@ -285,6 +293,7 @@ void _ms_divergent(
         mesh_output = {};
     }
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     if (thread_id_1.x == 0u) {
         mesh_output.vertex_count = 3u;
         mesh_output.primitive_count = 1u;
@@ -313,6 +322,7 @@ void _ms_divergent(
     threadgroup MeshOutput mesh_output;
     _ms_divergent(thread_id_1, __local_invocation_index, workgroupData, mesh_output);
     metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
+    metal::threadgroup_barrier(metal::mem_flags::mem_object_data);
     for(uint vertexIndex_2 = __local_invocation_index; vertexIndex_2 < metal::min(mesh_output.vertex_count, 3u); vertexIndex_2 += 2) {
         ms_divergentVertexOutput vertex_3;
         vertex_3.position = mesh_output.vertices.inner[vertexIndex_2].position;

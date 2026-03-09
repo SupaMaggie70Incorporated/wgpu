@@ -195,11 +195,11 @@ impl Display for Reinterpreted<'_> {
 }
 
 pub(super) struct TypeContext<'a> {
-    pub(super) handle: Handle<crate::Type>,
-    pub(super) gctx: proc::GlobalCtx<'a>,
-    pub(super) names: &'a FastHashMap<NameKey, String>,
-    pub(super) access: crate::StorageAccess,
-    pub(super) first_time: bool,
+    pub handle: Handle<crate::Type>,
+    pub gctx: proc::GlobalCtx<'a>,
+    pub names: &'a FastHashMap<NameKey, String>,
+    pub access: crate::StorageAccess,
+    pub first_time: bool,
 }
 
 impl TypeContext<'_> {
@@ -395,8 +395,13 @@ pub(super) struct TypedGlobalVariable<'a> {
     pub(super) reference: bool,
 }
 
+struct TypedGlobalVariableParts {
+    ty_name: String,
+    var_name: String,
+}
+
 impl TypedGlobalVariable<'_> {
-    fn to_parts(&self) -> Result<(String, String), Error> {
+    fn to_parts(&self) -> Result<TypedGlobalVariableParts, Error> {
         let var = &self.module.global_variables[self.handle];
         let name = &self.names[&NameKey::GlobalVariable(self.handle)];
 
@@ -443,21 +448,20 @@ impl TypedGlobalVariable<'_> {
         };
 
         let ty = format!(
-            "{}{}{}{}{}{}",
-            space,
+            "{space}{}{ty_name}{}{access}{reference}",
             if space.is_empty() { "" } else { " " },
-            ty_name,
             if access.is_empty() { "" } else { " " },
-            access,
-            reference,
         );
 
-        Ok((ty, name.clone()))
+        Ok(TypedGlobalVariableParts {
+            ty_name: ty,
+            var_name: name.clone(),
+        })
     }
     pub(super) fn try_fmt<W: Write>(&self, out: &mut W) -> BackendResult {
         let parts = self.to_parts()?;
 
-        Ok(write!(out, "{} {}", parts.0, parts.1,)?)
+        Ok(write!(out, "{} {}", parts.ty_name, parts.var_name)?)
     }
 }
 
@@ -3859,7 +3863,7 @@ impl<W: Write> Writer<W> {
                 }
                 crate::Statement::ControlBarrier(flags)
                 | crate::Statement::MemoryBarrier(flags) => {
-                    self.write_barrier(flags, level)?;
+                    self.write_barrier(flags, level, context.expression.lang_version)?;
                 }
                 crate::Statement::Store { pointer, value } => {
                     self.put_store(pointer, value, level, context)?
@@ -4011,7 +4015,11 @@ impl<W: Write> Writer<W> {
                     self.put_image_atomic(level, image, &address, fun, value, context)?
                 }
                 crate::Statement::WorkGroupUniformLoad { pointer, result } => {
-                    self.write_barrier(crate::Barrier::WORK_GROUP, level)?;
+                    self.write_barrier(
+                        crate::Barrier::WORK_GROUP,
+                        level,
+                        context.expression.lang_version,
+                    )?;
 
                     write!(self.out, "{level}")?;
                     let name = self.namer.call("");
@@ -4020,7 +4028,11 @@ impl<W: Write> Writer<W> {
                     self.named_expressions.insert(result, name);
 
                     writeln!(self.out, ";")?;
-                    self.write_barrier(crate::Barrier::WORK_GROUP, level)?;
+                    self.write_barrier(
+                        crate::Barrier::WORK_GROUP,
+                        level,
+                        context.expression.lang_version,
+                    )?;
                 }
                 crate::Statement::RayQuery { query, ref fun } => {
                     if context.expression.lang_version < (2, 4) {
@@ -7534,14 +7546,14 @@ template <typename A>
                             usage,
                             reference: true,
                         };
-                        let (ty_name, name) = tyvar.to_parts()?;
+                        let parts = tyvar.to_parts()?;
                         let mut binding = String::new();
                         if let Some(resolved) = resolved {
                             resolved.try_fmt(&mut binding)?;
                         }
                         args.push(EntryPointArgument {
-                            ty_name,
-                            name,
+                            ty_name: parts.ty_name,
+                            name: parts.var_name,
                             binding,
                             init: var.init,
                         });
@@ -7885,6 +7897,7 @@ template <typename A>
                     fun_info,
                     local_invocation_index,
                     ep.stage,
+                    options.lang_version,
                 )?;
             }
 
@@ -8009,6 +8022,7 @@ template <typename A>
         &mut self,
         flags: crate::Barrier,
         level: back::Level,
+        lang_version: (u8, u8),
     ) -> BackendResult {
         // Note: OR-ring bitflags requires `__HAVE_MEMFLAG_OPERATORS__`,
         // so we try to avoid it here.
@@ -8029,6 +8043,12 @@ template <typename A>
                 self.out,
                 "{level}{NAMESPACE}::threadgroup_barrier({NAMESPACE}::mem_flags::mem_threadgroup);",
             )?;
+            if lang_version >= (3, 0) {
+                writeln!(
+                    self.out,
+                    "{level}{NAMESPACE}::threadgroup_barrier({NAMESPACE}::mem_flags::mem_object_data);",
+                )?;
+            }
         }
         if flags.contains(crate::Barrier::SUB_GROUP) {
             writeln!(
@@ -8144,6 +8164,7 @@ mod workgroup_mem_init {
             fun_info: &valid::FunctionInfo,
             local_invocation_index: Option<&NameKey>,
             stage: crate::ShaderStage,
+            lang_version: (u8, u8),
         ) -> BackendResult {
             let level = back::Level(1);
 
@@ -8178,7 +8199,7 @@ mod workgroup_mem_init {
             }
 
             writeln!(self.out, "{level}}}")?;
-            self.write_barrier(crate::Barrier::WORK_GROUP, level)
+            self.write_barrier(crate::Barrier::WORK_GROUP, level, lang_version)
         }
 
         fn write_workgroup_variable_initialization(
