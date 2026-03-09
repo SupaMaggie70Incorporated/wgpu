@@ -4118,6 +4118,9 @@ impl Device {
             if let Some(cs) = cs.as_ref() {
                 target_specified = true;
                 let error = 'error: {
+                    // This is expected to be the operative check for illegal write mask
+                    // values (larger than 15), because WebGPU requires that it be validated
+                    // on the device timeline.
                     if cs.write_mask.contains_unknown_bits() {
                         break 'error Some(pipeline::ColorStateError::InvalidWriteMask(
                             cs.write_mask,
@@ -5123,9 +5126,10 @@ impl Device {
                     Ok(()) => (),
                     Err(error) => {
                         break 'error match error {
-                            hal::SurfaceError::Outdated | hal::SurfaceError::Lost => {
-                                E::InvalidSurface
-                            }
+                            hal::SurfaceError::Outdated
+                            | hal::SurfaceError::Lost
+                            | hal::SurfaceError::Occluded
+                            | hal::SurfaceError::Timeout => E::InvalidSurface,
                             hal::SurfaceError::Device(error) => {
                                 E::Device(self.handle_hal_error(error))
                             }
