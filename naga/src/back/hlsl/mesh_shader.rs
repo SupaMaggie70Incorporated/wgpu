@@ -17,7 +17,7 @@ use crate::{
 };
 
 impl<W: core::fmt::Write> super::Writer<'_, W> {
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments)]
     fn write_mesh_shader_wrapper(
         &mut self,
         module: &Module,
@@ -209,6 +209,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         Ok(())
     }
 
+    #[expect(clippy::too_many_arguments)]
     fn write_task_shader_wrapper(
         &mut self,
         module: &Module,
