@@ -10,7 +10,7 @@ RWByteAddressBuffer output : register(u0);
 [numthreads(1, 1, 1)]
 void main(uint __local_invocation_index : SV_GroupIndex)
 {
-    if (all(__local_invocation_index == 0)) {
+    if (__local_invocation_index == 0) {
         w_mem = (WStruct)0;
     }
     GroupMemoryBarrierWithGroupSync();

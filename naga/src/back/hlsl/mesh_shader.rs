@@ -440,6 +440,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             ty_name: indices_type.to_string(),
             arg_name: indices_name,
             members: Vec::new(),
+            local_invocation_index_name: None,
         })
     }
 }

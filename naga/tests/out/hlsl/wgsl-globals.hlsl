@@ -112,7 +112,7 @@ uint NagaBufferLength(ByteAddressBuffer buffer)
 [numthreads(1, 1, 1)]
 void main(uint __local_invocation_index : SV_GroupIndex)
 {
-    if (all(__local_invocation_index == 0)) {
+    if (__local_invocation_index == 0) {
         wg = (float[10])0;
         at_1 = (uint)0;
     }

@@ -77,6 +77,7 @@ pub(super) struct EntryPointBinding {
     pub(super) ty_name: String,
     /// Members of generated structure
     pub(super) members: Vec<EpStructMember>,
+    pub(super) local_invocation_index_name: Option<String>,
 }
 
 pub(super) struct EntryPointInterface {
@@ -656,10 +657,22 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
 
         write!(self.out, "struct {struct_name}")?;
         writeln!(self.out, " {{")?;
+        let mut local_invocation_index_name = None;
+        let mut subgroup_id_used = false;
         for m in members.iter() {
             // Sanity check that each IO member is a built-in or is assigned a
             // location. Also see note about nesting in `write_ep_input_struct`.
             debug_assert!(m.binding.is_some());
+
+            match m.binding {
+                Some(crate::Binding::BuiltIn(crate::BuiltIn::SubgroupId)) => {
+                    subgroup_id_used = true;
+                }
+                Some(crate::Binding::BuiltIn(crate::BuiltIn::LocalInvocationIndex)) => {
+                    local_invocation_index_name = Some(m.name.clone());
+                }
+                _ => (),
+            }
 
             if is_subgroup_builtin_binding(&m.binding) {
                 continue;
@@ -673,17 +686,10 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             self.write_semantic(&m.binding, Some(shader_stage))?;
             writeln!(self.out, ";")?;
         }
-        if members.iter().any(|arg| {
-            matches!(
-                arg.binding,
-                Some(crate::Binding::BuiltIn(crate::BuiltIn::SubgroupId))
-            )
-        }) {
-            writeln!(
-                self.out,
-                "{}uint __local_invocation_index : SV_GroupIndex;",
-                back::INDENT
-            )?;
+        if subgroup_id_used && local_invocation_index_name.is_none() {
+            let name = self.namer.call("local_invocation_index");
+            writeln!(self.out, "{}uint {name} : SV_GroupIndex;", back::INDENT)?;
+            local_invocation_index_name = Some(name);
         }
         writeln!(self.out, "}};")?;
         writeln!(self.out)?;
@@ -705,6 +711,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 .call(var_name.unwrap_or(struct_name.to_lowercase().as_str())),
             ty_name: struct_name,
             members,
+            local_invocation_index_name,
         })
     }
 
@@ -900,8 +907,10 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             Some(crate::Binding::BuiltIn(crate::BuiltIn::SubgroupId)) => {
                 write!(
                     self.out,
-                    "{}.__local_invocation_index / WaveGetLaneCount()",
-                    ep_input.arg_name
+                    "{}.{} / WaveGetLaneCount()",
+                    ep_input.arg_name,
+                    // When writing SubgroupId, we always guarantee that local_invocation_index_name is written
+                    ep_input.local_invocation_index_name.as_ref().unwrap()
                 )?;
             }
             _ => {
@@ -1673,6 +1682,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             }
         };
 
+        let needs_local_invocation_index_name = need_workgroup_variables_initialization && !nested;
+        let mut local_invocation_index_name = None;
         // Write function arguments for non entry point functions
         match func_ctx.ty {
             back::FunctionType::Function(handle) => {
@@ -1713,6 +1724,14 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         let argument_name =
                             &self.names[&NameKey::EntryPointArgument(ep_index, index as u32)];
 
+                        if arg.binding
+                            == Some(crate::Binding::BuiltIn(
+                                crate::BuiltIn::LocalInvocationIndex,
+                            ))
+                        {
+                            local_invocation_index_name = Some(argument_name.clone());
+                        }
+
                         write!(self.out, " {argument_name}")?;
                         if let TypeInner::Array { base, size, .. } = module.types[arg.ty].inner {
                             self.write_array_size(module, base, size)?;
@@ -1733,9 +1752,10 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         }
                     }
                 }
-                if need_workgroup_variables_initialization && !nested {
+                if needs_local_invocation_index_name && local_invocation_index_name.is_none() {
                     write!(self.out, "{}uint __local_invocation_index", separator())?;
                     write!(self.out, " : SV_GroupIndex")?;
+                    local_invocation_index_name = Some("__local_invocation_index".to_string());
                 }
             }
         }
@@ -1760,8 +1780,10 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             };
             writeln!(
                 self.out,
-                "{}if (all(__local_invocation_index == 0)) {{",
-                back::INDENT
+                "{}if ({} == 0) {{",
+                back::INDENT,
+                // This is guaranteed to be Some if workgroup variables might need to be initialized
+                local_invocation_index_name.as_ref().unwrap(),
             )?;
             self.write_workgroup_variables_initialization(
                 func_ctx,
