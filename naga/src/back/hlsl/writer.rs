@@ -854,6 +854,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     self.out,
                     "{}.{} / WaveGetLaneCount()",
                     ep_input.arg_name,
+                    // When writing SubgroupId, we always guarantee that local_invocation_index_name is written
                     ep_input.local_invocation_index_name.as_ref().unwrap()
                 )?;
             }
@@ -1595,6 +1596,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         let need_workgroup_variables_initialization =
             self.need_workgroup_variables_initialization(func_ctx, module);
 
+        let needs_local_invocation_index_name = need_workgroup_variables_initialization;
         let mut local_invocation_id_name = None;
         // Write function arguments for non entry point functions
         match func_ctx.ty {
@@ -1637,7 +1639,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         self.write_semantic(&arg.binding, Some((stage, Io::Input)))?;
                     }
                 }
-                if need_workgroup_variables_initialization && local_invocation_id_name.is_none() {
+                if needs_local_invocation_index_name && local_invocation_id_name.is_none() {
                     if self
                         .entry_point_io
                         .get(&(ep_index as usize))
@@ -1673,6 +1675,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             self.write_workgroup_variables_initialization(
                 func_ctx,
                 module,
+                // need_workgroup_variables_initialization forces this to be written
+                // if the user doesn't specify it (so this must be Some())
                 local_invocation_id_name.unwrap(),
             )?;
         }

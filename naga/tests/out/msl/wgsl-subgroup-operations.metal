@@ -16,25 +16,16 @@ kernel void main_(
 , uint subgroup_size [[threads_per_simdgroup]]
 , uint subgroup_id [[simdgroup_index_in_threadgroup]]
 , uint subgroup_invocation_id [[thread_index_in_simdgroup]]
-, metal::uint3 local_invocation_id [[thread_position_in_threadgroup]]
-, uint local_invocation_index [[thread_index_in_threadgroup]]
-, threadgroup uint& workgroup_var
 ) {
-    if (metal::all(local_invocation_id == metal::uint3(0u))) {
-        workgroup_var = {};
-    }
-    metal::threadgroup_barrier(metal::mem_flags::mem_threadgroup);
     const Structure sizes = { num_subgroups, subgroup_size };
     metal::uint4 unnamed = metal::uint4((uint64_t)metal::simd_ballot((subgroup_invocation_id & 1u) == 1u), 0, 0, 0);
     metal::uint4 unnamed_1 = metal::uint4((uint64_t)metal::simd_ballot(true), 0, 0, 0);
     bool unnamed_2 = metal::simd_all(subgroup_invocation_id != 0u);
     bool unnamed_3 = metal::simd_any(subgroup_invocation_id == 0u);
     uint unnamed_4 = metal::simd_sum(subgroup_invocation_id);
-    workgroup_var = unnamed_4;
-    uint _e20 = workgroup_var;
-    uint unnamed_5 = metal::simd_product(_e20);
-    uint unnamed_6 = metal::simd_min(local_invocation_id.x);
-    uint unnamed_7 = metal::simd_max(local_invocation_index);
+    uint unnamed_5 = metal::simd_product(subgroup_invocation_id);
+    uint unnamed_6 = metal::simd_min(subgroup_invocation_id);
+    uint unnamed_7 = metal::simd_max(subgroup_invocation_id);
     uint unnamed_8 = metal::simd_and(subgroup_invocation_id);
     uint unnamed_9 = metal::simd_or(subgroup_invocation_id);
     uint unnamed_10 = metal::simd_xor(subgroup_invocation_id);
