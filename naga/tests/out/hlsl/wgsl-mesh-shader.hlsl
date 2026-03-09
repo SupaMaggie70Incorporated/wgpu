@@ -96,7 +96,7 @@ void ts_main(uint local_invocation_index : SV_GroupIndex) {
         workgroupData = (float)0;
     }
     GroupMemoryBarrierWithGroupSync();
-    uint3 gridSize = _ts_main();
+    uint3 gridSize = _ts_main(local_invocation_index);
     GroupMemoryBarrierWithGroupSync();
     if (
         gridSize.x > 256 ||
@@ -125,7 +125,7 @@ void ts_divergent(uint3 thread_id : SV_GroupThreadID, uint local_invocation_inde
         taskPayload = (TaskPayload)0;
     }
     GroupMemoryBarrierWithGroupSync();
-    uint3 gridSize_1 = _ts_divergent(thread_id);
+    uint3 gridSize_1 = _ts_divergent(thread_id, local_invocation_index_1);
     GroupMemoryBarrierWithGroupSync();
     if (
         gridSize_1.x > 256 ||
@@ -167,7 +167,7 @@ void ms_main(uint local_invocation_index_2 : SV_GroupIndex, out indices uint3 tr
         mesh_output = (MeshOutput)0;
     }
     GroupMemoryBarrierWithGroupSync();
-    _ms_main(taskPayload);
+    _ms_main(local_invocation_index_2, taskPayload);
     GroupMemoryBarrierWithGroupSync();
     SetMeshOutputCounts(mesh_output.vertex_count, mesh_output.primitive_count);
     for (int vertIndex = local_invocation_index_2; vertIndex < mesh_output.vertex_count; vertIndex += 1) {
@@ -205,7 +205,7 @@ void ms_no_ts(uint local_invocation_index_3 : SV_GroupIndex, out indices uint3 t
         mesh_output = (MeshOutput)0;
     }
     GroupMemoryBarrierWithGroupSync();
-    _ms_no_ts();
+    _ms_no_ts(local_invocation_index_3);
     GroupMemoryBarrierWithGroupSync();
     SetMeshOutputCounts(mesh_output.vertex_count, mesh_output.primitive_count);
     for (int vertIndex_1 = local_invocation_index_3; vertIndex_1 < mesh_output.vertex_count; vertIndex_1 += 1) {
@@ -247,7 +247,7 @@ void ms_divergent(uint3 thread_id_1 : SV_GroupThreadID, uint local_invocation_in
         mesh_output = (MeshOutput)0;
     }
     GroupMemoryBarrierWithGroupSync();
-    _ms_divergent(thread_id_1);
+    _ms_divergent(thread_id_1, local_invocation_index_4);
     GroupMemoryBarrierWithGroupSync();
     SetMeshOutputCounts(mesh_output.vertex_count, mesh_output.primitive_count);
     for (int vertIndex_2 = local_invocation_index_4; vertIndex_2 < mesh_output.vertex_count; vertIndex_2 += 2) {

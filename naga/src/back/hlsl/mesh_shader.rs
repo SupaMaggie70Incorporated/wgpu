@@ -40,7 +40,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         let vert_info = mesh_interface.mesh_vertices.as_ref().unwrap();
         let prim_info = mesh_interface.mesh_primitives.as_ref().unwrap();
         let indices_info = mesh_interface.mesh_indices.as_ref().unwrap();
-        // Write something of the form `out indicies uint3 indices_var[num_primitives]`
+        // Write something of the form `out indices uint3 indices_var[num_primitives]`
         write!(
             self.out,
             "{}out indices {} {}[{}]",
@@ -353,6 +353,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
                 "{}uint {local_invocation_index_name} : SV_GroupIndex",
                 separator_if_needed()
             )?;
+            arg_names.push(local_invocation_index_name.clone());
         }
         if entry_point.stage == ShaderStage::Mesh {
             self.write_mesh_shader_wrapper(
