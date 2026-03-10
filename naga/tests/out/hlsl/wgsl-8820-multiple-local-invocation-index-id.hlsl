@@ -5,7 +5,7 @@ struct Input {
 
 groupshared uint wg_var;
 
-[numthreads(2, 1, 1)]
+[numthreads(1, 1, 1)]
 void compute1_(Input input, uint local_invocation_index : SV_GroupIndex)
 {
     if (local_invocation_index == 0) {

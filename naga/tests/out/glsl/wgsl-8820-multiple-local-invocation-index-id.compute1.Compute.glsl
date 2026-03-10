@@ -3,7 +3,7 @@
 precision highp float;
 precision highp int;
 
-layout(local_size_x = 2, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 struct Input {
     uvec3 local_invocation_id;
