@@ -120,6 +120,14 @@ pub(super) enum Io {
     MeshPrimitives,
 }
 
+/// Argument list for nested entry points
+pub(super) struct NestedEntryPointArgs {
+    /// Arguments literally declared by the user
+    pub user_args: Vec<String>,
+    pub task_payload: Option<String>,
+    pub local_invocation_index: String,
+}
+
 const fn is_subgroup_builtin_binding(binding: &Option<crate::Binding>) -> bool {
     let &Some(crate::Binding::BuiltIn(builtin)) = binding else {
         return false;
@@ -1684,6 +1692,10 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
 
         let needs_local_invocation_index_name = need_workgroup_variables_initialization || nested;
         let mut local_invocation_index_name = None;
+        // For nested entry points, collect arg names as we write them so that
+        // write_nested_function_outer can pass the exact same names to the call site.
+        let mut nested_wgsl_args: Vec<String> = Vec::new();
+        let mut nested_task_payload_name: Option<String> = None;
         // Write function arguments for non entry point functions
         match func_ctx.ty {
             back::FunctionType::Function(handle) => {
@@ -1715,6 +1727,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 {
                     write!(self.out, "{} {}", ep_input.ty_name, ep_input.arg_name)?;
                     separator();
+                    nested_wgsl_args.push(ep_input.arg_name.clone());
                 } else {
                     let stage = ep.stage;
                     for (index, arg) in func.arguments.iter().enumerate() {
@@ -1732,6 +1745,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                             local_invocation_index_name = Some(argument_name.clone());
                         }
 
+                        nested_wgsl_args.push(argument_name.clone());
                         write!(self.out, " {argument_name}")?;
                         if let TypeInner::Array { base, size, .. } = module.types[arg.ty].inner {
                             self.write_array_size(module, base, size)?;
@@ -1747,6 +1761,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         self.write_type(module, var.ty)?;
                         let arg_name = &self.names[&NameKey::GlobalVariable(var_handle)];
                         write!(self.out, " {arg_name}")?;
+                        nested_task_payload_name = Some(arg_name.clone());
                         if let TypeInner::Array { base, size, .. } = module.types[var.ty].inner {
                             self.write_array_size(module, base, size)?;
                         }
@@ -1864,8 +1879,12 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 need_workgroup_variables_initialization,
                 &nested_name,
                 ep.unwrap(),
-                // This is guaranteed to be written for nested functions
-                local_invocation_index_name.unwrap(),
+                NestedEntryPointArgs {
+                    user_args: nested_wgsl_args,
+                    task_payload: nested_task_payload_name,
+                    // guaranteed to be set for nested functions (task/mesh shaders)
+                    local_invocation_index: local_invocation_index_name.unwrap(),
+                },
             )?;
         }
 

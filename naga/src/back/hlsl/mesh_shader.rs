@@ -1,3 +1,5 @@
+use core::fmt;
+
 use alloc::{
     format,
     string::{String, ToString},
@@ -8,7 +10,7 @@ use crate::{
     back::{
         self,
         hlsl::{
-            writer::{EntryPointBinding, EpStructMember, Io},
+            writer::{EntryPointBinding, EpStructMember, Io, NestedEntryPointArgs},
             BackendResult, Error,
         },
     },
@@ -16,7 +18,25 @@ use crate::{
     Handle, Module, ShaderStage, TypeInner,
 };
 
-impl<W: core::fmt::Write> super::Writer<'_, W> {
+impl NestedEntryPointArgs {
+    pub fn write_call_args(&self, out: &mut impl fmt::Write) -> fmt::Result {
+        let all_args = self
+            .user_args
+            .iter()
+            .map(String::as_str)
+            .chain(self.task_payload.as_deref())
+            .chain(core::iter::once(self.local_invocation_index.as_str()));
+        for (i, arg) in all_args.enumerate() {
+            if i != 0 {
+                write!(out, ", ")?;
+            }
+            write!(out, "{arg}")?;
+        }
+        Ok(())
+    }
+}
+
+impl<W: fmt::Write> super::Writer<'_, W> {
     #[expect(clippy::too_many_arguments)]
     fn write_mesh_shader_wrapper(
         &mut self,
@@ -25,9 +45,8 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         need_workgroup_variables_initialization: bool,
         nested_name: &str,
         entry_point: &crate::EntryPoint,
-        mut arg_names: Vec<String>,
+        args: NestedEntryPointArgs,
         mut separator_if_needed: impl FnMut() -> &'static str,
-        local_invocation_index_name: String,
     ) -> BackendResult {
         let Some(ref mesh_info) = entry_point.mesh_info else {
             unreachable!()
@@ -62,14 +81,14 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             prim_info.ty_name, prim_info.arg_name, mesh_info.max_primitives
         )?;
         if let Some(task_payload) = entry_point.task_payload {
-            // Set task payload variable
+            // Write the outer-function `in payload` arg.  The name is already in
+            // args.task_payload, having been collected when the inner function
+            // signature was written in write_function (writer.rs).
             write!(self.out, ", in payload ")?;
             let var = &module.global_variables[task_payload];
             self.write_type(module, var.ty)?;
-
             let name = &self.names[&NameKey::GlobalVariable(task_payload)];
             write!(self.out, " {name}")?;
-            arg_names.push(name.clone());
             if let TypeInner::Array { base, size, .. } = module.types[var.ty].inner {
                 self.write_array_size(module, base, size)?;
             }
@@ -80,7 +99,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
                 self.out,
                 "{}if ({} == 0) {{",
                 back::INDENT,
-                local_invocation_index_name,
+                args.local_invocation_index,
             )?;
             self.write_workgroup_variables_initialization(
                 func_ctx,
@@ -91,12 +110,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             self.write_control_barrier(crate::Barrier::WORK_GROUP, back::Level(1))?;
         }
         write!(self.out, "{}{nested_name}(", back::INDENT)?;
-        for (i, arg_name) in arg_names.iter().enumerate() {
-            if i != 0 {
-                write!(self.out, ", ")?;
-            }
-            write!(self.out, "{arg_name}")?;
-        }
+        args.write_call_args(&mut self.out)?;
         writeln!(self.out, ");")?;
         writeln!(
             self.out,
@@ -182,10 +196,10 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             let array_name = get_var_member_name(array_bi, var_type);
             let item_name = format!("{var_name}.{array_name}[{index_name}]");
             writeln!(
-                    self.out,
-                    "{level}for (int {index_name} = {local_invocation_index_name}; {index_name} < {count}; {index_name} += {}) {{",
-                    wg_size
-                )?;
+                self.out,
+                "{level}for (int {index_name} = {}; {index_name} < {count}; {index_name} += {}) {{",
+                args.local_invocation_index, wg_size
+            )?;
 
             // Loop body, uses more indentation
             {
@@ -213,7 +227,6 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         Ok(())
     }
 
-    #[expect(clippy::too_many_arguments)]
     fn write_task_shader_wrapper(
         &mut self,
         module: &Module,
@@ -221,8 +234,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         need_workgroup_variables_initialization: bool,
         nested_name: &str,
         entry_point: &crate::EntryPoint,
-        arg_names: Vec<String>,
-        local_invocation_index_name: String,
+        args: NestedEntryPointArgs,
     ) -> BackendResult {
         let back::FunctionType::EntryPoint(ep_index) = func_ctx.ty else {
             unreachable!()
@@ -232,8 +244,9 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         if need_workgroup_variables_initialization {
             writeln!(
                 self.out,
-                "{}if ({local_invocation_index_name} == 0) {{",
-                back::INDENT
+                "{}if ({} == 0) {{",
+                back::INDENT,
+                args.local_invocation_index,
             )?;
             self.write_workgroup_variables_initialization(
                 func_ctx,
@@ -249,12 +262,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
             "{}uint3 {grid_size} = {nested_name}(",
             back::INDENT
         )?;
-        for (i, arg_name) in arg_names.iter().enumerate() {
-            if i != 0 {
-                write!(self.out, ", ")?;
-            }
-            write!(self.out, "{arg_name}")?;
-        }
+        args.write_call_args(&mut self.out)?;
         writeln!(self.out, ");")?;
         writeln!(
             self.out,
@@ -308,7 +316,9 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         need_workgroup_variables_initialization: bool,
         nested_name: &str,
         entry_point: &crate::EntryPoint,
-        local_invocation_index_name: String,
+        // Built in write_function alongside the inner function signature, so the
+        // call-site argument order is guaranteed to match the declaration order.
+        args: NestedEntryPointArgs,
     ) -> BackendResult {
         let mut any_args_written = false;
         let mut separator_if_needed = || {
@@ -326,10 +336,11 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         let stage = module.entry_points[ep_index as usize].stage;
         write!(self.out, "{header}")?;
         write!(self.out, "void {name}(")?;
-        let mut arg_names = Vec::new();
+        // Write the outer function's argument list with full type annotations and
+        // semantics.  Arg names come from self.names and are the same names that
+        // were collected into `args` when writing the inner function signature.
         if let Some(ref ep_input) = self.entry_point_io.get(&(ep_index as usize)).unwrap().input {
             write!(self.out, "{} {}", ep_input.ty_name, ep_input.arg_name)?;
-            arg_names.push(ep_input.arg_name.clone());
         } else {
             for (index, arg) in entry_point.function.arguments.iter().enumerate() {
                 write!(self.out, "{}", separator_if_needed())?;
@@ -337,7 +348,6 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
 
                 let argument_name =
                     &self.names[&NameKey::EntryPointArgument(ep_index, index as u32)];
-                arg_names.push(argument_name.clone());
 
                 write!(self.out, " {argument_name}")?;
                 if let TypeInner::Array { base, size, .. } = module.types[arg.ty].inner {
@@ -350,10 +360,10 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
         if need_workgroup_variables_initialization || stage == ShaderStage::Mesh {
             write!(
                 self.out,
-                "{}uint {local_invocation_index_name} : SV_GroupIndex",
-                separator_if_needed()
+                "{}uint {} : SV_GroupIndex",
+                separator_if_needed(),
+                args.local_invocation_index,
             )?;
-            arg_names.push(local_invocation_index_name.clone());
         }
         if entry_point.stage == ShaderStage::Mesh {
             self.write_mesh_shader_wrapper(
@@ -362,9 +372,8 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
                 need_workgroup_variables_initialization,
                 nested_name,
                 entry_point,
-                arg_names,
+                args,
                 separator_if_needed,
-                local_invocation_index_name,
             )?;
         } else {
             self.write_task_shader_wrapper(
@@ -373,8 +382,7 @@ impl<W: core::fmt::Write> super::Writer<'_, W> {
                 need_workgroup_variables_initialization,
                 nested_name,
                 entry_point,
-                arg_names,
-                local_invocation_index_name,
+                args,
             )?;
         }
 

@@ -167,7 +167,7 @@ void ms_main(uint local_invocation_index_2 : SV_GroupIndex, out indices uint3 tr
         mesh_output = (MeshOutput)0;
     }
     GroupMemoryBarrierWithGroupSync();
-    _ms_main(local_invocation_index_2, taskPayload);
+    _ms_main(taskPayload, local_invocation_index_2);
     GroupMemoryBarrierWithGroupSync();
     SetMeshOutputCounts(mesh_output.vertex_count, mesh_output.primitive_count);
     for (int vertIndex = local_invocation_index_2; vertIndex < mesh_output.vertex_count; vertIndex += 1) {
