@@ -2,6 +2,8 @@
 // Since this test isn't dependent on the current architecture, we can just skip it on wasm without any issues.
 #![cfg(not(any(target_arch = "wasm32", miri)))]
 
+extern crate wgpu_c_backend;
+
 use std::process::Command;
 
 #[derive(Debug)]

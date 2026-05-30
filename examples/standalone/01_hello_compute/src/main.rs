@@ -1,3 +1,5 @@
+extern crate wgpu_c_backend;
+
 /// To serve as an introduction to the wgpu api, we will implement a simple
 /// compute shader which takes a list of numbers on the CPU and doubles them on the GPU.
 ///

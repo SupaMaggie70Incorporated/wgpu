@@ -56,6 +56,7 @@ naga = { workspace = true, features = [
     "msl-out",
     "glsl-out",
 ] }
+wgpu-c-backend.workspace = true
 
 anyhow.workspace = true
 arrayvec.workspace = true

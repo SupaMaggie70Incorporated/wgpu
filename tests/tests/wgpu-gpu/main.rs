@@ -1,3 +1,5 @@
+extern crate wgpu_c_backend;
+
 mod regression {
     pub mod issue_3349;
     pub mod issue_3457;

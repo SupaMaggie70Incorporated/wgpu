@@ -1,6 +1,8 @@
 #![cfg(not(miri))]
 // Tests that ensure that various constructs that should not compile do not compile.
 
+extern crate wgpu_c_backend;
+
 #[cfg_attr(miri, ignore)]
 #[test]
 fn compile_fail() {
