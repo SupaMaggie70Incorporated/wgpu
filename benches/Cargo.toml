@@ -50,3 +50,6 @@ serde_json.workspace = true
 termcolor.workspace = true
 tracy-client = { workspace = true, optional = true }
 wgpu.workspace = true
+
+[dependencies]
+wgpu-c-backend = { path = "../wgpu-c-backend", features = ["instance_factory_override"] }

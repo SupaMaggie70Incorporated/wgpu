@@ -31,6 +31,7 @@ webgl = ["wgpu/webgl"]
 webgpu = ["wgpu/webgpu"]
 
 [dependencies]
+wgpu-c-backend = { path = "../../wgpu-c-backend", features = ["instance_factory_override"] }
 bytemuck.workspace = true
 cfg-if.workspace = true
 encase = { workspace = true }

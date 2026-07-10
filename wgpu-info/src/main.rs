@@ -1,5 +1,6 @@
 #![cfg_attr(target_arch = "wasm32", no_main)]
 #![cfg(not(target_arch = "wasm32"))]
+extern crate wgpu_c_backend;
 
 mod cli;
 mod human;

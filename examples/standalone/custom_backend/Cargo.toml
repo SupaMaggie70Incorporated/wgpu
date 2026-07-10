@@ -9,6 +9,7 @@ default = ["web"]
 web = ["wgpu/web"]
 
 [dependencies]
+wgpu-c-backend = { path = "../../../wgpu-c-backend", features = ["instance_factory_override"] }
 wgpu = { version = "29.0.0", features = [
     "custom",
     "wgsl",
