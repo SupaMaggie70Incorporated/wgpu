@@ -17,7 +17,17 @@ pub struct GpuReport {
 }
 
 impl GpuReport {
-    pub fn generate() -> Self {
+    pub fn generate(skip_custom: bool) -> Self {
+        // The patched `wgpu::Instance::new` (built with `--cfg wgpu_custom_backend`)
+        // routes through wgpu-native's C backend unless `WGPU_NO_CUSTOM_BACKEND=1`.
+        // Toggle it here so a single process can produce both the custom-backend
+        // and wgpu-core reports for `custom_backend_matches_wgpu_core`. No-op on
+        // an unpatched wgpu.
+        if skip_custom {
+            std::env::set_var("WGPU_NO_CUSTOM_BACKEND", "1");
+        } else {
+            std::env::remove_var("WGPU_NO_CUSTOM_BACKEND");
+        }
         let instance = wgpu::Instance::new({
             let mut desc = wgpu::InstanceDescriptor::new_without_display_handle();
             desc.backend_options.dx12.shader_compiler = Dx12Compiler::StaticDxc;

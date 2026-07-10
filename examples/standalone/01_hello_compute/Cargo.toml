@@ -5,6 +5,7 @@ rust-version = "1.87"
 publish = false
 
 [dependencies]
+wgpu-c-backend = { path = "../../../wgpu-c-backend" }
 bytemuck = { version = "1.22.0", features = ["extern_crate_alloc"] }
 env_logger = "0.11"
 pollster = "0.4"

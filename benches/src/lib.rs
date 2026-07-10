@@ -23,6 +23,7 @@
 //!
 //! By default all tests run for 2 seconds, but this can be overridden
 //! by individual tests.
+extern crate wgpu_c_backend;
 
 use std::{collections::HashMap, io::IsTerminal, time::Duration};
 

@@ -275,6 +275,10 @@ smallvec.workspace = true
 portable-atomic.workspace = true
 
 [dev-dependencies]
+# C-backend integration test rig: links wgpu-native's C backend into wgpu's own
+# test binary so `Instance::new`'s call-out symbol resolves. (Dev-dependency
+# cycle is permitted by Cargo.)
+wgpu-c-backend = { path = "../wgpu-c-backend" }
 # Used in doc-tests
 bytemuck.workspace = true
 

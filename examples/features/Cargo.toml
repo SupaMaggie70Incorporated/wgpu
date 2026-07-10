@@ -28,6 +28,7 @@ webgpu = ["wgpu/webgpu"]
 exhaust = ["wgpu/exhaust"]
 
 [dependencies]
+wgpu-c-backend = { path = "../../wgpu-c-backend" }
 bytemuck.workspace = true
 cfg-if.workspace = true
 encase = { workspace = true }
