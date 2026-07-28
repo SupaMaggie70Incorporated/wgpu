@@ -249,6 +249,14 @@ pub extern crate wgpu_core as wgc;
 pub extern crate wgpu_hal as hal;
 pub extern crate wgpu_types as wgt;
 
+// C-backend integration test rig: force wgpu's own test binary to link
+// wgpu-native's C backend, which provides `__wgpu_custom_backend_new_instance`
+// (referenced by `Instance::new`). Without this the wgpu lib-test fails to link
+// (its own tests don't otherwise pull in the C backend).
+#[cfg(test)]
+#[allow(unused_extern_crates)] // linked only to provide the C-backend symbol
+extern crate wgpu_c_backend;
+
 //
 //
 // Modules

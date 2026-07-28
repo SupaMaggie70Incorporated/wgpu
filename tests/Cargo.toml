@@ -42,6 +42,7 @@ test-build-with-profiling = ["profiling/type-check"]
 # dev-dependencies will make the dependency graph just a bit shallower, and makes
 # `cargo clippy -- -Wunused-crate-dependencies` give fewer false positives.
 [dependencies]
+wgpu-c-backend = { path = "../wgpu-c-backend" }
 # Passthrough backend uses as_hal for the GLES backend, and there's not a great way to cfg-gate that.
 # These are all enabled for any testing on CI anyway, and won't do anything if no devices are detected.
 wgpu = { workspace = true, features = ["noop", "gles", "webgl", "angle"] }

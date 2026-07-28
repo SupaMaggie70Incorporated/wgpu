@@ -10,6 +10,7 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+wgpu-c-backend = { path = "../wgpu-c-backend" }
 anyhow.workspace = true
 bitflags.workspace = true
 env_logger.workspace = true

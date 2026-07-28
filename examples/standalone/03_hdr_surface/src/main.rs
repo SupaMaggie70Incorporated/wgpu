@@ -18,6 +18,7 @@
 //! hdr10`; on the web: a `?mode=` query parameter) — to force a particular color
 //! space instead of auto-picking.
 //! Set `WGPU_BACKEND=vulkan` to force the backend.
+extern crate wgpu_c_backend;
 
 use std::sync::Arc;
 

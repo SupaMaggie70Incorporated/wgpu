@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
+members = ["wgpu-c-backend",
     "cts_runner",
     "deno_webgpu",
 
@@ -30,7 +30,7 @@ members = [
     "xtask",
 ]
 exclude = []
-default-members = [
+default-members = ["wgpu-c-backend",
     "benches",
     "examples/features",
     "examples/standalone/*",
@@ -338,3 +338,10 @@ debug = true
 # Speed up image comparison even in debug builds
 [profile.dev.package."nv-flip-sys"]
 opt-level = 3
+
+# PATCH
+[patch."https://github.com/gfx-rs/wgpu.git"]
+wgpu-core = { path = "./wgpu-core" }
+wgpu-hal = { path = "./wgpu-hal" }
+wgpu-types = { path = "./wgpu-types" }
+naga = { path = "./naga" }

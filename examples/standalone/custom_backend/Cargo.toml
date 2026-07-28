@@ -9,6 +9,7 @@ default = ["web"]
 web = ["wgpu/web"]
 
 [dependencies]
+wgpu-c-backend = { path = "../../../wgpu-c-backend" }
 wgpu = { version = "30.0.0", features = [
     "custom",
     "wgsl",

@@ -63,6 +63,36 @@ impl Instance {
     ///   this method will panic; see [`Instance::enabled_backend_features()`].
     #[allow(clippy::allow_attributes, unreachable_code)]
     pub fn new(desc: InstanceDescriptor) -> Self {
+        // wgpu-native C-backend integration testing.
+        //
+        // This is a dedicated test-rig branch: `Instance::new` routes through
+        // wgpu-native's C backend, which provides the
+        // `__wgpu_custom_backend_new_instance` symbol (always linked here via the
+        // injected `extern crate wgpu_c_backend`). `WGPU_NO_CUSTOM_BACKEND=1`
+        // selects the normal wgpu path instead, so the two can be compared in one
+        // process (see `wgpu-info`'s `custom_backend_matches_wgpu_core` test).
+        // wgpu-native is unaware of this wiring; wgpu decides here whether to
+        // defer to it. Gated on `std` only, for the env read.
+        #[cfg(std)]
+        let desc = {
+            if std::env::var("WGPU_NO_CUSTOM_BACKEND").as_deref() != Ok("1") {
+                extern "Rust" {
+                    fn __wgpu_custom_backend_new_instance(
+                        desc: InstanceDescriptor,
+                    ) -> Result<Instance, InstanceDescriptor>;
+                }
+                // SAFETY: the symbol is provided by wgpu-native (wgpu-c-backend)
+                // with exactly this Rust-ABI signature, and is only linked in the
+                // integration build.
+                match unsafe { __wgpu_custom_backend_new_instance(desc) } {
+                    Ok(instance) => return instance,
+                    Err(returned) => returned,
+                }
+            } else {
+                desc
+            }
+        };
+
         if Self::enabled_backend_features().is_empty() {
             panic!(
                 "No wgpu backend feature that is implemented for the target platform was enabled. \
